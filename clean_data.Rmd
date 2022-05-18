@@ -211,12 +211,14 @@ summary(cat_rtg)
 plot(instrument, pct_maj)
 ```
 
-Correlations b/w 1) instrument's presumed valence, 2) mean explicit rating, and 3) tuning step & percent of major categorization
+Correlations b/w 1) instrument's presumed valence, 2) mean explicit rating, and 3) tuning step & percent of major categorization, 
+and 4)instrument's presumed valence & mean explicit rating
 
 ```{r cor}
 cor(cat_rtg$inst_id, cat_rtg$pct_maj)
 cor(cat_rtg$mean_rtg, cat_rtg$pct_maj)
 cor(cat_rtg$tuning_step, cat$pct_maj)
+cor(cat_rtg$inst_id, cat_rtg$mean_rtg)
 ```
 
 Logistic regression

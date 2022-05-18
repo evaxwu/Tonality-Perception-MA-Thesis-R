@@ -154,13 +154,16 @@ Descriptives, exploratory plot
 ![](clean_data_files/figure-gfm/descr-1.png)<!-- -->
 
 Correlations b/w 1) instrument’s presumed valence, 2) mean explicit
-rating, and 3) tuning step & percent of major categorization
+rating, and 3) tuning step & percent of major categorization, and
+4)instrument’s presumed valence & mean explicit rating
 
     ## [1] 0.2145526
 
     ## [1] 0.1630075
 
     ## [1] 0.9350613
+
+    ## [1] 0.853123
 
 Logistic regression
 
