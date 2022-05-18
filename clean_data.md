@@ -16,7 +16,7 @@ Eva Wu
     ## $ passed_practice       <dbl> NA, NA, NA, NA, NA, NA, 1, NA, NA, NA, NA, NA, N…
     ## $ block_passed_practice <dbl> NA, NA, NA, NA, NA, NA, 1, NA, NA, NA, NA, NA, N…
     ## $ practice_score        <dbl> NA, NA, NA, NA, NA, NA, 11, NA, NA, NA, NA, NA, …
-    ## $ instrument            <chr> NA, NA, NA, NA, NA, NA, NA, "violin", "piano", "…
+    ## $ instrument            <fct> NA, NA, NA, NA, NA, NA, NA, violin, piano, oboe,…
     ## $ valence               <chr> NA, NA, NA, NA, NA, NA, NA, "sad", "neutral", "s…
     ## $ tuning_step           <dbl> NA, NA, NA, NA, NA, NA, NA, 5, 2, 5, 5, 3, 1, 3,…
     ## $ selected_major        <dbl> NA, NA, NA, NA, NA, NA, NA, 1, 0, 1, 1, 0, 0, 0,…
@@ -64,3 +64,17 @@ Eva Wu
 ## Practice Score
 
 ![](clean_data_files/figure-gfm/practice-1.png)<!-- -->
+
+## Categorization
+
+![](clean_data_files/figure-gfm/cat-1.png)<!-- -->
+
+## Explicit Rating
+
+![](clean_data_files/figure-gfm/rating-1.png)<!-- -->
+
+## Compare trend between tonality judgment and explicit rating
+
+![](clean_data_files/figure-gfm/compare-valence-1.png)<!-- -->
+
+## Explore correlation between music background & categorization / explicit rating

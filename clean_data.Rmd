@@ -7,6 +7,7 @@ date: '2022-05-18'
 
 ```{r setup, include = FALSE}
 library(tidyverse)
+library(colorspace)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
@@ -21,7 +22,8 @@ df_j <- read_csv("inst-cat-uc-1.csv") %>% # load exp1 data
          instrument, valence, tuning_step, selected_major, explicit_rtg) %>% 
   # for some reason 2 participant's qualtrics id was "participant", so I recoded according to their id on Qualtrics
   mutate(qualtrics_id = if_else(participant == "ch4dg75c7th9g1", "1706631024", qualtrics_id), 
-         qualtrics_id = if_else(participant == "ept8xz3drgq38w", "4475978126", qualtrics_id))
+         qualtrics_id = if_else(participant == "ept8xz3drgq38w", "4475978126", qualtrics_id),
+         instrument = factor(instrument, levels = c("xylophone", "trumpet", "piano", "violin", "oboe")))
 
 df_q <- read_csv("Qualtrics_5:4.csv") %>%
   filter(row_number() > 7) %>% # delete pilot data
@@ -72,7 +74,7 @@ demo %>%
 ```{r practice}
 demo %>%
   ggplot(aes(practice_score)) +
-  geom_bar(fill = "lightblue") +
+  geom_bar(fill = "lightgreen") +
   labs(title = "Practice score distribution among those who passed (almost all did)",
        subtitle = "Pass: getting ≥ 8 out of 12 correct",
        x = "Number of correct responses out of 12",
@@ -80,3 +82,64 @@ demo %>%
   theme_minimal()
 ```
 
+## Categorization
+
+```{r cat}
+cat <- df_j %>%
+  filter(designation == "MAIN-JUDGMENT") %>%
+  select(10:13, 5) %>%
+  group_by(instrument, tuning_step) %>%
+  count(selected_major) %>%
+  filter(selected_major == 1) %>%
+  select(-3) %>%
+  mutate(pct_maj = n/392) # 392 = # of categorizations made
+
+cat %>%
+  ggplot(aes(tuning_step, pct_maj, color = instrument)) +
+  geom_smooth() +
+  scale_y_continuous(labels = scales::percent) +
+  # need to come up w/ a better palette
+  # scale_color_discrete_sequential("Viridis", rev = TRUE) + 
+  labs(title = "Proportion of major choices vs. tuning step & instruments",
+       x = "Tuning step", y = "Percept of major choices") +
+  theme_minimal()
+```
+
+## Explicit Rating
+
+```{r rating}
+rtg <- df_j %>%
+  filter(designation == "INST-VALENCE-RTG") %>%
+  group_by(instrument) %>%
+  count(explicit_rtg) %>%
+  summarise(mean_rtg = sum((explicit_rtg*n)/sum(n))) 
+
+rtg %>%
+  ggplot(aes(instrument, mean_rtg, fill = instrument)) +
+  geom_col() +
+  labs(title = "Explicit valence rating for each instrument",
+       x = "Instrument", y = "Mean rating") +
+  theme_minimal() +
+  theme(legend.position = "None")
+```
+
+## Compare trend between tonality judgment and explicit rating
+
+```{r compare-valence}
+cat %>%
+  group_by(instrument) %>%
+  summarise(mean_pct = sum(pct_maj) / 5) %>%
+  ggplot() +
+  geom_line(mapping = aes(instrument, mean_pct, group = 1), color = "red") +
+  geom_line(rtg, mapping = aes(instrument, mean_rtg, group = 1), color = "blue") +
+  scale_y_continuous(limits = c(0.2, 3)) +
+  labs(title = "Compare trend b/w tonality categorization & valence rating",
+       x = "Instrument", y = "Tonality categorization (% major) | Explicit valence rating") +
+  theme_minimal() +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())
+```
+
+## Explore correlation between music background & categorization / explicit rating
