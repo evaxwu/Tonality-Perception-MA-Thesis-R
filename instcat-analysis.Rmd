@@ -1,0 +1,123 @@
+---
+title: "Instrument and Chord Perception"
+author: "Stephen Van Hedger"
+date: "22/02/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(lme4)
+library(tidyverse)
+library(effects)
+library(ordinal)
+library(emmeans)
+library(lmerTest)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+
+Project examining how instrumental timbre influences categorization of three-note arpeggios as major versus minor. Middle note of the arpeggios has five steps, ranging from +0c (minor) to +100c (major) in 25c increments. Participants heard five instruments in total (randomized across trial): piano, oboe, violin, trumpet, xylophone.
+
+Judgments should be theoretically independent of instrument. However, if certain timbres are more strongly associated with positive/negative affect, then it is possible that this will be reflected in the categorization task (i.e., "happier" instruments leading to a greater likelihood of responding "major"), despite no explicit instructions to base judgments on affective characteristics.
+
+### 1. Load Packages and Data
+```{r load_data, warning = FALSE, echo = FALSE}
+data <- read_csv("inst-cat-uc.csv")
+```
+
+### 2. Generalized Linear Models
+
+Here we report our main analyses
+
+```{r lmer, echo=TRUE}
+data.cat <- data %>% filter(designation == "MAIN-JUDGMENT")
+
+#first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
+main.model3 <- lmer(selected_major ~ poly(tuning_step,3)*instrument + (1+instrument|participant), data=data.cat)
+main.model2 <- lmer(selected_major ~ poly(tuning_step,2)*instrument + (1+instrument|participant), data=data.cat)
+main.model1 <- lmer(selected_major ~ poly(tuning_step,1)*instrument + (1+instrument|participant), data=data.cat)
+
+
+anova(main.model3, main.model2) # strong evidence to keep cubic fit (versus just quadratic + linear)
+anova(main.model3, main.model1) # strong evidence to keep cubic fit (versus just linear)
+
+#now let's assess the results from the selected model
+summary(main.model3)
+
+cat.emm <- emmeans(main.model3, "instrument")
+pairs(cat.emm)
+
+#assess explicit ratings of instruments
+data.exp <- data %>% filter(designation == "INST-VALENCE-RTG")
+data.exp$explicit_rtg <- ordered(data.exp$explicit_rtg)
+
+explicit.model <- clmm(explicit_rtg ~ instrument + (1|participant), data=data.exp)
+summary(explicit.model) #clear differences in reported capacity for instruments to play happy/sad
+explicit.emm <- emmeans(explicit.model, "instrument")
+pairs(explicit.emm) # oboe lower than all others, xylophone higher than all others except trumpet
+
+#how do categorization results map onto explicit ratings?
+cat.sum <- aggregate(selected_major ~ instrument*participant, FUN=mean,data=data.cat)
+exp.sum <- aggregate(as.numeric(explicit_rtg) ~ instrument*participant, FUN=mean,data=data.exp)
+
+#convert to wide format for correlational analyses
+library(reshape2)
+cat.sum.wide <- dcast(cat.sum, participant ~ instrument)
+exp.sum.wide <- dcast(exp.sum, participant ~ instrument)
+cor.data <- cbind(cat.sum.wide[,c(2:6)], exp.sum.wide[,c(2:6)])
+
+library(corrplot)
+library(rstatix)
+
+names(cor.data) = c("Oboe C", "Piano C", "Trumpet C", "Violin C", "Xylophone C", "Oboe E", "Piano E", "Trumpet E", "Violin E", "Xylophone E")
+corvalues <- cor(cor.data) #cor matrix
+
+col <- colorRampPalette(c("#4477AA",  "#77AADD", "#FFFFFF","#BB4444", "#EE9988"))
+corrplot(corvalues, method="color", col=col(200),    
+         type="upper", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE 
+         )
+
+####plot the results
+#theme
+plot_theme = theme(
+  text = element_text(size = 10),
+  axis.title.x = element_text(size = 16),
+  axis.title.y = element_text(size = 16),
+  axis.text = element_text(size = 14),
+  legend.title=element_text(size=16),
+  legend.text=element_text(size=16),
+  strip.text = element_text(size=14),
+  panel.background = element_rect(fill = 'white', colour = 'black'),
+  legend.position = c(0.20,0.75),
+  plot.title = element_text(lineheight=.8, face="bold", size = 16),
+  panel.border = element_rect(color = "black", fill=NA, size=1.25),
+  panel.grid.minor = element_blank(),
+  panel.grid.major = element_blank(),
+  axis.line.x = element_line(colour = 'black', size=0.5, linetype='solid'),
+  axis.line.y = element_line(colour = 'black', size=0.5, linetype='solid'))
+
+eff.inst <- as.data.frame(effect(term="poly(tuning_step,3)*instrument", mod=main.model))
+str(eff.inst)
+levels(eff.inst$instrument) <- c("Oboe", "Piano", "Trumpet", "Violin", "Xylophone",NA)
+
+efplot.main <- ggplot(eff.inst, aes(x=tuning_step, y=fit, group=instrument, color=instrument, fill=instrument)) + 
+  geom_point(size=2) + 
+  geom_errorbar(aes(ymin=fit-se, ymax=fit+se), width=0.1, lwd=1)+
+  #geom_line(size=1.2) +
+  geom_smooth(formula = "y~poly(x,3)", method = "glm", family = binomial, se = FALSE)+
+  scale_x_continuous(labels=c("0", "25", "50", "75", "100"))+
+  labs(y = "'Major' Response (Prop.)", x="Tuning Step", color="Instrument", fill="Instrument") +
+  plot_theme +
+  theme(legend.background = element_rect(color=NA), legend.title = element_text(), legend.box="vertical", legend.margin=margin())
+
+png("inst-cat-plot.png", height=4, width=5.5, res=300, units="in")
+efplot.main
+dev.off()
+```

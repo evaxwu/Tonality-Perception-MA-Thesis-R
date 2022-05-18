@@ -1,0 +1,40 @@
+---
+title: "Concatenate_CSVs"
+author: "Stephen Van Hedger"
+date: "June 26, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(gtools)
+library(tidyverse)
+```
+
+## Overview
+
+This is an R Markdown document that can be dropped one level up from a folder with individual csv files you want to concatenate (bind by rows) for later analysis.
+
+### Load individual csvs
+
+```{r concatenate, warning=FALSE}
+setwd("raw1") #this is the folder name that contains the individual csvs
+filenames <- list.files(full.names=TRUE) #lists each file in the folder
+
+data <- data.frame()
+
+All <- lapply(filenames, function(i){
+  temp <- read.csv(i)
+  temp$identifier <- i
+  data <- smartbind(data, temp)
+}) #function that reads the csv for all files listed in 'filenames'
+
+data <- do.call(smartbind, All) #use function and bind the read csv files be row into a large data frame
+```
+
+### Save combined data frame
+
+```{r save_csv}
+write.csv(data,"inst-cat-uc.csv", row.names=FALSE) #save the large data frame as its own csv file
+```
+

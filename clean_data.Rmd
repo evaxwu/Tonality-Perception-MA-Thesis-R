@@ -1,0 +1,78 @@
+---
+title: "Data Cleaning"
+author: "Eva Wu"
+output: html_document
+date: '2022-05-18'
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r }
+df_j <- read_csv("inst-cat-uc.csv") %>%
+  filter(designation != "NA" & designation != "practice-intro" & designation != "practice-resp" & 
+         qualtrics_id != "NA" & qualtrics_id != "9643222579") %>% # delete pilot data
+  select(participant, qualtrics_id, chord, designation, response, # delete meta data
+         correct, passed_practice, block_passed_practice, practice_score, 
+         instrument, valence, tuning_step, selected_major, explicit_rtg) %>% 
+  # for some reason 2 participant's qualtrics id was "participant", so I recoded according to their id on Qualtrics
+  mutate(qualtrics_id = if_else(participant == "ch4dg75c7th9g1", "1706631024", qualtrics_id), 
+         qualtrics_id = if_else(participant == "ept8xz3drgq38w", "4475978126", qualtrics_id))
+
+df_q <- read_csv("Qualtrics_5:4.csv") %>%
+  filter(row_number() > 7) %>% # delete pilot data
+  select(-(2:16), -50) # delete unnecessary meta data
+
+# join qualtrics & jspsych data by embedded qualtrics id, discarding those who do not have a matching qualtrics_id in qualtrics data, keep everyone in jspsych data
+combined <- left_join(df_j, df_q, by = c("qualtrics_id" = "participant"))
+
+# check if there are participants who wrote the wrong jspsych code
+# miraculously there aren't any
+combined %>%
+  filter(participant != jspsych_id)
+```
+
+## Demographics
+
+```{r demographics}
+demo <- combined %>%
+  filter(designation == "PRACTICE-PASSED-SUMMARY") %>%
+  select(-(1:6), -(10:16)) %>%
+  mutate(Age = as.numeric(Age))
+
+demo %>%
+  filter(Gender != "NA") %>%
+  ggplot(aes(Gender, fill = Gender)) +
+  geom_bar() +
+  labs(title = "Participant gender distribution",
+       x = "Gender",
+       y = "Number of participants") +
+  theme_minimal() +
+  theme(legend.position = "None")
+
+demo %>%
+  ggplot(aes(Age)) +
+  geom_bar(fill = "lightblue") +
+  labs(title = "Participant age distribution",
+       x = "Age",
+       y = "Number of participants") +
+  theme_minimal()
+```
+
+## Practice Score
+
+```{r practice}
+demo %>%
+  ggplot(aes(practice_score)) +
+  geom_bar(fill = "lightblue") +
+  labs(title = "Practice score distribution among those who passed (almost all did)",
+       subtitle = "Pass: getting ≥ 8 out of 12 correct",
+       x = "Number of correct responses out of 12",
+       y = "Number of participants") +
+  theme_minimal()
+```
+
