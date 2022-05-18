@@ -11,6 +11,45 @@ library(colorspace)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
+## Recap
+
+### Hypothesis 
+
+“Happy” instruments would make people more prone to identify the chord as major, 
+while “sad” instruments might make people more prone to identify the chord as minor.
+
+### Exploratory research questions 
+
+1) Association between timbre and tonality judgment 
+
+2) Association between timbre and explicit ratings of instrument valence
+
+3) Association between tonality judgment and explicit ratings of instrument valence
+
+4) Association between musical background and tonality judgment and/or explicit ratings of instrument valence
+
+### Design
+
+* IV1 (w/in-subject): instrument (happy [marimba, xylophone, vibraphone] vs. neutral [piano] vs. sad [oboe, flute, violin]) 
+
+* IV2 (w/in-subject): tuning of middle note (5 levels, ranging from absolute minor to absolute major)
+
+* IV3 (b/w-subject): key (Bb vs. C) (to find out absolute-pitch-related effects)
+
+* DV: the likelihood that one categorizes a chord as major/minor 
+
+### Procedure
+
+* Pt 1 Sound calibration (choose the quietest sound among 3)
+
+* Pt 2 Training (press the buttons to listen to the chords, practice w/ feedback) + testing phase (listen to 12 chords and choose b/w major and minor for each, need to correctly answer 8 to pass)
+
+* Everyone moves on to the categorization task, but we will only analyze the response of those who pass the assessment. 
+
+* Pt 3 Categorization task (jspsych) - listen to 4 blocks of 70 chords and choose b/w major and minor for each chord; explicit rating of instrument valence at the end
+
+* Pt 4 Questionnaires (demographics & music experience; Qualtrics)
+
 ## Clean Data
 
 ```{r clean, include = FALSE}
