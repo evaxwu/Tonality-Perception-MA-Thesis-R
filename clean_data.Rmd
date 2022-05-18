@@ -1,19 +1,19 @@
 ---
 title: "Data Cleaning"
 author: "Eva Wu"
-output: html_document
+output: github_document
 date: '2022-05-18'
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 library(tidyverse)
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
-## R Markdown
+## Clean Data
 
-```{r }
-df_j <- read_csv("inst-cat-uc.csv") %>%
+```{r clean, include = FALSE}
+df_j <- read_csv("inst-cat-uc-1.csv") %>% # load exp1 data
   filter(designation != "NA" & designation != "practice-intro" & designation != "practice-resp" & 
          qualtrics_id != "NA" & qualtrics_id != "9643222579") %>% # delete pilot data
   select(participant, qualtrics_id, chord, designation, response, # delete meta data
@@ -34,6 +34,10 @@ combined <- left_join(df_j, df_q, by = c("qualtrics_id" = "participant"))
 # miraculously there aren't any
 combined %>%
   filter(participant != jspsych_id)
+```
+
+```{r present}
+glimpse(combined)
 ```
 
 ## Demographics

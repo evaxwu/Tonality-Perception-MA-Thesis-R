@@ -18,7 +18,7 @@ This is an R Markdown document that can be dropped one level up from a folder wi
 ### Load individual csvs
 
 ```{r concatenate, warning=FALSE}
-setwd("raw1") #this is the folder name that contains the individual csvs
+setwd("raw1") #this is the folder name that contains the individual csvs from exp1
 filenames <- list.files(full.names=TRUE) #lists each file in the folder
 
 data <- data.frame()
@@ -35,6 +35,6 @@ data <- do.call(smartbind, All) #use function and bind the read csv files be row
 ### Save combined data frame
 
 ```{r save_csv}
-write.csv(data,"inst-cat-uc.csv", row.names=FALSE) #save the large data frame as its own csv file
+write.csv(data,"inst-cat-uc-1.csv", row.names=FALSE) #save the large data frame as its own csv file
 ```
 
