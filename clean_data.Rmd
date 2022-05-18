@@ -1,5 +1,5 @@
 ---
-title: "Data Cleaning"
+title: "Exploratory Analysis"
 author: "Eva Wu"
 output: github_document
 date: '2022-05-18'
@@ -8,6 +8,7 @@ date: '2022-05-18'
 ```{r setup, include = FALSE}
 library(tidyverse)
 library(colorspace)
+library(ISLR2)
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 ```
 
@@ -75,6 +76,38 @@ combined <- left_join(df_j, df_q, by = c("qualtrics_id" = "participant"))
 # miraculously there aren't any
 combined %>%
   filter(participant != jspsych_id)
+
+# df for demographics
+demo <- combined %>%
+  filter(designation == "PRACTICE-PASSED-SUMMARY") %>%
+  select(-(1:6), -(10:16)) %>%
+  mutate(Age = as.numeric(Age))
+
+# df for categorization
+cat <- df_j %>%
+  filter(designation == "MAIN-JUDGMENT") %>%
+  select(10:13, 5) %>%
+  group_by(instrument, tuning_step) %>%
+  count(selected_major) %>%
+  filter(selected_major == 1) %>%
+  select(-3) %>%
+  mutate(pct_maj = n/392, # 392 = # of categorizations made
+         inst_id = case_when(instrument == "oboe" ~ 1,
+                             instrument == "violin" ~ 2,
+                             instrument == "piano" ~ 3,
+                             instrument == "trumpet" ~ 4,
+                             instrument == "xylophone" ~ 5)) 
+
+# df for explicit rating
+rtg <- df_j %>%
+  filter(designation == "INST-VALENCE-RTG") %>%
+  group_by(instrument) %>%
+  count(explicit_rtg) %>%
+  summarise(mean_rtg = sum((explicit_rtg*n)/sum(n))) 
+
+# df for both combined
+cat_rtg <- cat %>% 
+  left_join(rtg, by = "instrument")
 ```
 
 ```{r present}
@@ -83,12 +116,7 @@ glimpse(combined)
 
 ## Demographics
 
-```{r demographics}
-demo <- combined %>%
-  filter(designation == "PRACTICE-PASSED-SUMMARY") %>%
-  select(-(1:6), -(10:16)) %>%
-  mutate(Age = as.numeric(Age))
-
+```{r demo}
 demo %>%
   filter(Gender != "NA") %>%
   ggplot(aes(Gender, fill = Gender)) +
@@ -124,15 +152,6 @@ demo %>%
 ## Categorization
 
 ```{r cat}
-cat <- df_j %>%
-  filter(designation == "MAIN-JUDGMENT") %>%
-  select(10:13, 5) %>%
-  group_by(instrument, tuning_step) %>%
-  count(selected_major) %>%
-  filter(selected_major == 1) %>%
-  select(-3) %>%
-  mutate(pct_maj = n/392) # 392 = # of categorizations made
-
 cat %>%
   ggplot(aes(tuning_step, pct_maj, color = instrument)) +
   geom_smooth() +
@@ -147,12 +166,6 @@ cat %>%
 ## Explicit Rating
 
 ```{r rating}
-rtg <- df_j %>%
-  filter(designation == "INST-VALENCE-RTG") %>%
-  group_by(instrument) %>%
-  count(explicit_rtg) %>%
-  summarise(mean_rtg = sum((explicit_rtg*n)/sum(n))) 
-
 rtg %>%
   ggplot(aes(instrument, mean_rtg, fill = instrument)) +
   geom_col() +
@@ -182,3 +195,60 @@ cat %>%
 ```
 
 ## Explore correlation between music background & categorization / explicit rating
+
+TBC
+
+## Statistical Analyses
+
+Descriptives, exploratory plot
+
+```{r descr}
+# save data to be used
+attach(cat_rtg)
+
+# descriptives
+summary(cat_rtg)
+plot(instrument, pct_maj)
+```
+
+Correlations b/w 1) instrument's presumed valence, 2) mean explicit rating, and 3) tuning step & percent of major categorization
+
+```{r cor}
+cor(cat_rtg$inst_id, cat_rtg$pct_maj)
+cor(cat_rtg$mean_rtg, cat_rtg$pct_maj)
+cor(cat_rtg$tuning_step, cat$pct_maj)
+```
+
+Logistic regression
+
+1) Percent major ~ instrument & tuning step
+
+```{r log-reg}
+glm.fit <- glm(pct_maj ~ instrument + tuning_step, family = binomial) 
+# family= binomial tells r to run logistic regression
+summary(glm.fit)
+```
+
+2) Percent major ~ mean explicit rating of each instrument & tuning step
+
+```{r log-reg2}
+glm.fit2 <- glm(pct_maj ~ mean_rtg + tuning_step, family = binomial) 
+# family= binomial tells r to run logistic regression
+summary(glm.fit2)
+```
+
+Linear regression
+
+```{r lm-fit-both}
+lm.fit2 <- lm(pct_maj ~ tuning_step, data = cat)
+lm.fit <- lm(pct_maj ~ instrument + tuning_step, data = cat) 
+summary(lm.fit)
+```
+
+ANOVA exploring 1) whether adding instrument as a predictor significantly improves model, 
+and 2) whether adding both predictors is significantly better than null model
+
+```{r lm-anova}
+anova(lm.fit, lm.fit2) # adding instrument significantly improves model
+anova(lm.fit) # adding both predictors significantly better than null model
+```

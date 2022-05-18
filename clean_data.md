@@ -1,4 +1,4 @@
-Data Cleaning
+Exploratory Analysis
 ================
 Eva Wu
 2022-05-18
@@ -110,7 +110,7 @@ identify the chord as minor.
 
 ## Demographics
 
-![](clean_data_files/figure-gfm/demographics-1.png)<!-- -->![](clean_data_files/figure-gfm/demographics-2.png)<!-- -->
+![](clean_data_files/figure-gfm/demo-1.png)<!-- -->![](clean_data_files/figure-gfm/demo-2.png)<!-- -->
 
 ## Practice Score
 
@@ -129,3 +129,146 @@ identify the chord as minor.
 ![](clean_data_files/figure-gfm/compare-valence-1.png)<!-- -->
 
 ## Explore correlation between music background & categorization / explicit rating
+
+TBC
+
+## Statistical Analyses
+
+Descriptives, exploratory plot
+
+    ##      instrument  tuning_step       n            pct_maj          inst_id 
+    ##  xylophone:5    Min.   :1    Min.   : 45.0   Min.   :0.1148   Min.   :1  
+    ##  trumpet  :5    1st Qu.:2    1st Qu.: 92.0   1st Qu.:0.2347   1st Qu.:2  
+    ##  piano    :5    Median :3    Median :196.0   Median :0.5000   Median :3  
+    ##  violin   :5    Mean   :3    Mean   :197.6   Mean   :0.5041   Mean   :3  
+    ##  oboe     :5    3rd Qu.:4    3rd Qu.:316.0   3rd Qu.:0.8061   3rd Qu.:4  
+    ##                 Max.   :5    Max.   :348.0   Max.   :0.8878   Max.   :5  
+    ##     mean_rtg    
+    ##  Min.   :2.000  
+    ##  1st Qu.:2.245  
+    ##  Median :2.714  
+    ##  Mean   :2.535  
+    ##  3rd Qu.:2.755  
+    ##  Max.   :2.959
+
+![](clean_data_files/figure-gfm/descr-1.png)<!-- -->
+
+Correlations b/w 1) instrument’s presumed valence, 2) mean explicit
+rating, and 3) tuning step & percent of major categorization
+
+    ## [1] 0.2145526
+
+    ## [1] 0.1630075
+
+    ## [1] 0.9350613
+
+Logistic regression
+
+1)  Percent major \~ instrument & tuning step
+
+<!-- -->
+
+    ## 
+    ## Call:
+    ## glm(formula = pct_maj ~ instrument + tuning_step, family = binomial)
+    ## 
+    ## Deviance Residuals: 
+    ##      Min        1Q    Median        3Q       Max  
+    ## -0.20221  -0.11459   0.00986   0.12625   0.24408  
+    ## 
+    ## Coefficients:
+    ##                   Estimate Std. Error z value Pr(>|z|)  
+    ## (Intercept)        -2.1771     1.4853  -1.466   0.1427  
+    ## instrumenttrumpet  -0.4293     1.4980  -0.287   0.7744  
+    ## instrumentpiano    -0.3983     1.4978  -0.266   0.7903  
+    ## instrumentviolin   -0.5364     1.4995  -0.358   0.7205  
+    ## instrumentoboe     -1.1086     1.5256  -0.727   0.4674  
+    ## tuning_step         0.8979     0.3834   2.342   0.0192 *
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## (Dispersion parameter for binomial family taken to be 1)
+    ## 
+    ##     Null deviance: 8.24632  on 24  degrees of freedom
+    ## Residual deviance: 0.46274  on 19  degrees of freedom
+    ## AIC: 28.317
+    ## 
+    ## Number of Fisher Scoring iterations: 5
+
+2)  Percent major \~ mean explicit rating of each instrument & tuning
+    step
+
+<!-- -->
+
+    ## 
+    ## Call:
+    ## glm(formula = pct_maj ~ mean_rtg + tuning_step, family = binomial)
+    ## 
+    ## Deviance Residuals: 
+    ##      Min        1Q    Median        3Q       Max  
+    ## -0.27832  -0.18536   0.02224   0.17012   0.28202  
+    ## 
+    ## Coefficients:
+    ##             Estimate Std. Error z value Pr(>|z|)  
+    ## (Intercept)  -4.3947     3.7112  -1.184   0.2363  
+    ## mean_rtg      0.6941     1.3323   0.521   0.6024  
+    ## tuning_step   0.8859     0.3789   2.338   0.0194 *
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## (Dispersion parameter for binomial family taken to be 1)
+    ## 
+    ##     Null deviance: 8.24632  on 24  degrees of freedom
+    ## Residual deviance: 0.75289  on 22  degrees of freedom
+    ## AIC: 22.44
+    ## 
+    ## Number of Fisher Scoring iterations: 4
+
+Linear regression
+
+    ## 
+    ## Call:
+    ## lm(formula = pct_maj ~ instrument + tuning_step, data = cat)
+    ## 
+    ## Residuals:
+    ##       Min        1Q    Median        3Q       Max 
+    ## -0.106888 -0.073469  0.002551  0.059184  0.133418 
+    ## 
+    ## Coefficients:
+    ##                   Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)        0.04719    0.05198   0.908  0.37533    
+    ## instrumenttrumpet -0.07704    0.05334  -1.444  0.16490    
+    ## instrumentpiano   -0.07143    0.05334  -1.339  0.19629    
+    ## instrumentviolin  -0.09643    0.05334  -1.808  0.08647 .  
+    ## instrumentoboe    -0.19898    0.05334  -3.731  0.00142 ** 
+    ## tuning_step        0.18189    0.01193  15.251 4.11e-12 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.08433 on 19 degrees of freedom
+    ## Multiple R-squared:  0.9286, Adjusted R-squared:  0.9098 
+    ## F-statistic: 49.41 on 5 and 19 DF,  p-value: 3.097e-10
+
+ANOVA exploring 1) whether adding instrument as a predictor
+significantly improves model, and 2) whether adding both predictors is
+significantly better than null model
+
+    ## Analysis of Variance Table
+    ## 
+    ## Model 1: pct_maj ~ instrument + tuning_step
+    ## Model 2: pct_maj ~ tuning_step
+    ##   Res.Df     RSS Df Sum of Sq      F Pr(>F)  
+    ## 1     19 0.13512                             
+    ## 2     23 0.23774 -4  -0.10262 3.6074 0.0238 *
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+    ## Analysis of Variance Table
+    ## 
+    ## Response: pct_maj
+    ##             Df  Sum Sq Mean Sq  F value    Pr(>F)    
+    ## instrument   4 0.10262 0.02565   3.6074    0.0238 *  
+    ## tuning_step  1 1.65416 1.65416 232.6004 4.108e-12 ***
+    ## Residuals   19 0.13512 0.00711                       
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
