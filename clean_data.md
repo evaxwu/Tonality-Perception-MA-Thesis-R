@@ -56,6 +56,8 @@ identify the chord as minor.
 
 ## Clean Data
 
+A snapshot of the data (still need to do further cleaning)
+
     ## Rows: 10,388
     ## Columns: 49
     ## $ participant           <chr> "14vd1s548b9ux8", "14vd1s548b9ux8", "14vd1s548b9…

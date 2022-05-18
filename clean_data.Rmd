@@ -110,6 +110,8 @@ cat_rtg <- cat %>%
   left_join(rtg, by = "instrument")
 ```
 
+A snapshot of the data (still need to do further cleaning)
+
 ```{r present}
 glimpse(combined)
 ```

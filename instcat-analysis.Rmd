@@ -2,7 +2,7 @@
 title: "Instrument and Chord Perception"
 author: "Stephen Van Hedger"
 date: "22/02/2022"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -24,7 +24,7 @@ Judgments should be theoretically independent of instrument. However, if certain
 
 ### 1. Load Packages and Data
 ```{r load_data, warning = FALSE, echo = FALSE}
-data <- read_csv("inst-cat-uc.csv")
+data <- read_csv("inst-cat-uc-1.csv")
 ```
 
 ### 2. Generalized Linear Models
@@ -38,7 +38,6 @@ data.cat <- data %>% filter(designation == "MAIN-JUDGMENT")
 main.model3 <- lmer(selected_major ~ poly(tuning_step,3)*instrument + (1+instrument|participant), data=data.cat)
 main.model2 <- lmer(selected_major ~ poly(tuning_step,2)*instrument + (1+instrument|participant), data=data.cat)
 main.model1 <- lmer(selected_major ~ poly(tuning_step,1)*instrument + (1+instrument|participant), data=data.cat)
-
 
 anova(main.model3, main.model2) # strong evidence to keep cubic fit (versus just quadratic + linear)
 anova(main.model3, main.model1) # strong evidence to keep cubic fit (versus just linear)
@@ -103,7 +102,7 @@ plot_theme = theme(
   axis.line.x = element_line(colour = 'black', size=0.5, linetype='solid'),
   axis.line.y = element_line(colour = 'black', size=0.5, linetype='solid'))
 
-eff.inst <- as.data.frame(effect(term="poly(tuning_step,3)*instrument", mod=main.model))
+eff.inst <- as.data.frame(effect(term="poly(tuning_step,3)*instrument", mod=main.model)) # added 3 otherwise wouldn't knit
 str(eff.inst)
 levels(eff.inst$instrument) <- c("Oboe", "Piano", "Trumpet", "Violin", "Xylophone",NA)
 
