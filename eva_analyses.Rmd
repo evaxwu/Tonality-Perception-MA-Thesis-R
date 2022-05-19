@@ -55,7 +55,7 @@ explicit rating of instrument valence at the end
 
 ## Clean Data
 
-```{r clean, include = FALSE}
+```{r load, include = FALSE}
 df_j <- read_csv("inst-cat-uc-1.csv") %>% # load exp1 data
   filter(designation != "NA" & designation != "practice-intro" & designation != "practice-resp" & 
          qualtrics_id != "NA" & qualtrics_id != "9643222579") %>% # delete pilot data
@@ -65,12 +65,7 @@ df_j <- read_csv("inst-cat-uc-1.csv") %>% # load exp1 data
   # for some reason 2 participant's qualtrics id was "participant", so I recoded according to their id on Qualtrics
   mutate(qualtrics_id = if_else(participant == "ch4dg75c7th9g1", "1706631024", qualtrics_id), 
          qualtrics_id = if_else(participant == "ept8xz3drgq38w", "4475978126", qualtrics_id),
-         instrument = factor(instrument, levels = c("xylophone", "trumpet", "piano", "violin", "oboe")), 
-         inst_id = case_when(instrument == "oboe" ~ 1,
-                             instrument == "violin" ~ 2,
-                             instrument == "piano" ~ 3,
-                             instrument == "trumpet" ~ 4,
-                             instrument == "xylophone" ~ 5))
+         instrument = factor(instrument, levels = c("xylophone", "trumpet", "piano", "violin", "oboe")))
 
 df_q <- read_csv("Qualtrics_5:4.csv") %>%
   filter(row_number() > 7) %>% # delete pilot data
@@ -84,21 +79,9 @@ combined <- left_join(df_j, df_q, by = c("qualtrics_id" = "participant"))
 # miraculously there aren't any
 combined %>%
   filter(participant != jspsych_id)
+```
 
-# df for headphone test
-test <- combined %>%
-  filter(designation == "headphone-test") %>%
-  select(2, 6) %>%
-  group_by(qualtrics_id) %>%
-  summarize(n = sum(correct)) %>%
-  # set 4 out of 6 as passed headphone test
-  mutate(headphone = if_else(n >= 4, 1, 0)) 
-
-# see how many failed the headphone test
-test %>%
-  filter(headphone == 0)
-# turns out 8 failed
-
+```{r demo-headphone}
 # df for demographics
 # need to find a way to summarize musical expertise
 demo <- combined %>%
@@ -106,40 +89,84 @@ demo <- combined %>%
   select(-1, -(3:6), -(10:16), -49) %>% # delete unnecessary data
   mutate(Age = as.numeric(Age))
 
+# df for headphone test
+test <- df_j %>%
+  filter(designation == "headphone-test") %>%
+  select(2, 6) %>%
+  group_by(qualtrics_id) %>%
+  summarize(n = sum(correct)) %>%
+  # set 4 out of 6 as passed headphone test
+  mutate(headphone = if_else(n >= 4, 1, 0),
+         test_corr = n) %>%
+  select(-n)
+
+# combine headphone test pass/fail result w/ original data
+demo_test <- left_join(demo, test, by = "qualtrics_id")
+
+# see how many failed the headphone test
+test %>%
+  filter(headphone == 0)
+```
+
+Turns out 8 participants failed the headphone test.
+
+```{r cat-rtg}
 # df for categorization
-cat <- combined %>%
+cat <- df_j %>%
   filter(designation == "MAIN-JUDGMENT") %>%
-  select(2:3, 10:13, 15) %>%
-  group_by(qualtrics_id, instrument, inst_id, tuning_step) %>%
+  select(2:3, 10:13) %>%
+  group_by(qualtrics_id, instrument, tuning_step) %>%
   count(selected_major)
 
-# since count function dropped rows where n == 0, but we still need those rows to calculate proportion of major cat
-# we select rows where n == 8 (all judged as major/ all judged as minor), 
+# count function dropped rows where n == 0, but we still need those rows to calculate proportion of major cat
+# so we select rows where n == 8 (all judged as major/ all judged as minor), 
 # duplicate them, change their values, and bind them back to the cat df
 
-cat %>%
+n_8 <- cat %>%
   filter(n == 8)
-  
+
+n_0 <- n_8 %>%
+  mutate(selected_major = if_else(selected_major == 0, 1, 0),
+         n = 0)
+
+cat_binded <- rbind(n_8, n_0, cat) %>%
+  arrange(qualtrics_id, instrument, tuning_step, selected_major) %>%
+  unique() %>% # delete duplicate rows (don't know why there are duplicates)
+  filter(selected_major == 1) %>%
   # pct_major = each individual's proportion of choosing major for each instrument & tuning step
   #8 = # of categorizations made by each individual on each instrument w/ each tuning step
-  mutate(pct_maj = n/8) 
+  mutate(pct_maj = n/8)
+  
+cat_pivoted <- cat_binded %>%
+  ungroup() %>% # can't drop grouping variable
+  select(-n, -selected_major) %>%
+  pivot_wider(names_from = c(instrument, tuning_step), values_from = pct_maj)
 
 # df for explicit rating
 rtg <- df_j %>%
   filter(designation == "INST-VALENCE-RTG") %>%
-  group_by(qualtrics_id, instrument, inst_id) %>%
+  group_by(qualtrics_id, instrument) %>%
   count(explicit_rtg) %>%
   select(-n) 
 
+rtg_pivoted <- rtg %>%
+  pivot_wider(names_from = instrument, values_from = explicit_rtg)
+
 # df for both combined
-cat_rtg <- cat %>% 
-  left_join(rtg, by = c("qualtrics_id", "instrument", "inst_id"))
+cat_rtg_pivoted <- cat_pivoted %>% 
+  left_join(rtg_pivoted, by = c("qualtrics_id"))
+  
+# delete the following since no need
+# mutate(inst_id = case_when(instrument == "oboe" ~ 1, instrument == "violin" ~ 2,
+# instrument == "piano" ~ 3, instrument == "trumpet" ~ 4, instrument == "xylophone" ~ 5))
+
+all <- left_join(cat_rtg_pivoted, demo_test)
 ```
 
-A snapshot of the data (still need to do further cleaning)
+A snapshot of the data (next step: find a measure to summarize musical background)
 
 ```{r present}
-glimpse(combined)
+glimpse(all)
 ```
 
 ## Demographics
@@ -180,9 +207,9 @@ demo %>%
 ## Categorization
 
 ```{r cat}
-cat %>%
+cat_binded %>%
   ggplot(aes(tuning_step, pct_maj, color = instrument)) +
-  geom_smooth() +
+  geom_smooth(se = FALSE) +
   scale_y_continuous(labels = scales::percent) +
   # need to come up w/ a better palette
   # scale_color_discrete_sequential("Viridis", rev = TRUE) + 
@@ -195,7 +222,7 @@ cat %>%
 
 ```{r rating}
 rtg %>%
-  ggplot(aes(instrument, mean_rtg, fill = instrument)) +
+  ggplot(aes(instrument, explicit_rtg, fill = instrument)) +
   geom_col() +
   labs(title = "Explicit valence rating for each instrument",
        x = "Instrument", y = "Mean rating") +
@@ -206,12 +233,13 @@ rtg %>%
 ## Compare trend between tonality judgment and explicit rating
 
 ```{r compare-valence}
-cat %>%
+# need more work
+cat_binded %>%
   group_by(instrument) %>%
   summarise(mean_pct = sum(pct_maj) / 5) %>%
   ggplot() +
   geom_line(mapping = aes(instrument, mean_pct, group = 1), color = "red") +
-  geom_line(rtg, mapping = aes(instrument, mean_rtg, group = 1), color = "blue") +
+  geom_line(rtg, mapping = aes(instrument, explicit_rtg, group = 1), color = "blue") +
   scale_y_continuous(limits = c(0.2, 3)) +
   labs(title = "Compare trend b/w tonality categorization & valence rating",
        x = "Instrument", y = "Tonality categorization (% major) | Explicit valence rating") +
@@ -232,21 +260,21 @@ Descriptives, exploratory plot
 
 ```{r descr}
 # save data to be used
-attach(cat_rtg)
+#attach(all)
 
 # descriptives
-summary(cat_rtg)
-plot(instrument, pct_maj)
+#summary(cat_rtg)
+#plot(instrument, pct_maj)
 ```
 
 Correlations b/w 1) instrument's presumed valence, 2) mean explicit rating, and 3) tuning step & percent of major categorization, 
 and 4)instrument's presumed valence & mean explicit rating
 
 ```{r cor}
-cor(cat_rtg$inst_id, cat_rtg$pct_maj)
-cor(cat_rtg$mean_rtg, cat_rtg$pct_maj)
-cor(cat_rtg$tuning_step, cat$pct_maj)
-cor(cat_rtg$inst_id, cat_rtg$mean_rtg)
+#cor(cat_rtg$inst_id, cat_rtg$pct_maj)
+#cor(cat_rtg$mean_rtg, cat_rtg$pct_maj)
+#cor(cat_rtg$tuning_step, cat$pct_maj)
+#cor(cat_rtg$inst_id, cat_rtg$mean_rtg)
 ```
 
 Logistic regression
@@ -254,31 +282,31 @@ Logistic regression
 1) Percent major ~ instrument & tuning step
 
 ```{r log-reg}
-glm.fit <- glm(pct_maj ~ instrument + tuning_step, family = binomial) 
+#glm.fit <- glm(pct_maj ~ instrument + tuning_step, family = binomial) 
 # family= binomial tells r to run logistic regression
-summary(glm.fit)
+#summary(glm.fit)
 ```
 
 2) Percent major ~ mean explicit rating of each instrument & tuning step
 
 ```{r log-reg2}
-glm.fit2 <- glm(pct_maj ~ mean_rtg + tuning_step, family = binomial) 
+#glm.fit2 <- glm(pct_maj ~ mean_rtg + tuning_step, family = binomial) 
 # family= binomial tells r to run logistic regression
-summary(glm.fit2)
+#summary(glm.fit2)
 ```
 
 Linear regression
 
 ```{r lm-fit-both}
-lm.fit2 <- lm(pct_maj ~ tuning_step, data = cat)
-lm.fit <- lm(pct_maj ~ instrument + tuning_step, data = cat) 
-summary(lm.fit)
+#lm.fit2 <- lm(pct_maj ~ tuning_step, data = cat)
+#lm.fit <- lm(pct_maj ~ instrument + tuning_step, data = cat) 
+#summary(lm.fit)
 ```
 
 ANOVA exploring 1) whether adding instrument as a predictor significantly improves model, 
 and 2) whether adding both predictors is significantly better than null model
 
 ```{r lm-anova}
-anova(lm.fit, lm.fit2) # adding instrument significantly improves model
-anova(lm.fit) # adding both predictors significantly better than null model
+#anova(lm.fit, lm.fit2) # adding instrument significantly improves model
+#anova(lm.fit) # adding both predictors significantly better than null model
 ```
