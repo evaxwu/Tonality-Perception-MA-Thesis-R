@@ -31,23 +31,25 @@ while “sad” instruments might make people more prone to identify the chord a
 
 ### Design
 
-* IV1 (w/in-subject): instrument (happy [marimba, xylophone, vibraphone] vs. neutral [piano] vs. sad [oboe, flute, violin]) 
+* IV1 (w/in-subject): instrument (happy [xylophone, trumpet] vs. neutral [piano] vs. sad [oboe, violin]) 
 
 * IV2 (w/in-subject): tuning of middle note (5 levels, ranging from absolute minor to absolute major)
 
-* IV3 (b/w-subject): key (Bb vs. C) (to find out absolute-pitch-related effects)
+* IV3 (b/w-subject): key (B vs. C) (to find out absolute-pitch-related effects)
 
 * DV: the likelihood that one categorizes a chord as major/minor 
 
 ### Procedure
 
-* Pt 1 Sound calibration (choose the quietest sound among 3)
+* Pt 1 Sound calibration & headphone test (choose the quietest sound among 3)
 
-* Pt 2 Training (press the buttons to listen to the chords, practice w/ feedback) + testing phase (listen to 12 chords and choose b/w major and minor for each, need to correctly answer 8 to pass)
+* Pt 2 Training (press the buttons to listen to the chords, practice w/ feedback) + 
+testing phase (listen to 12 chords and choose b/w major and minor for each, need to correctly answer 8 to pass)
 
-* Everyone moves on to the categorization task, but we will only analyze the response of those who pass the assessment. 
+* only analyze the response of those who pass the assessment w/in 2 tries
 
-* Pt 3 Categorization task (jspsych) - listen to 4 blocks of 70 chords and choose b/w major and minor for each chord; explicit rating of instrument valence at the end
+* Pt 3 Categorization task (jspsych) - listen to 4 blocks of 70 chords and choose b/w major and minor for each chord; 
+explicit rating of instrument valence at the end
 
 * Pt 4 Questionnaires (demographics & music experience; Qualtrics)
 
@@ -63,13 +65,19 @@ df_j <- read_csv("inst-cat-uc-1.csv") %>% # load exp1 data
   # for some reason 2 participant's qualtrics id was "participant", so I recoded according to their id on Qualtrics
   mutate(qualtrics_id = if_else(participant == "ch4dg75c7th9g1", "1706631024", qualtrics_id), 
          qualtrics_id = if_else(participant == "ept8xz3drgq38w", "4475978126", qualtrics_id),
-         instrument = factor(instrument, levels = c("xylophone", "trumpet", "piano", "violin", "oboe")))
+         instrument = factor(instrument, levels = c("xylophone", "trumpet", "piano", "violin", "oboe")), 
+         inst_id = case_when(instrument == "oboe" ~ 1,
+                             instrument == "violin" ~ 2,
+                             instrument == "piano" ~ 3,
+                             instrument == "trumpet" ~ 4,
+                             instrument == "xylophone" ~ 5))
 
 df_q <- read_csv("Qualtrics_5:4.csv") %>%
   filter(row_number() > 7) %>% # delete pilot data
   select(-(2:16), -50) # delete unnecessary meta data
 
-# join qualtrics & jspsych data by embedded qualtrics id, discarding those who do not have a matching qualtrics_id in qualtrics data, keep everyone in jspsych data
+# join qualtrics & jspsych data by embedded qualtrics id
+# discard those who do not have a matching qualtrics_id in qualtrics data, keep everyone in jspsych data
 combined <- left_join(df_j, df_q, by = c("qualtrics_id" = "participant"))
 
 # check if there are participants who wrote the wrong jspsych code
@@ -77,37 +85,55 @@ combined <- left_join(df_j, df_q, by = c("qualtrics_id" = "participant"))
 combined %>%
   filter(participant != jspsych_id)
 
+# df for headphone test
+test <- combined %>%
+  filter(designation == "headphone-test") %>%
+  select(2, 6) %>%
+  group_by(qualtrics_id) %>%
+  summarize(n = sum(correct)) %>%
+  # set 4 out of 6 as passed headphone test
+  mutate(headphone = if_else(n >= 4, 1, 0)) 
+
+# see how many failed the headphone test
+test %>%
+  filter(headphone == 0)
+# turns out 8 failed
+
 # df for demographics
+# need to find a way to summarize musical expertise
 demo <- combined %>%
   filter(designation == "PRACTICE-PASSED-SUMMARY") %>%
-  select(-(1:6), -(10:16)) %>%
+  select(-1, -(3:6), -(10:16), -49) %>% # delete unnecessary data
   mutate(Age = as.numeric(Age))
 
 # df for categorization
-cat <- df_j %>%
+cat <- combined %>%
   filter(designation == "MAIN-JUDGMENT") %>%
-  select(10:13, 5) %>%
-  group_by(instrument, tuning_step) %>%
-  count(selected_major) %>%
-  filter(selected_major == 1) %>%
-  select(-3) %>%
-  mutate(pct_maj = n/392, # 392 = # of categorizations made
-         inst_id = case_when(instrument == "oboe" ~ 1,
-                             instrument == "violin" ~ 2,
-                             instrument == "piano" ~ 3,
-                             instrument == "trumpet" ~ 4,
-                             instrument == "xylophone" ~ 5)) 
+  select(2:3, 10:13, 15) %>%
+  group_by(qualtrics_id, instrument, inst_id, tuning_step) %>%
+  count(selected_major)
+
+# since count function dropped rows where n == 0, but we still need those rows to calculate proportion of major cat
+# we select rows where n == 8 (all judged as major/ all judged as minor), 
+# duplicate them, change their values, and bind them back to the cat df
+
+cat %>%
+  filter(n == 8)
+  
+  # pct_major = each individual's proportion of choosing major for each instrument & tuning step
+  #8 = # of categorizations made by each individual on each instrument w/ each tuning step
+  mutate(pct_maj = n/8) 
 
 # df for explicit rating
 rtg <- df_j %>%
   filter(designation == "INST-VALENCE-RTG") %>%
-  group_by(instrument) %>%
+  group_by(qualtrics_id, instrument, inst_id) %>%
   count(explicit_rtg) %>%
-  summarise(mean_rtg = sum((explicit_rtg*n)/sum(n))) 
+  select(-n) 
 
 # df for both combined
 cat_rtg <- cat %>% 
-  left_join(rtg, by = "instrument")
+  left_join(rtg, by = c("qualtrics_id", "instrument", "inst_id"))
 ```
 
 A snapshot of the data (still need to do further cleaning)
