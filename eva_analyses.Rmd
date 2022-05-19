@@ -116,43 +116,26 @@ cat <- df_j %>%
   filter(designation == "MAIN-JUDGMENT") %>%
   select(2:3, 10:13) %>%
   group_by(qualtrics_id, instrument, tuning_step) %>%
-  count(selected_major)
-
-# count function dropped rows where n == 0, but we still need those rows to calculate proportion of major cat
-# so we select rows where n == 8 (all judged as major/ all judged as minor), 
-# duplicate them, change their values, and bind them back to the cat df
-
-n_8 <- cat %>%
-  filter(n == 8)
-
-n_0 <- n_8 %>%
-  mutate(selected_major = if_else(selected_major == 0, 1, 0),
-         n = 0)
-
-cat_binded <- rbind(n_8, n_0, cat) %>%
-  arrange(qualtrics_id, instrument, tuning_step, selected_major) %>%
-  unique() %>% # delete duplicate rows (don't know why there are duplicates)
-  filter(selected_major == 1) %>%
-  # pct_major = each individual's proportion of choosing major for each instrument & tuning step
-  #8 = # of categorizations made by each individual on each instrument w/ each tuning step
-  mutate(pct_maj = n/8) %>%
-  select(-n, -selected_major)
+  summarize(pct_maj = mean(selected_major))
   
-cat_pivoted <- cat_binded %>%
-  pivot_wider(names_from = c(instrument, tuning_step), values_from = pct_maj)
+# each person's mean major choice proportion 
+cat_pivoted <- cat %>%
+  group_by(qualtrics_id) %>%
+  summarize(mean_pct_maj_across_indvl = mean(pct_maj))
+
+# delete since no point of having 25 cols for major judgment
+# pivot_wider(names_from = c(instrument, tuning_step), values_from = pct_maj)
 
 # df for explicit rating
 rtg <- df_j %>%
   filter(designation == "INST-VALENCE-RTG") %>%
-  group_by(qualtrics_id, instrument) %>%
-  count(explicit_rtg) %>%
-  select(-n) 
+  select(qualtrics_id, instrument, explicit_rtg)
 
 rtg_pivoted <- rtg %>%
   pivot_wider(names_from = instrument, values_from = explicit_rtg)
 
 # df for both combined
-cat_rtg <- left_join(cat_binded, rtg)
+cat_rtg <- left_join(cat, rtg)
 
 cat_rtg_summary <- cat_rtg %>%
   group_by(instrument) %>%
@@ -214,7 +197,7 @@ demo %>%
 ## Categorization
 
 ```{r cat}
-cat_binded %>%
+cat %>%
   ggplot(aes(tuning_step, pct_maj, color = instrument)) +
   geom_smooth(se = FALSE) +
   scale_y_continuous(labels = scales::percent) +
@@ -241,23 +224,34 @@ rtg %>%
 
 ```{r compare-cat-valence}
 cat_rtg_summary %>%
-  ggplot() +
-  geom_line(aes(instrument, mean_pct, group = 1), color = "red") +
-  geom_line(aes(instrument, mean_rtg, group = 1), color = "blue") +
-  scale_y_continuous(limits = c(0.2, 3)) +
+  pivot_longer(cols = c(mean_pct, mean_rtg), names_to = "type", values_to = "value") %>%
+  mutate(type = if_else(type == "mean_pct", "Mean percent proportion of major categorization", 
+                        "Mean explicit valence rating")) %>%
+  ggplot(aes(instrument, value, group = 1, color = type)) +
+  geom_line() +
+  facet_wrap(~type, ncol = 1, scales = "free_y") +
   labs(title = "Compare trend b/w tonality categorization & valence rating",
-       x = "Instrument", y = "Tonality categorization (% major) | Explicit valence rating") +
-  theme_minimal() +
+       x = "Instrument", y = NULL) +
   theme(axis.text.y = element_blank(),
         axis.ticks.y = element_blank(),
         panel.grid.major.y = element_blank(),
-        panel.grid.minor.y = element_blank())
+        legend.position = "None")
+```
 
-cat_rtg_summary %>%
-  pivot_longer(cols = c(mean_pct, mean_rtg), names_to = "type", values_to = "value") %>%
-  ggplot(aes(instrument, value, group = 1)) +
-  geom_line() +
-  facet_wrap(~type, scales = "free_y")
+```{r clean-na}
+# need more work
+anti_join(df_q, df_j, by = c("participant" = "qualtrics_id"))
+
+qualtrics_na <- df_j %>%
+  filter(participant == "22-0159" | participant == "en7lefm4g8mp17" |
+         participant == "ghbk58xwj3w7v2" | participant == "w3uh3gtrykkjgc" |
+         participant == "wczbffevcxqk45" | participant == "5281kj47nhoboj") %>%
+  filter(designation == "PRACTICE-PASSED-SUMMARY")
+
+df_q %>%
+  filter(jspsych_id == "22-0159" | jspsych_id == "en7lefm4g8mp17" |
+         jspsych_id == "ghbk58xwj3w7v2" | jspsych_id == "w3uh3gtrykkjgc" |
+         jspsych_id == "wczbffevcxqk45" | jspsych_id == "5281kj47nhoboj")
 ```
 
 ## Explore correlation between music background & categorization / explicit rating
