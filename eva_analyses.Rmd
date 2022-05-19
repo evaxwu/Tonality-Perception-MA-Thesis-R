@@ -135,11 +135,10 @@ cat_binded <- rbind(n_8, n_0, cat) %>%
   filter(selected_major == 1) %>%
   # pct_major = each individual's proportion of choosing major for each instrument & tuning step
   #8 = # of categorizations made by each individual on each instrument w/ each tuning step
-  mutate(pct_maj = n/8)
+  mutate(pct_maj = n/8) %>%
+  select(-n, -selected_major)
   
 cat_pivoted <- cat_binded %>%
-  ungroup() %>% # can't drop grouping variable
-  select(-n, -selected_major) %>%
   pivot_wider(names_from = c(instrument, tuning_step), values_from = pct_maj)
 
 # df for explicit rating
@@ -153,9 +152,17 @@ rtg_pivoted <- rtg %>%
   pivot_wider(names_from = instrument, values_from = explicit_rtg)
 
 # df for both combined
+cat_rtg <- left_join(cat_binded, rtg)
+
+cat_rtg_summary <- cat_rtg %>%
+  group_by(instrument) %>%
+  summarize(mean_pct = sum(pct_maj) / 245, # 245 = # of times each instrument appears
+         mean_rtg = sum(explicit_rtg) / 245)
+
+# both pivoted combined
 cat_rtg_pivoted <- cat_pivoted %>% 
   left_join(rtg_pivoted, by = c("qualtrics_id"))
-  
+
 # delete the following since no need
 # mutate(inst_id = case_when(instrument == "oboe" ~ 1, instrument == "violin" ~ 2,
 # instrument == "piano" ~ 3, instrument == "trumpet" ~ 4, instrument == "xylophone" ~ 5))
@@ -232,14 +239,11 @@ rtg %>%
 
 ## Compare trend between tonality judgment and explicit rating
 
-```{r compare-valence}
-# need more work
-cat_binded %>%
-  group_by(instrument) %>%
-  summarise(mean_pct = sum(pct_maj) / 5) %>%
+```{r compare-cat-valence}
+cat_rtg_summary %>%
   ggplot() +
-  geom_line(mapping = aes(instrument, mean_pct, group = 1), color = "red") +
-  geom_line(rtg, mapping = aes(instrument, explicit_rtg, group = 1), color = "blue") +
+  geom_line(aes(instrument, mean_pct, group = 1), color = "red") +
+  geom_line(aes(instrument, mean_rtg, group = 1), color = "blue") +
   scale_y_continuous(limits = c(0.2, 3)) +
   labs(title = "Compare trend b/w tonality categorization & valence rating",
        x = "Instrument", y = "Tonality categorization (% major) | Explicit valence rating") +
@@ -248,6 +252,12 @@ cat_binded %>%
         axis.ticks.y = element_blank(),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank())
+
+cat_rtg_summary %>%
+  pivot_longer(cols = c(mean_pct, mean_rtg), names_to = "type", values_to = "value") %>%
+  ggplot(aes(instrument, value, group = 1)) +
+  geom_line() +
+  facet_wrap(~type, scales = "free_y")
 ```
 
 ## Explore correlation between music background & categorization / explicit rating
