@@ -1,5 +1,9 @@
 # Thesis Tonality Categorization
 
+Eva Wu
+
+Advisors: Dr. Howard Nusbaum & Dr. Stephen Van Hedger
+
 ## Hypothesis 
 
 “Happy” instruments would make people more prone to identify the chord as major, 
