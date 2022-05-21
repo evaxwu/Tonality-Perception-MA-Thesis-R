@@ -12,47 +12,6 @@ library(kableExtra)
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
-## Recap
-
-### Hypothesis 
-
-“Happy” instruments would make people more prone to identify the chord as major, 
-while “sad” instruments might make people more prone to identify the chord as minor.
-
-### Exploratory research questions 
-
-1) Association between timbre and tonality judgment 
-
-2) Association between timbre and explicit ratings of instrument valence
-
-3) Association between tonality judgment and explicit ratings of instrument valence
-
-4) Association between musical background and tonality judgment and/or explicit ratings of instrument valence
-
-### Design
-
-* IV1 (w/in-subject): instrument (happy [xylophone, trumpet] vs. neutral [piano] vs. sad [oboe, violin]) 
-
-* IV2 (w/in-subject): tuning of middle note (5 levels, ranging from absolute minor to absolute major)
-
-* IV3 (b/w-subject): key (B vs. C) (to find out absolute-pitch-related effects)
-
-* DV: the likelihood that one categorizes a chord as major/minor 
-
-### Procedure
-
-* Pt 1 Sound calibration & headphone test (choose the quietest sound among 3)
-
-* Pt 2 Training (press the buttons to listen to the chords, practice w/ feedback) + 
-testing phase (listen to 12 chords and choose b/w major and minor for each, need to correctly answer 8 to pass)
-
-* only analyze the response of those who pass the assessment w/in 2 tries
-
-* Pt 3 Categorization task (jspsych) - listen to 4 blocks of 70 chords and choose b/w major and minor for each chord; 
-explicit rating of instrument valence at the end
-
-* Pt 4 Questionnaires (demographics & music experience; Qualtrics)
-
 ## Clean Data
 
 ```{r load}
@@ -71,7 +30,22 @@ df_j <- read_csv("inst-cat-uc-1.csv") %>% # load exp1 data
 # qualtrics data
 df_q <- read_csv("Qualtrics_5:4.csv") %>%
   filter(row_number() > 7) %>% # delete pilot data
-  select(-(2:16), -50) # delete unnecessary meta data
+  select(-(2:16), -50) %>% # delete unnecessary meta data
+  mutate(Age = as.numeric(Age),
+         Year = factor(Year, levels = c("Freshman", "Sophomore", "Junior", "Senior", "Graduate", "Other (please specify: )")),
+         Inst = as.integer(if_else(Inst == "Yes", 1, 0)),
+         Start = if_else(Start == "10 Years Old", "10", Start), # so that this won't be coerced to NA when mutating to numeric
+         Start = as.integer(Start),
+         Inst_now = as.integer(if_else(Inst_now == "Yes", 1, 0)),
+         Ens = as.integer(if_else(Ens == "Yes", 1, 0)),
+         Course = as.integer(if_else(Course == "Yes", 1, 0)),
+         Read = as.integer(if_else(Read == "Yes", 1, 0)),
+         `Pitch&Tempo_1` = as.integer(`Pitch&Tempo_1`),
+         `Pitch&Tempo_2` = as.integer(`Pitch&Tempo_2`),
+         Perf = as.integer(case_when(Perf == "Yes" ~ 1,
+                                     Perf == "No" ~ 0,
+                                     Perf == "Not sure" ~ -1)),
+         Concert = as.integer(Concert))
 
 # join qualtrics & jspsych data by embedded qualtrics id
 # discard those who do not have a matching qualtrics_id in qualtrics data, keep everyone in jspsych data
@@ -106,8 +80,7 @@ combined_drop_na <- rbind(combined, na_combined) %>%
 # need to find a way to summarize musical expertise
 demo <- combined_drop_na %>%
   filter(designation == "PRACTICE-PASSED-SUMMARY") %>%
-  select(-1, -(3:6), -(10:16), -49) %>% # delete unnecessary data
-  mutate(Age = as.numeric(Age))
+  select(-1, -(3:6), -(10:16), -49) # delete unnecessary data
 
 # df for headphone test
 test <- combined_drop_na %>%
@@ -173,19 +146,7 @@ cat_rtg_pivoted <- cat_pivoted %>%
 # instrument == "piano" ~ 3, instrument == "trumpet" ~ 4, instrument == "xylophone" ~ 5))
 
 # each participant = 1 row of data
-all <- left_join(cat_rtg_pivoted, demo_test) %>%
-  mutate(Inst = if_else(Inst == "Yes", 1, 0),
-         Start = as.integer(Start),
-         Inst_now = if_else(Inst_now == "Yes", 1, 0),
-         Ens = if_else(Ens == "Yes", 1, 0),
-         Course = if_else(Course == "Yes", 1, 0),
-         Read = if_else(Read == "Yes", 1, 0),
-         `Pitch&Tempo_1` = as.integer(`Pitch&Tempo_1`),
-         `Pitch&Tempo_2` = as.integer(`Pitch&Tempo_2`),
-         Perf = case_when(Perf == "Yes" ~ 1,
-                          Perf == "No" ~ 0,
-                          Perf == "Not sure" ~ -1),
-         Concert = as.integer(Concert))
+all <- left_join(cat_rtg_pivoted, demo_test)
 ```
 
 A snapshot of the data (next step: find a measure to summarize musical background)
@@ -197,14 +158,13 @@ variable_meaning = c("Random 10-digit ID assigned by Qualtrics, used to join Qua
                 "Explicit valence rating of trumpet", "Explicit valence rating of oboe", "Passed practice or not (1 = pass)", "Number of tries taken to pass", 
                 "Practice score (out of 12)", "", "", "", "If not a student or faculty", "", "If not a psych of music major", "Play instrument or not", 
                 "At what age did they start playing an instrument", "Still playing now?", "List instruments played", "Participated in ensemble or not",
-                "Taken music courses or not", "List music courses taken", "Read music or not", "Absolute pitch?", "Absolute tempo?", "Perfect pitch", 
-                "Time spent making music", "Time spent listening to music", "Number of concert attended per month", "Proportion of each genre listened to (total 100)",
-                "", "", "", "", "", "", "", "", "", "", "", "Passed headphone test or not (1 = pass)", "Number of right answers in headphone test")
+                "Taken music courses or not", "List music courses taken", "Read music or not", "Ability to perceive and remember pitch", "Ability to perceive and remember tempo",
+                "Perfect pitch", "Time spent making music per week", "Time spent listening to music per day", "Number of concert attended per year", 
+                "Proportion of each genre listened to (total 100)", "", "", "", "", "", "", "", "", "", "", "", "Passed headphone test or not (1 = pass)", 
+                "Number of right answers in headphone test")
 codebook <- data.frame(variable_names, variable_meaning)
 kable(codebook)
 ```
-
-
 
 ## Demographics
 
@@ -226,6 +186,30 @@ demo %>%
        x = "Age",
        y = "Number of participants") +
   theme_minimal()
+
+demo %>%
+  filter(Year != "NA") %>%
+  ggplot(aes(Year)) +
+  geom_bar(fill = "orange") +
+  labs(title = "Participant year of school distribution",
+       x = "Year",
+       y = "Number of participants") +
+  theme_minimal()
+
+
+# 3 psych, 3 double, 43 other; why is the graph like this
+demo %>%
+  mutate(Major = case_when(Major == "Psychology" ~ "Psychology",
+                           Major == "Music" ~ "Music",
+                           Major == "NA" ~ "NA",
+                           Major == "Music,Other (please specify):" ~ "Double major in music and another subject",
+                           Major == "Other (please specify):" ~ "Other",
+                           Major == "Psychology,Other (please specify):" ~ "Double major in psychology and another subject")) %>%
+  ggplot(aes("", Major, fill = Major)) +
+  geom_bar(stat = "identity") +
+  coord_polar(theta = "y") +
+  labs(title = "Participant major distribution") +
+  theme_void()
 ```
 
 ## Practice Score
@@ -301,5 +285,11 @@ Explicit valence rating: violin lowest, violin < oboe
 Categorization: oboe lowest, violin > oboe
 
 ```{r musical-background}
-
+# demo$Course is already an integer, why is it still double in the graph
+demo %>%
+  ggplot(aes("", Course, fill = Course)) +
+  geom_bar(stat = "identity") +
+  coord_polar(theta = "y") +
+  labs(title = "Taken music courses or not") +
+  theme_void()
 ```
