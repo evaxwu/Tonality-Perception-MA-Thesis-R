@@ -113,8 +113,10 @@ cat <- combined_drop_na %>%
   
 # each person's mean major choice proportion 
 cat_pivoted <- cat %>%
-  group_by(qualtrics_id) %>%
-  summarize(mean_pct_maj_across_indvl = mean(pct_maj))
+  group_by(qualtrics_id, instrument) %>%
+  summarize(mean_cat = mean(pct_maj)) %>%
+  mutate(instrument = paste0("cat_", instrument)) %>%
+  pivot_wider(names_from = instrument, values_from = mean_cat)
 
 # delete since no point of having 25 cols for major judgment
 # pivot_wider(names_from = c(instrument, tuning_step), values_from = pct_maj)
@@ -126,6 +128,7 @@ rtg <- combined_drop_na %>%
 
 # pivot so that one person has one row
 rtg_pivoted <- rtg %>%
+  mutate(instrument = paste0("rtg_", instrument)) %>%
   pivot_wider(names_from = instrument, values_from = explicit_rtg)
 
 # df for both combined
@@ -134,8 +137,8 @@ cat_rtg <- left_join(cat, rtg)
 # each instrument's mean cat & rtg
 cat_rtg_summary <- cat_rtg %>%
   group_by(instrument) %>%
-  summarize(mean_pct = sum(pct_maj) / 245, # 245 = # of times each instrument appears
-         mean_rtg = sum(explicit_rtg) / 245)
+  summarize(mean_pct = mean(pct_maj),
+         mean_rtg = mean(explicit_rtg))
 
 # both pivoted combined
 cat_rtg_pivoted <- cat_pivoted %>% 
@@ -147,13 +150,17 @@ cat_rtg_pivoted <- cat_pivoted %>%
 
 # each participant = 1 row of data
 all <- left_join(cat_rtg_pivoted, demo_test)
+
+write_csv(cat_rtg, "cat_rtg")
+write_csv(all, "pivoted_data")
 ```
 
 A snapshot of the data (next step: find a measure to summarize musical background)
 
 ```{r present}
 variable_names = colnames(all)
-variable_meaning = c("Random 10-digit ID assigned by Qualtrics, used to join Qualtrics and jspsych data", "Each individual's average percent of major choices",
+variable_meaning = c("Random 10-digit ID assigned by Qualtrics, used to join Qualtrics and jspsych data", "Proportion of major categorization for xylophone", "Proportion of major categorization for violin", "Proportion of major categorization for piano",
+                "Proportion of major categorization for trumpet", "Proportion of major categorization for oboe",
                 "Explicit valence rating of xylophone", "Explicit valence rating of violin", "Explicit valence rating of piano",
                 "Explicit valence rating of trumpet", "Explicit valence rating of oboe", "Passed practice or not (1 = pass)", "Number of tries taken to pass", 
                 "Practice score (out of 12)", "", "", "", "If not a student or faculty", "", "If not a psych of music major", "Play instrument or not", 
@@ -161,7 +168,7 @@ variable_meaning = c("Random 10-digit ID assigned by Qualtrics, used to join Qua
                 "Taken music courses or not", "List music courses taken", "Read music or not", "Ability to perceive and remember pitch", "Ability to perceive and remember tempo",
                 "Perfect pitch", "Time spent making music per week", "Time spent listening to music per day", "Number of concert attended per year", 
                 "Proportion of each genre listened to (total 100)", "", "", "", "", "", "", "", "", "", "", "", "Passed headphone test or not (1 = pass)", 
-                "Number of right answers in headphone test")
+                "Number of correct answers in headphone test")
 codebook <- data.frame(variable_names, variable_meaning)
 kable(codebook)
 ```
@@ -169,7 +176,7 @@ kable(codebook)
 ## Demographics
 
 ```{r demo}
-demo %>%
+all %>%
   filter(Gender != "NA") %>%
   ggplot(aes(Gender, fill = Gender)) +
   geom_bar() +
@@ -179,7 +186,7 @@ demo %>%
   theme_minimal() +
   theme(legend.position = "None")
 
-demo %>%
+all %>%
   ggplot(aes(Age)) +
   geom_bar(fill = "lightblue") +
   labs(title = "Participant age distribution",
@@ -187,7 +194,7 @@ demo %>%
        y = "Number of participants") +
   theme_minimal()
 
-demo %>%
+all %>%
   filter(Year != "NA") %>%
   ggplot(aes(Year)) +
   geom_bar(fill = "orange") +
@@ -198,7 +205,7 @@ demo %>%
 
 
 # 3 psych, 3 double, 43 other; why is the graph like this
-demo %>%
+all %>%
   mutate(Major = case_when(Major == "Psychology" ~ "Psychology",
                            Major == "Music" ~ "Music",
                            Major == "NA" ~ "NA",
@@ -215,10 +222,10 @@ demo %>%
 ## Practice Score
 
 ```{r practice}
-demo %>%
+all %>%
   filter(block_passed_practice == 2)
 
-demo %>%
+all %>%
   ggplot(aes(practice_score)) +
   geom_bar(fill = "lightgreen") +
   labs(title = "Practice score distribution among those who passed (almost all did)",
@@ -286,10 +293,19 @@ Categorization: oboe lowest, violin > oboe
 
 ```{r musical-background}
 # demo$Course is already an integer, why is it still double in the graph
-demo %>%
+all %>%
   ggplot(aes("", Course, fill = Course)) +
   geom_bar(stat = "identity") +
   coord_polar(theta = "y") +
   labs(title = "Taken music courses or not") +
   theme_void()
+
+all %>%
+  ggplot(aes(Course)) +
+  geom_bar() +
+  labs(title = "Taken music courses or not")
+```
+
+```{r}
+combined_drop_na
 ```

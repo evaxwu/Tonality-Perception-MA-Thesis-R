@@ -116,8 +116,10 @@ cat <- combined_drop_na %>%
   
 # each person's mean major choice proportion 
 cat_pivoted <- cat %>%
-  group_by(qualtrics_id) %>%
-  summarize(mean_pct_maj_across_indvl = mean(pct_maj))
+  group_by(qualtrics_id, instrument) %>%
+  summarize(mean_cat = mean(pct_maj)) %>%
+  mutate(instrument = paste0("cat_", instrument)) %>%
+  pivot_wider(names_from = instrument, values_from = mean_cat)
 
 # delete since no point of having 25 cols for major judgment
 # pivot_wider(names_from = c(instrument, tuning_step), values_from = pct_maj)
@@ -129,6 +131,7 @@ rtg <- combined_drop_na %>%
 
 # pivot so that one person has one row
 rtg_pivoted <- rtg %>%
+  mutate(instrument = paste0("rtg_", instrument)) %>%
   pivot_wider(names_from = instrument, values_from = explicit_rtg)
 
 # df for both combined
@@ -137,8 +140,8 @@ cat_rtg <- left_join(cat, rtg)
 # each instrument's mean cat & rtg
 cat_rtg_summary <- cat_rtg %>%
   group_by(instrument) %>%
-  summarize(mean_pct = sum(pct_maj) / 245, # 245 = # of times each instrument appears
-         mean_rtg = sum(explicit_rtg) / 245)
+  summarize(mean_pct = mean(pct_maj),
+         mean_rtg = mean(explicit_rtg))
 
 # both pivoted combined
 cat_rtg_pivoted <- cat_pivoted %>% 
@@ -150,6 +153,9 @@ cat_rtg_pivoted <- cat_pivoted %>%
 
 # each participant = 1 row of data
 all <- left_join(cat_rtg_pivoted, demo_test)
+
+write_csv(cat_rtg, "cat_rtg")
+write_csv(all, "pivoted_data")
 ```
 
 A snapshot of the data (next step: find a measure to summarize musical
@@ -157,7 +163,8 @@ background)
 
 ``` r
 variable_names = colnames(all)
-variable_meaning = c("Random 10-digit ID assigned by Qualtrics, used to join Qualtrics and jspsych data", "Each individual's average percent of major choices",
+variable_meaning = c("Random 10-digit ID assigned by Qualtrics, used to join Qualtrics and jspsych data", "Proportion of major categorization for xylophone", "Proportion of major categorization for violin", "Proportion of major categorization for piano",
+                "Proportion of major categorization for trumpet", "Proportion of major categorization for oboe",
                 "Explicit valence rating of xylophone", "Explicit valence rating of violin", "Explicit valence rating of piano",
                 "Explicit valence rating of trumpet", "Explicit valence rating of oboe", "Passed practice or not (1 = pass)", "Number of tries taken to pass", 
                 "Practice score (out of 12)", "", "", "", "If not a student or faculty", "", "If not a psych of music major", "Play instrument or not", 
@@ -193,15 +200,47 @@ jspsych data
 </tr>
 <tr>
 <td style="text-align:left;">
-mean_pct_maj_across_indvl
+cat_xylophone
 </td>
 <td style="text-align:left;">
-Each individual’s average percent of major choices
+Proportion of major categorization for xylophone
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-xylophone
+cat_trumpet
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for violin
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cat_piano
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for piano
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cat_violin
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for trumpet
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+cat_oboe
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for oboe
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+rtg_xylophone
 </td>
 <td style="text-align:left;">
 Explicit valence rating of xylophone
@@ -209,7 +248,7 @@ Explicit valence rating of xylophone
 </tr>
 <tr>
 <td style="text-align:left;">
-violin
+rtg_violin
 </td>
 <td style="text-align:left;">
 Explicit valence rating of violin
@@ -217,7 +256,7 @@ Explicit valence rating of violin
 </tr>
 <tr>
 <td style="text-align:left;">
-piano
+rtg_piano
 </td>
 <td style="text-align:left;">
 Explicit valence rating of piano
@@ -225,7 +264,7 @@ Explicit valence rating of piano
 </tr>
 <tr>
 <td style="text-align:left;">
-trumpet
+rtg_trumpet
 </td>
 <td style="text-align:left;">
 Explicit valence rating of trumpet
@@ -233,7 +272,7 @@ Explicit valence rating of trumpet
 </tr>
 <tr>
 <td style="text-align:left;">
-oboe
+rtg_oboe
 </td>
 <td style="text-align:left;">
 Explicit valence rating of oboe
@@ -526,7 +565,7 @@ Number of right answers in headphone test
 ## Demographics
 
 ``` r
-demo %>%
+all %>%
   filter(Gender != "NA") %>%
   ggplot(aes(Gender, fill = Gender)) +
   geom_bar() +
@@ -540,7 +579,7 @@ demo %>%
 ![](data_cleaning_files/figure-gfm/demo-1.png)<!-- -->
 
 ``` r
-demo %>%
+all %>%
   ggplot(aes(Age)) +
   geom_bar(fill = "lightblue") +
   labs(title = "Participant age distribution",
@@ -552,7 +591,7 @@ demo %>%
 ![](data_cleaning_files/figure-gfm/demo-2.png)<!-- -->
 
 ``` r
-demo %>%
+all %>%
   filter(Year != "NA") %>%
   ggplot(aes(Year)) +
   geom_bar(fill = "orange") +
@@ -566,7 +605,7 @@ demo %>%
 
 ``` r
 # 3 psych, 3 double, 43 other; why is the graph like this
-demo %>%
+all %>%
   mutate(Major = case_when(Major == "Psychology" ~ "Psychology",
                            Major == "Music" ~ "Music",
                            Major == "NA" ~ "NA",
@@ -585,25 +624,26 @@ demo %>%
 ## Practice Score
 
 ``` r
-demo %>%
+all %>%
   filter(block_passed_practice == 2)
 ```
 
-    ## # A tibble: 2 × 36
-    ##   qualtrics_id passed_practice block_passed_practice practice_score   Age Gender
-    ##   <chr>                  <dbl>                 <dbl>          <dbl> <dbl> <chr> 
-    ## 1 2701997442                 1                     2              9    19 Female
-    ## 2 6783315289                 1                     2              8    20 Male  
-    ## # … with 30 more variables: Year <fct>, Year_6_TEXT <chr>, Major <chr>,
-    ## #   Major_5_TEXT <chr>, Inst <int>, Start <int>, Inst_now <int>,
-    ## #   Inst_list <chr>, Ens <int>, Course <int>, Course_list <chr>, Read <int>,
-    ## #   `Pitch&Tempo_1` <int>, `Pitch&Tempo_2` <int>, Perf <int>, Time_make <chr>,
-    ## #   Time_listen <chr>, Concert <int>, Genre_18 <chr>, Genre_8 <chr>,
-    ## #   Genre_9 <chr>, Genre_17 <chr>, Genre_10 <chr>, Genre_11 <chr>,
-    ## #   Genre_12 <chr>, Genre_13 <chr>, Genre_16 <chr>, Genre_14 <chr>, …
+    ## # A tibble: 2 × 48
+    ## # Groups:   qualtrics_id [2]
+    ##   qualtrics_id cat_xylophone cat_trumpet cat_piano cat_violin cat_oboe
+    ##   <chr>                <dbl>       <dbl>     <dbl>      <dbl>    <dbl>
+    ## 1 2701997442            1           0.8      0.75       0.375    0.3  
+    ## 2 6783315289            0.55        0.65     0.575      0.7      0.525
+    ## # … with 42 more variables: rtg_xylophone <dbl>, rtg_violin <dbl>,
+    ## #   rtg_piano <dbl>, rtg_trumpet <dbl>, rtg_oboe <dbl>, passed_practice <dbl>,
+    ## #   block_passed_practice <dbl>, practice_score <dbl>, Age <dbl>, Gender <chr>,
+    ## #   Year <fct>, Year_6_TEXT <chr>, Major <chr>, Major_5_TEXT <chr>, Inst <int>,
+    ## #   Start <int>, Inst_now <int>, Inst_list <chr>, Ens <int>, Course <int>,
+    ## #   Course_list <chr>, Read <int>, `Pitch&Tempo_1` <int>,
+    ## #   `Pitch&Tempo_2` <int>, Perf <int>, Time_make <chr>, Time_listen <chr>, …
 
 ``` r
-demo %>%
+all %>%
   ggplot(aes(practice_score)) +
   geom_bar(fill = "lightgreen") +
   labs(title = "Practice score distribution among those who passed (almost all did)",
@@ -680,7 +720,7 @@ Categorization: oboe lowest, violin \> oboe
 
 ``` r
 # demo$Course is already an integer, why is it still double in the graph
-demo %>%
+all %>%
   ggplot(aes("", Course, fill = Course)) +
   geom_bar(stat = "identity") +
   coord_polar(theta = "y") +
@@ -689,3 +729,37 @@ demo %>%
 ```
 
 ![](data_cleaning_files/figure-gfm/musical-background-1.png)<!-- -->
+
+``` r
+all %>%
+  ggplot(aes(Course)) +
+  geom_bar() +
+  labs(title = "Taken music courses or not")
+```
+
+![](data_cleaning_files/figure-gfm/musical-background-2.png)<!-- -->
+
+``` r
+combined_drop_na
+```
+
+    ## # A tibble: 10,388 × 49
+    ##    participant   qualtrics_id chord designation response correct passed_practice
+    ##    <chr>         <chr>        <chr> <chr>       <chr>      <dbl>           <dbl>
+    ##  1 14vd1s548b9u… 9800773380   C     headphone-… 0              1              NA
+    ##  2 14vd1s548b9u… 9800773380   C     headphone-… 1              1              NA
+    ##  3 14vd1s548b9u… 9800773380   C     headphone-… 2              1              NA
+    ##  4 14vd1s548b9u… 9800773380   C     headphone-… 1              1              NA
+    ##  5 14vd1s548b9u… 9800773380   C     headphone-… 2              1              NA
+    ##  6 14vd1s548b9u… 9800773380   C     headphone-… 0              1              NA
+    ##  7 14vd1s548b9u… 9800773380   C     PRACTICE-P… 0             NA               1
+    ##  8 14vd1s548b9u… 9800773380   C     MAIN-JUDGM… 0             NA              NA
+    ##  9 14vd1s548b9u… 9800773380   C     MAIN-JUDGM… 1             NA              NA
+    ## 10 14vd1s548b9u… 9800773380   C     MAIN-JUDGM… 0             NA              NA
+    ## # … with 10,378 more rows, and 42 more variables: block_passed_practice <dbl>,
+    ## #   practice_score <dbl>, instrument <fct>, valence <chr>, tuning_step <dbl>,
+    ## #   selected_major <dbl>, explicit_rtg <dbl>, StartDate <chr>,
+    ## #   jspsych_id <chr>, Age <dbl>, Gender <chr>, Year <fct>, Year_6_TEXT <chr>,
+    ## #   Major <chr>, Major_5_TEXT <chr>, Inst <int>, Start <int>, Inst_now <int>,
+    ## #   Inst_list <chr>, Ens <int>, Course <int>, Course_list <chr>, Read <int>,
+    ## #   `Pitch&Tempo_1` <int>, `Pitch&Tempo_2` <int>, Perf <int>, …
