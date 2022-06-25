@@ -42,3 +42,13 @@ testing phase (listen to 12 chords and choose b/w major and minor for each, need
 explicit rating of instrument valence at the end
 
 * Pt 4 Questionnaires (demographics & music experience; Qualtrics)
+
+## File directory
+
+* [cancatenate.Rmd](cancatenate.Rmd): Steve's script to concatenate raw data into 1 csv
+
+* [instcat-analysis.Rmd](instcat-analysis.Rmd): Steve's script for statistcal analyses
+
+* [data_cleaning.md](data_cleaning.md): data cleaning and exploratory graphs
+
+* [eva_analyses.md](eva_analyses.md): statistical analysis attempt by Eva

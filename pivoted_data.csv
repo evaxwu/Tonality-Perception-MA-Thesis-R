@@ -1,0 +1,70 @@
+qualtrics_id,cat_xylophone,cat_trumpet,cat_piano,cat_violin,cat_oboe,rtg_xylophone,rtg_violin,rtg_piano,rtg_trumpet,rtg_oboe,passed_practice,block_passed_practice,practice_score,Age,Gender,Year,Year_6_TEXT,Major,Major_5_TEXT,Inst,Start,Inst_now,Inst_list,Ens,Course,Course_list,Read,Pitch&Tempo_1,Pitch&Tempo_2,Perf,Time_make,Time_listen,Concert,Genre_18,Genre_8,Genre_9,Genre_17,Genre_10,Genre_11,Genre_12,Genre_13,Genre_16,Genre_14,Genre_15,Genre_15_TEXT,headphone,test_corr
+1044403354,0.575,0.55,0.65,0.75,0.4,4,2,3,2,1,1,1,9,19,Female,Sophomore,NA,Other (please specify):,economics,1,9,0,clarinet for 4 years,1,0,NA,0,3,3,0,Less than one hour,Less than one hour,3,0,0,30,40,5,0,10,0,5,10,0,NA,0,2
+1067596379,0.39999999999999997,0.575,0.35000000000000003,0.375,0.375,4,1,3,2,2,1,1,12,19,Female,Sophomore,NA,Other (please specify):,economics,1,10,0,"violin (2)
+piano(8)
+clarinet(5)",0,1,2,1,50,92,0,Less than one hour,3-4 hours,2,40,0,0,0,0,0,30,0,0,30,0,NA,1,5
+1155580075,0.475,0.45,0.47500000000000003,0.475,0.45,4,2,3,3,2,1,1,12,20,Male,Sophomore,NA,Other (please specify):,NA,1,9,1,"Piano (12 years), Double Bass (8 years)",1,1,Private piano lessons throughout high school,1,80,61,0,Less than one hour,1-2 hours,4,52,8,0,0,0,5,5,10,20,0,0,NA,1,6
+1176432322,0.625,0.6,0.6,0.6,0.575,4,1,2,3,2,1,1,12,22,Female,Senior,NA,Other (please specify):,Computer Science,1,4,0,"Piano (9 years)
+Opera (2 years)",0,0,NA,1,70,70,0,Less than one hour,3-4 hours,1,20,20,0,0,0,20,0,20,20,0,0,NA,1,6
+1475084897,0.75,0.375,0.625,0.3,0.1,4,1,2,3,2,1,1,8,20,Male,Sophomore,NA,"Psychology,Other (please specify):",Neuroscience,1,15,1,Guitar - 5 years,1,1,1,1,35,32,0,Less than one hour,5-6 hours,3,30,0,0,0,0,10,60,0,0,0,0,NA,1,6
+1588756489,0.5,0.675,0.65,0.625,0.525,4,3,3,4,3,1,1,12,19,Female,Freshman,NA,"Psychology,Other (please specify):",Economics,1,12,0,"Alto Saxophone - 4 years
+Piano - 1 year
+Violin - 1 year",0,1,1,0,14,14,0,Less than one hour,3-4 hours,0,33,33,0,0,0,0,34,0,0,0,0,NA,1,6
+1706631024,0.5,0.55,0.55,0.475,0.45,1,2,3,2,1,1,1,12,26,Male,Freshman,NA,Other (please specify):,CAAM,1,12,0,Guitar - 3 years,1,0,NA,0,90,90,0,Less than one hour,3-4 hours,1,5,20,15,30,0,0,15,5,10,0,0,NA,1,6
+2077443174,0.775,0.725,0.725,0.525,0.05,3,2,4,2,1,1,1,11,NA,Male,Sophomore,NA,Other (please specify):,Economics,1,5,0,Piano,1,1,2,0,23,24,-1,Less than one hour,More than 6 hours,2,50,25,0,10,0,0,0,15,0,0,0,NA,0,2
+2095686609,0.39999999999999997,0.35,0.3,0.35,0.39999999999999997,2,2,2,3,3,1,1,12,18,Male,Freshman,NA,Other (please specify):,Neuroscience (undeclared),1,11,0,"Piano (2 years)
+Cello (5 years)",1,1,1,1,70,80,0,Less than one hour,1-2 hours,1,60,0,15,0,0,10,10,5,0,0,0,NA,1,6
+2334472117,0.55,0.45,0.525,0.525,0.5,2,3,3,3,3,1,1,12,32,Female,NA,Non-student,Other (please specify):,N/A,1,7,0,Violin (11 yrs.); Piano (23 yrs.),1,1,9,1,60,60,0,Less than one hour,1-2 hours,0,10,15,15,60,0,0,0,0,0,0,0,NA,1,6
+2528622657,0.45,0.55,0.45,0.5,0.5,3,3,3,2,3,1,1,12,20,Male,Sophomore,NA,Psychology,NA,1,4,1,"Piano, 16 years
+
+Singing, 6 years",1,1,2,1,90,100,-1,Less than one hour,5-6 hours,5,10,10,0,10,0,10,60,0,0,0,0,NA,1,6
+2701997442,1,0.8,0.75,0.375,0.3,4,1,2,3,2,1,2,9,19,Female,Freshman,NA,Psychology,NA,0,NA,0,NA,0,0,NA,0,5,10,0,Less than one hour,3-4 hours,0,50,35,15,0,0,0,0,0,0,0,0,NA,1,6
+2707228965,0.975,0.475,0.425,0.7,0.275,4,1,2,3,3,1,1,10,NA,Female,Sophomore,NA,Other (please specify):,Biology,1,12,0,"string bass-2 years
+handbells-5 years
+choir-5 years",1,0,NA,1,14,40,0,Less than one hour,1-2 hours,0,80,10,0,10,0,0,0,0,0,0,0,NA,1,4
+3023525743,0.55,0.575,0.45,0.525,0.525,4,1,3,4,2,1,1,12,21,Male,Junior,NA,Other (please specify):,Computer Science,1,5,0,Piano 6 years,0,0,NA,1,100,30,1,Less than one hour,1-2 hours,0,0,0,0,0,0,0,0,100,0,0,0,NA,1,5
+3189001139,0.575,0.625,0.45,0.35,0.5,3,1,2,3,2,1,1,12,19,Female,Sophomore,NA,Other (please specify):,"econ, bio",1,8,0,"guitar, 4",0,0,NA,1,21,39,0,Less than one hour,More than 6 hours,3,90,0,0,0,0,0,0,10,0,0,0,NA,1,6
+3192422879,0.925,0.325,0.775,0.475,0.425,4,2,3,3,3,1,1,9,20,Male,Sophomore,NA,Other (please specify):,CS/Econ,0,NA,0,NA,0,0,NA,0,40,40,0,Less than one hour,1-2 hours,0,20,10,10,0,0,0,60,0,0,0,0,NA,1,6
+3270768954,0.47500000000000003,0.55,0.525,0.5,0.375,4,2,3,2,2,1,1,10,19,Female,Sophomore,NA,Other (please specify):,Biology,1,7,0,"voice - 3
+piano - 5",1,0,NA,0,46,46,0,Less than one hour,5-6 hours,0,94,2,2,0,0,2,0,0,0,0,0,NA,1,6
+3566263097,0.17500000000000002,0.625,0.425,0.275,0.425,3,2,3,2,2,1,1,11,21,Male,Junior,NA,Other (please specify):,Computer Science,1,5,0,"Alto saxophone (5 years)
+Drums (2 years)",1,1,2,1,55,60,0,Less than one hour,3-4 hours,0,35,0,0,0,0,35,30,0,0,0,0,NA,1,6
+3586902878,0.55,0.45,0.39999999999999997,0.5,0.525,3,2,4,3,2,1,1,12,19,Female,Sophomore,NA,Other (please specify):,Business Econ /PreMed,1,4,1,"Piano, Singing",1,1,1,1,90,90,-1,1-2 hours,1-2 hours,1,50,0,0,0,0,20,20,10,0,0,0,NA,1,6
+3600962747,0.6,0.6,0.55,0.6,0.55,3,2,3,3,3,1,1,12,20,Female,Sophomore,NA,Other (please specify):,Biology,1,8,1,"Voice (12 years), piano (8 years)",1,1,4,1,85,85,0,More than 6 hours,3-4 hours,3,70,0,15,0,0,0,0,5,0,10,0,NA,1,6
+3619423604,0.825,0.4,0.7,0.65,0.225,3,2,3,3,2,1,1,12,20,Male,Sophomore,NA,Other (please specify):,Computer Science,1,12,0,Violin (3),1,0,NA,1,20,80,0,Less than one hour,3-4 hours,0,10,0,0,0,0,70,20,0,0,0,0,NA,0,0
+3869729575,0.275,0.725,0.6,0.5,0.55,2,2,3,2,2,1,1,11,19,Male,Junior,NA,Other (please specify):,Math,1,8,0,Piano - 10 years,0,0,NA,1,70,85,0,Less than one hour,3-4 hours,0,20,0,5,0,0,30,40,5,0,0,0,NA,1,4
+3981943250,0.47500000000000003,0.525,0.45,0.45,0.45,3,2,2,3,2,1,1,12,20,Male,Sophomore,NA,Other (please specify):,Econ,1,5,1,Piano 15,1,1,2,1,82,83,-1,Less than one hour,1-2 hours,1,20,0,0,15,0,20,20,20,0,5,0,NA,1,6
+4358939887,0.7,0.725,0.6,0.7,0.5,3,3,3,2,2,1,1,12,20,Male,Freshman,NA,Other (please specify):,Business Economics,1,5,0,"Violin 10
+Viola 3",1,1,Orchestra all through middle and high school,1,65,65,0,Less than one hour,1-2 hours,0,80,0,0,0,0,0,0,0,0,0,20,EDM,1,6
+4475978126,0.875,0.425,0.55,0.325,0.45,4,3,4,3,2,1,1,9,19,Female,Freshman,NA,"Psychology,Other (please specify):",Economics,1,6,0,Piano (12 years),0,1,1 music course in high school,1,30,19,0,Less than one hour,1-2 hours,3,55,10,5,0,5,5,0,20,0,0,0,NA,1,6
+4721459480,0.625,0.6,0.55,0.6,0.5,3,2,2,2,2,1,1,12,19,Male,Freshman,NA,Other (please specify):,Economics/Statistics,1,10,0,I've played the piano for around 3 years when I was 9. I also started the violin around 9 years old and stopped at around 15 years old.,1,1,1 (Orchestra during Freshman Year),1,45,52,-1,Less than one hour,1-2 hours,0,50,0,0,0,0,0,50,0,0,0,0,NA,1,6
+5041247779,0.5,0.375,0.39999999999999997,0.3,0.35,3,1,3,2,2,1,1,12,20,Male,Junior,NA,Other (please specify):,Computer Science,1,5,1,Piano - 15 years,1,1,"2 in high school, 1 in college",1,70,93,0,Less than one hour,1-2 hours,2,10,0,0,0,5,0,20,65,0,0,0,NA,1,4
+5099255339,0.775,0.675,0.55,0.5,0.325,3,2,3,2,2,1,1,12,20,Male,Sophomore,NA,Other (please specify):,Economics,1,8,0,"Piano (10yrs)
+Drums (2 yrs)",1,0,NA,1,18,81,0,Less than one hour,3-4 hours,1,40,20,0,20,0,0,20,0,0,0,0,NA,1,6
+5345399037,0.45,0.55,0.475,0.4,0.55,2,2,2,4,1,1,1,8,NA,Male,Sophomore,NA,Psychology,NA,0,NA,0,NA,0,0,NA,0,67,88,0,Less than one hour,1-2 hours,1,10,0,0,0,0,20,70,0,0,0,0,NA,1,4
+5405144116,0.325,0.475,0.525,0.525,0.3,2,1,2,4,3,1,1,11,19,Male,Sophomore,NA,Other (please specify):,Economics,1,8,0,Piano for one year,0,1,1,0,8,8,0,Less than one hour,Less than one hour,2,30,10,0,0,0,30,0,0,30,0,0,NA,0,0
+5684042495,0.775,0.325,0.275,0.275,0.3,3,2,2,3,3,1,1,10,NA,Female,Sophomore,NA,Other (please specify):,Economics,1,8,0,piano,1,0,NA,0,8,20,0,Less than one hour,3-4 hours,4,60,0,0,40,0,0,0,0,0,0,0,NA,1,5
+6050072818,0.325,0.3,0.575,0.75,0.075,4,3,4,1,1,1,1,12,21,Male,Junior,NA,Other (please specify):,Chemistry,0,NA,0,NA,0,0,NA,0,20,50,0,Less than one hour,3-4 hours,2,40,40,0,0,0,0,0,0,0,20,0,NA,1,6
+6141459621,0.825,0.525,0.75,0.3,0.275,2,1,2,3,3,1,1,11,18,Male,Freshman,NA,Other (please specify):,Economics,1,9,0,"Violin (1 Year)
+French Horn (1 Year)
+Keyboard (2 Year)",0,0,NA,1,55,70,0,Less than one hour,1-2 hours,0,80,0,5,0,0,0,15,0,0,0,0,NA,1,6
+6323213291,0.45,0.39999999999999997,0.39999999999999997,0.39999999999999997,0.39999999999999997,1,2,2,1,2,1,1,12,24,Male,Senior,NA,Other (please specify):,Economics,1,6,1,Piano - 12 years,0,0,NA,1,60,60,0,Less than one hour,1-2 hours,5,0,0,0,0,0,0,0,100,0,0,0,NA,0,2
+6444402078,0.47500000000000003,0.45,0.39999999999999997,0.475,0.325,4,3,4,3,3,1,1,12,20,Female,Sophomore,NA,Other (please specify):,Biology,1,11,1,"Piano-5
+Guitar-4
+Voice-7",1,1,4,1,85,80,0,Less than one hour,3-4 hours,3,85,0,0,0,0,3,2,0,0,10,0,NA,1,6
+6559157051,0.5,0.55,0.47500000000000003,0.55,0.525,3,2,3,2,3,1,1,12,21,Male,Sophomore,NA,Other (please specify):,cs,0,5,0,NA,0,0,NA,0,0,NA,0,Less than one hour,1-2 hours,0,100,0,0,0,0,0,0,0,0,0,0,NA,1,5
+6783315289,0.55,0.65,0.575,0.7,0.525,2,3,3,4,1,1,2,8,20,Male,Sophomore,NA,Other (please specify):,Economics (Data Science),0,NA,0,NA,0,0,NA,0,6,4,0,Less than one hour,1-2 hours,0,20,80,0,0,0,0,0,0,0,0,0,NA,0,2
+6819144283,0.65,0.55,0.6,0.55,0.55,3,2,2,3,3,1,1,12,21,Female,Junior,NA,Other (please specify):,Economics,1,8,0,Voice -- I was in a choir for 4 years (8 years old -12 yeras old),1,1,Piano -- 1 (very basic),0,60,89,0,Less than one hour,Less than one hour,NA,25,15,5,0,0,15,30,5,5,0,0,NA,1,5
+7263097562,0.425,0.425,0.3,0.425,0.35000000000000003,3,2,3,3,3,1,1,12,18,Female,Sophomore,NA,Other (please specify):,economics,1,4,0,violin,0,1,5,1,68,89,0,Less than one hour,3-4 hours,2,40,0,0,0,0,0,40,20,0,0,0,NA,1,6
+7404697358,0.5,0.525,0.47500000000000003,0.425,0.25,2,3,3,4,3,1,1,12,18,Male,Sophomore,NA,Other (please specify):,Biology,1,13,0,"'-clarinet (1 yr)
+-percussion (5 yrs)",1,1,12,1,60,60,0,Less than one hour,3-4 hours,0,30,0,0,0,0,50,10,0,0,10,0,NA,1,6
+7507206303,0.875,0.6,0.65,0.575,0.475,3,2,3,3,3,1,1,12,NA,Female,Sophomore,NA,Other (please specify):,Neuroscience,0,NA,0,NA,0,0,NA,0,50,50,0,Less than one hour,3-4 hours,0,0,0,0,0,0,80,20,0,0,0,0,NA,1,6
+7516178077,0.75,0.325,0.6,0.475,0.225,1,2,2,2,2,1,1,11,20,Female,Freshman,NA,Other (please specify):,Economics,1,5,0,"Piano, 7 years",0,1,1,0,52,51,1,Less than one hour,1-2 hours,1,15,5,0,0,15,10,30,5,20,0,0,NA,1,4
+7849985568,0.375,0.375,0.325,0.275,0.35,3,3,3,3,3,1,1,12,19,Female,Sophomore,NA,Other (please specify):,Economics,1,9,0,Violin for 9 years,1,0,NA,1,81,74,-1,Less than one hour,Less than one hour,NA,50,0,0,0,0,30,10,10,0,0,0,NA,1,5
+8017703570,0.9,0.5,0.45,0.65,0.275,3,3,2,4,2,1,1,12,21,Female,Junior,NA,Other (please specify):,applied mathematics,1,13,0,"viola - 1 year
+guitar - a little less than a year",1,1,I took two courses for guitar in high school,0,50,40,0,Less than one hour,3-4 hours,0,20,20,20,0,0,0,20,0,0,20,0,NA,1,6
+8089229725,0.425,0.35,0.35,0.6,0.375,2,2,3,2,2,1,1,12,19,Female,Freshman,NA,Other (please specify):,History,1,6,0,Piano - 6,1,0,NA,1,34,34,0,Less than one hour,1-2 hours,NA,80,10,0,0,5,0,0,0,5,0,0,NA,0,0
+9018846073,0.85,0.725,0.55,0.825,0.4,2,2,4,3,3,1,1,12,19,Female,Sophomore,NA,Other (please specify):,Biology,1,12,0,Flute (4 years),0,0,NA,0,33,26,0,Less than one hour,More than 6 hours,5,10,0,0,0,10,40,20,0,0,0,20,Country,0,1
+9065164044,0.625,0.6,0.6,0.6,0.45,3,2,2,3,2,1,1,12,19,Female,Sophomore,NA,Other (please specify):,Biology and Global Studies,1,8,0,"piano, some guitar, and mostly singing",1,1,1 year of music class in highschool,1,4,24,0,Less than one hour,3-4 hours,2,0,0,0,0,0,20,10,0,0,70,0,NA,1,4
+9800773380,0.45,0.575,0.55,0.525,0.45,3,1,2,2,2,1,1,11,18,Female,Freshman,NA,Other (please specify):,Public Policy,1,8,0,"Clarinet, ages 8-13; voice, ages 11-13",1,0,NA,1,61,70,0,Less than one hour,1-2 hours,1,25,0,0,0,0,0,25,0,0,0,50,Indie,1,6
+9969091032,0.675,0.175,0.6,0.2,0.3,3,2,3,2,2,1,1,9,21,Female,Senior,NA,Other (please specify):,econ,0,NA,0,NA,0,0,NA,0,7,8,-1,Less than one hour,3-4 hours,1,80,0,0,0,20,0,0,0,0,0,0,NA,1,6

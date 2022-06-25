@@ -12,7 +12,9 @@ library(kableExtra)
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
-## Clean Data
+## Data Cleaning
+
+This code chunk is to import concatenated data, delete irrelevant variables and metadata to prepare for further data cleaning.
 
 ```{r load}
 # jspsych data
@@ -51,6 +53,7 @@ df_q <- read_csv("Qualtrics_5:4.csv") %>%
 # discard those who do not have a matching qualtrics_id in qualtrics data, keep everyone in jspsych data
 combined <- left_join(df_j, df_q, by = c("qualtrics_id" = "participant"))
 ```
+This code chunk is to filter out participants who did not do anything in the survey/categorization task. Since there were problems with SONA, some participants had duplicate rows, one with data and the other without. Others had two rows, one with Qualtrics response but blank jspsych response, the other with filled jspsych response but blank Qualtrics response. This step is to make sure we delete duplicates and combine same participants' Qualtrics and jspsych data into one row.
 
 ```{r clean-na}
 # those who only have j data but not q
@@ -74,6 +77,8 @@ na_combined <- full_join(na_q, na_j, by = c("participant" = "jspsych_id"), keep 
 combined_drop_na <- rbind(combined, na_combined) %>%
   filter(!is.na(Gender))
 ```
+
+The following code chunk is to extract demographics and headphone test data, combine them together, and filter out those who did not pass the headphone test.
 
 ```{r demo-headphone}
 # df for demographics
@@ -101,7 +106,9 @@ test %>%
   filter(headphone == 0)
 ```
 
-Turns out 8 participants failed the headphone test.
+Setting 4 as the pass threshold, we can see that 8 participants did not pass the headphone test (answered fewer than 4 questions correctly). For now I'll keep them, but later we can see if deleting them makes a big difference, and then decide whether to keep them.
+
+The following code chunk extracts categorization and explicit rating data respectively, and manipulate them to create 2 new data frames, 1 with participants' categorization with explicit ratings combined ([cat_rtg.csv](cat_rtg.csv)), the other with participants' demographics and average percent of major categorization and explicit rating of each instrument combined ([pivoted_data.csv](pivoted_data.csv)).
 
 ```{r cat-rtg}
 # df for categorization
@@ -151,8 +158,8 @@ cat_rtg_pivoted <- cat_pivoted %>%
 # each participant = 1 row of data
 all <- left_join(cat_rtg_pivoted, demo_test)
 
-write_csv(cat_rtg, "cat_rtg")
-write_csv(all, "pivoted_data")
+write_csv(cat_rtg, "cat_rtg.csv")
+write_csv(all, "pivoted_data.csv")
 ```
 
 A snapshot of the data (next step: find a measure to summarize musical background)
@@ -173,7 +180,7 @@ codebook <- data.frame(variable_names, variable_meaning)
 kable(codebook)
 ```
 
-## Demographics
+## Demographic analysis
 
 ```{r demo}
 all %>%
@@ -219,6 +226,30 @@ all %>%
   theme_void()
 ```
 
+Turns out the number of female and male participants did not differ much. 
+Most participants were aged 18-21, while a few above 22. 
+We had the greatest number of sophomores, then freshmen, then juniors, and the lowest number of seniors. 
+Pie chart was a bit odd; need more work. But we can see that most participants were neither a psychology major nor a music major.
+
+## Music courses taken
+
+```{r musical-background}
+# demo$Course is already an integer, why is it still double in the graph
+#all %>%
+#  ggplot(aes("", Course, fill = Course)) +
+#  geom_bar(stat = "identity") +
+#  coord_polar(theta = "y") +
+#  labs(title = "Taken music courses or not") +
+#  theme_void()
+
+all %>%
+  ggplot(aes(Course)) +
+  geom_bar() +
+  labs(title = "Taken music courses or not")
+```
+
+The number of participants who have taken music courses were slightly lower than that of those who haven't.
+
 ## Practice Score
 
 ```{r practice}
@@ -235,9 +266,7 @@ all %>%
   theme_minimal()
 ```
 
-Only 2 failed the 1st time. The rest all passed in the 1st try.
-
-Most passed with 12/12.
+Only 2 failed the 1st time. The rest all passed in the 1st try. Most passed with 12/12.
 
 ## Categorization
 
@@ -269,6 +298,8 @@ rtg %>%
   theme(legend.position = "None")
 ```
 
+Xylophone: rated "happiest" on average, then piano, then trumpet, then oboe, and violin rated the "saddest".
+
 ## Compare trend between tonality judgment and explicit rating
 
 ```{r compare-cat-valence}
@@ -287,25 +318,8 @@ cat_rtg_summary %>%
         legend.position = "None")
 ```
 
+Trend for categorization is similar to that for explicit rating. But there was a tiny bit of difference:
+
 Explicit valence rating: violin lowest, violin < oboe
 
 Categorization: oboe lowest, violin > oboe
-
-```{r musical-background}
-# demo$Course is already an integer, why is it still double in the graph
-all %>%
-  ggplot(aes("", Course, fill = Course)) +
-  geom_bar(stat = "identity") +
-  coord_polar(theta = "y") +
-  labs(title = "Taken music courses or not") +
-  theme_void()
-
-all %>%
-  ggplot(aes(Course)) +
-  geom_bar() +
-  labs(title = "Taken music courses or not")
-```
-
-```{r}
-combined_drop_na
-```

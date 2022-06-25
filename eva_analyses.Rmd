@@ -5,10 +5,6 @@ date: '`r Sys.Date()`'
 output: github_document
 ---
 
-## Explore correlation between music background & categorization / explicit rating
-
-TBC
-
 ## Statistical Analyses
 
 Descriptives, exploratory plot

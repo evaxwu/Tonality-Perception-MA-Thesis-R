@@ -3,7 +3,10 @@ Data Cleaning & Exploratory Graphs
 Eva Wu
 2022-05-18
 
-## Clean Data
+## Data Cleaning
+
+This code chunk is to import concatenated data, delete irrelevant
+variables and metadata to prepare for further data cleaning.
 
 ``` r
 # jspsych data
@@ -43,6 +46,14 @@ df_q <- read_csv("Qualtrics_5:4.csv") %>%
 combined <- left_join(df_j, df_q, by = c("qualtrics_id" = "participant"))
 ```
 
+This code chunk is to filter out participants who did not do anything in
+the survey/categorization task. Since there were problems with SONA,
+some participants had duplicate rows, one with data and the other
+without. Others had two rows, one with Qualtrics response but blank
+jspsych response, the other with filled jspsych response but blank
+Qualtrics response. This step is to make sure we delete duplicates and
+combine same participants’ Qualtrics and jspsych data into one row.
+
 ``` r
 # those who only have j data but not q
 na_q <- combined %>%
@@ -65,6 +76,10 @@ na_combined <- full_join(na_q, na_j, by = c("participant" = "jspsych_id"), keep 
 combined_drop_na <- rbind(combined, na_combined) %>%
   filter(!is.na(Gender))
 ```
+
+The following code chunk is to extract demographics and headphone test
+data, combine them together, and filter out those who did not pass the
+headphone test.
 
 ``` r
 # df for demographics
@@ -104,7 +119,17 @@ test %>%
     ## 7 8089229725           0         0
     ## 8 9018846073           0         1
 
-Turns out 8 participants failed the headphone test.
+Setting 4 as the pass threshold, we can see that 8 participants did not
+pass the headphone test (answered fewer than 4 questions correctly). For
+now I’ll keep them, but later we can see if deleting them makes a big
+difference, and then decide whether to keep them.
+
+The following code chunk extracts categorization and explicit rating
+data respectively, and manipulate them to create 2 new data frames, 1
+with participants’ categorization with explicit ratings combined
+([cat_rtg.csv](cat_rtg.csv)), the other with participants’ demographics
+and average percent of major categorization and explicit rating of each
+instrument combined ([pivoted_data.csv](pivoted_data.csv)).
 
 ``` r
 # df for categorization
@@ -154,8 +179,8 @@ cat_rtg_pivoted <- cat_pivoted %>%
 # each participant = 1 row of data
 all <- left_join(cat_rtg_pivoted, demo_test)
 
-write_csv(cat_rtg, "cat_rtg")
-write_csv(all, "pivoted_data")
+write_csv(cat_rtg, "cat_rtg.csv")
+write_csv(all, "pivoted_data.csv")
 ```
 
 A snapshot of the data (next step: find a measure to summarize musical
@@ -172,7 +197,7 @@ variable_meaning = c("Random 10-digit ID assigned by Qualtrics, used to join Qua
                 "Taken music courses or not", "List music courses taken", "Read music or not", "Ability to perceive and remember pitch", "Ability to perceive and remember tempo",
                 "Perfect pitch", "Time spent making music per week", "Time spent listening to music per day", "Number of concert attended per year", 
                 "Proportion of each genre listened to (total 100)", "", "", "", "", "", "", "", "", "", "", "", "Passed headphone test or not (1 = pass)", 
-                "Number of right answers in headphone test")
+                "Number of correct answers in headphone test")
 codebook <- data.frame(variable_names, variable_meaning)
 kable(codebook)
 ```
@@ -556,13 +581,13 @@ Passed headphone test or not (1 = pass)
 test_corr
 </td>
 <td style="text-align:left;">
-Number of right answers in headphone test
+Number of correct answers in headphone test
 </td>
 </tr>
 </tbody>
 </table>
 
-## Demographics
+## Demographic analysis
 
 ``` r
 all %>%
@@ -621,6 +646,35 @@ all %>%
 
 ![](data_cleaning_files/figure-gfm/demo-4.png)<!-- -->
 
+Turns out the number of female and male participants did not differ
+much. Most participants were aged 18-21, while a few above 22. We had
+the greatest number of sophomores, then freshmen, then juniors, and the
+lowest number of seniors. Pie chart was a bit odd; need more work. But
+we can see that most participants were neither a psychology major nor a
+music major.
+
+## Music courses taken
+
+``` r
+# demo$Course is already an integer, why is it still double in the graph
+#all %>%
+#  ggplot(aes("", Course, fill = Course)) +
+#  geom_bar(stat = "identity") +
+#  coord_polar(theta = "y") +
+#  labs(title = "Taken music courses or not") +
+#  theme_void()
+
+all %>%
+  ggplot(aes(Course)) +
+  geom_bar() +
+  labs(title = "Taken music courses or not")
+```
+
+![](data_cleaning_files/figure-gfm/musical-background-1.png)<!-- -->
+
+The number of participants who have taken music courses were slightly
+lower than that of those who haven’t.
+
 ## Practice Score
 
 ``` r
@@ -655,9 +709,8 @@ all %>%
 
 ![](data_cleaning_files/figure-gfm/practice-1.png)<!-- -->
 
-Only 2 failed the 1st time. The rest all passed in the 1st try.
-
-Most passed with 12/12.
+Only 2 failed the 1st time. The rest all passed in the 1st try. Most
+passed with 12/12.
 
 ## Categorization
 
@@ -694,6 +747,9 @@ rtg %>%
 
 ![](data_cleaning_files/figure-gfm/rating-1.png)<!-- -->
 
+Xylophone: rated “happiest” on average, then piano, then trumpet, then
+oboe, and violin rated the “saddest”.
+
 ## Compare trend between tonality judgment and explicit rating
 
 ``` r
@@ -714,52 +770,9 @@ cat_rtg_summary %>%
 
 ![](data_cleaning_files/figure-gfm/compare-cat-valence-1.png)<!-- -->
 
+Trend for categorization is similar to that for explicit rating. But
+there was a tiny bit of difference:
+
 Explicit valence rating: violin lowest, violin \< oboe
 
 Categorization: oboe lowest, violin \> oboe
-
-``` r
-# demo$Course is already an integer, why is it still double in the graph
-all %>%
-  ggplot(aes("", Course, fill = Course)) +
-  geom_bar(stat = "identity") +
-  coord_polar(theta = "y") +
-  labs(title = "Taken music courses or not") +
-  theme_void()
-```
-
-![](data_cleaning_files/figure-gfm/musical-background-1.png)<!-- -->
-
-``` r
-all %>%
-  ggplot(aes(Course)) +
-  geom_bar() +
-  labs(title = "Taken music courses or not")
-```
-
-![](data_cleaning_files/figure-gfm/musical-background-2.png)<!-- -->
-
-``` r
-combined_drop_na
-```
-
-    ## # A tibble: 10,388 × 49
-    ##    participant   qualtrics_id chord designation response correct passed_practice
-    ##    <chr>         <chr>        <chr> <chr>       <chr>      <dbl>           <dbl>
-    ##  1 14vd1s548b9u… 9800773380   C     headphone-… 0              1              NA
-    ##  2 14vd1s548b9u… 9800773380   C     headphone-… 1              1              NA
-    ##  3 14vd1s548b9u… 9800773380   C     headphone-… 2              1              NA
-    ##  4 14vd1s548b9u… 9800773380   C     headphone-… 1              1              NA
-    ##  5 14vd1s548b9u… 9800773380   C     headphone-… 2              1              NA
-    ##  6 14vd1s548b9u… 9800773380   C     headphone-… 0              1              NA
-    ##  7 14vd1s548b9u… 9800773380   C     PRACTICE-P… 0             NA               1
-    ##  8 14vd1s548b9u… 9800773380   C     MAIN-JUDGM… 0             NA              NA
-    ##  9 14vd1s548b9u… 9800773380   C     MAIN-JUDGM… 1             NA              NA
-    ## 10 14vd1s548b9u… 9800773380   C     MAIN-JUDGM… 0             NA              NA
-    ## # … with 10,378 more rows, and 42 more variables: block_passed_practice <dbl>,
-    ## #   practice_score <dbl>, instrument <fct>, valence <chr>, tuning_step <dbl>,
-    ## #   selected_major <dbl>, explicit_rtg <dbl>, StartDate <chr>,
-    ## #   jspsych_id <chr>, Age <dbl>, Gender <chr>, Year <fct>, Year_6_TEXT <chr>,
-    ## #   Major <chr>, Major_5_TEXT <chr>, Inst <int>, Start <int>, Inst_now <int>,
-    ## #   Inst_list <chr>, Ens <int>, Course <int>, Course_list <chr>, Read <int>,
-    ## #   `Pitch&Tempo_1` <int>, `Pitch&Tempo_2` <int>, Perf <int>, …
