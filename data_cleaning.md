@@ -26,9 +26,9 @@ df_q <- read_csv("Qualtrics_5:4.csv") %>%
   filter(row_number() > 7) %>% # delete pilot data
   select(-(2:16), -50) %>% # delete unnecessary meta data
   mutate(Age = as.numeric(Age),
-         Year = factor(Year, levels = c("Freshman", "Sophomore", "Junior", "Senior", "Graduate", "Other (please specify: )")),
+         Year = factor(Year, levels = c("Freshman", "Sophomore", "Junior", "Senior", "Graduate", "Other (please specify):")),
          Inst = as.integer(if_else(Inst == "Yes", 1, 0)),
-         Start = if_else(Start == "10 Years Old", "10", Start), # so that this won't be coerced to NA when mutating to numeric
+         Start = if_else(Start == "10 Years Old", "10", Start), # so that this won't be coerced to NA when mutating to numeric; only this one didn't write an integer in this question
          Start = as.integer(Start),
          Inst_now = as.integer(if_else(Inst_now == "Yes", 1, 0)),
          Ens = as.integer(if_else(Ens == "Yes", 1, 0)),

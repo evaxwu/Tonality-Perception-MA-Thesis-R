@@ -2,7 +2,7 @@
 title: "Data Cleaning & Exploratory Graphs"
 author: "Eva Wu"
 output: github_document
-date: "2022-05-18"
+date: "2022-06-27"
 ---
 
 ```{r setup, include = FALSE}
@@ -18,16 +18,13 @@ This code chunk is to import concatenated data, delete irrelevant variables and 
 
 ```{r load}
 # jspsych data
-df_j <- read_csv("inst-cat-uc-1.csv") %>% # load exp1 data
+df_j <- read_csv("inst-cat-uc-2.csv") %>% # load exp1 data
   filter(designation != "NA" & designation != "practice-intro" & designation != "practice-resp" & 
-         qualtrics_id != "NA" & qualtrics_id != "9643222579") %>% # delete pilot data
+         qualtrics_id != "NA") %>%
   select(participant, qualtrics_id, chord, designation, response, # delete meta data
          correct, passed_practice, block_passed_practice, practice_score, 
-         instrument, valence, tuning_step, selected_major, explicit_rtg) %>% 
-  # for some reason 2 participant's qualtrics id was "participant", so I recoded according to their id on Qualtrics
-  mutate(qualtrics_id = if_else(participant == "ch4dg75c7th9g1", "1706631024", qualtrics_id), 
-         qualtrics_id = if_else(participant == "ept8xz3drgq38w", "4475978126", qualtrics_id),
-         instrument = factor(instrument, levels = c("xylophone", "trumpet", "piano", "violin", "oboe")))
+         instrument, envelope, harmonics, tuning_step, selected_major, explicit_rtg) %>% 
+  mutate(instrument = factor(instrument, levels = c("xylophone", "trumpet", "piano", "violin", "oboe")))
 
 # qualtrics data
 df_q <- read_csv("Qualtrics_5:4.csv") %>%
@@ -51,15 +48,16 @@ df_q <- read_csv("Qualtrics_5:4.csv") %>%
 
 # join qualtrics & jspsych data by embedded qualtrics id
 # discard those who do not have a matching qualtrics_id in qualtrics data, keep everyone in jspsych data
-combined <- left_join(df_j, df_q, by = c("qualtrics_id" = "participant"))
+combined <- left_join(df_j, df_q, by = c("participant" = "jspsych_id"))
 ```
+
 This code chunk is to filter out participants who did not do anything in the survey/categorization task. Since there were problems with SONA, some participants had duplicate rows, one with data and the other without. Others had two rows, one with Qualtrics response but blank jspsych response, the other with filled jspsych response but blank Qualtrics response. This step is to make sure we delete duplicates and combine same participants' Qualtrics and jspsych data into one row.
 
 ```{r clean-na}
 # those who only have j data but not q
 na_q <- combined %>%
   filter(is.na(Gender)) %>%
-  select(1:14) # delete q columns
+  select(1:15) # delete q columns
 # there are 4 of them w/ blank qualtrics data but full jspsych data
 
 # those who only have q data but not j
@@ -73,7 +71,7 @@ na_combined <- full_join(na_q, na_j, by = c("participant" = "jspsych_id"), keep 
   select(-participant.y) %>%
   rename(participant = participant.x)
 
-# bind them back to combined, delete the half-full rows
+# bind them back to combined, delete the half-full rows (those whose gender was NA)
 combined_drop_na <- rbind(combined, na_combined) %>%
   filter(!is.na(Gender))
 ```

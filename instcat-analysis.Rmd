@@ -23,6 +23,7 @@ Project examining how instrumental timbre influences categorization of three-not
 Judgments should be theoretically independent of instrument. However, if certain timbres are more strongly associated with positive/negative affect, then it is possible that this will be reflected in the categorization task (i.e., "happier" instruments leading to a greater likelihood of responding "major"), despite no explicit instructions to base judgments on affective characteristics.
 
 ### 1. Load Packages and Data
+
 ```{r load_data, warning = FALSE, echo = FALSE}
 data <- read_csv("inst-cat-uc-1.csv")
 ```
