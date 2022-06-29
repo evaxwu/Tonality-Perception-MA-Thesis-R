@@ -11,11 +11,13 @@ Descriptives, exploratory plot
 
 ```{r descr}
 # save data to be used
-#attach(all)
+all <- read_csv("pivoted_data.csv")
+cat_rtg <- read_csv("cat_rtg.csv")
+attach(cat_rtg)
 
 # descriptives
-#summary(cat_rtg)
-#plot(instrument, pct_maj)
+summary(cat_rtg)
+plot(instrument, pct_maj)
 ```
 
 Correlations b/w 1) instrument's presumed valence, 2) mean explicit rating, and 3) tuning step & percent of major categorization, 

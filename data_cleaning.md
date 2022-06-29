@@ -141,9 +141,10 @@ cat <- combined_drop_na %>%
   
 # each person's mean major choice proportion 
 cat_pivoted <- cat %>%
-  group_by(qualtrics_id, instrument) %>%
+  group_by(qualtrics_id, instrument, tuning_step) %>%
   summarize(mean_cat = mean(pct_maj)) %>%
-  mutate(instrument = paste0("cat_", instrument)) %>%
+  mutate(instrument = paste0(instrument, tuning_step)) %>%
+  select(-tuning_step) %>%
   pivot_wider(names_from = instrument, values_from = mean_cat)
 
 # delete since no point of having 25 cols for major judgment
@@ -187,17 +188,58 @@ A snapshot of the data (next step: find a measure to summarize musical
 background)
 
 ``` r
-variable_names = colnames(all)
-variable_meaning = c("Random 10-digit ID assigned by Qualtrics, used to join Qualtrics and jspsych data", "Proportion of major categorization for xylophone", "Proportion of major categorization for violin", "Proportion of major categorization for piano",
-                "Proportion of major categorization for trumpet", "Proportion of major categorization for oboe",
-                "Explicit valence rating of xylophone", "Explicit valence rating of violin", "Explicit valence rating of piano",
-                "Explicit valence rating of trumpet", "Explicit valence rating of oboe", "Passed practice or not (1 = pass)", "Number of tries taken to pass", 
-                "Practice score (out of 12)", "", "", "", "If not a student or faculty", "", "If not a psych of music major", "Play instrument or not", 
-                "At what age did they start playing an instrument", "Still playing now?", "List instruments played", "Participated in ensemble or not",
-                "Taken music courses or not", "List music courses taken", "Read music or not", "Ability to perceive and remember pitch", "Ability to perceive and remember tempo",
-                "Perfect pitch", "Time spent making music per week", "Time spent listening to music per day", "Number of concert attended per year", 
-                "Proportion of each genre listened to (total 100)", "", "", "", "", "", "", "", "", "", "", "", "Passed headphone test or not (1 = pass)", 
-                "Number of correct answers in headphone test")
+variable_names <- colnames(all)
+variable_meaning = c("Random 10-digit ID assigned by Qualtrics, used to join Qualtrics and jspsych data", 
+                     "Proportion of major categorization for xylophone, tuning step 1", 
+                     "Proportion of major categorization for xylophone, tuning step 2", 
+                     "Proportion of major categorization for xylophone, tuning step 3", 
+                     "Proportion of major categorization for xylophone, tuning step 4", 
+                     "Proportion of major categorization for xylophone, tuning step 5", 
+                     "Proportion of major categorization for trumpet, tuning step 1", 
+                     "Proportion of major categorization for trumpet, tuning step 2", 
+                     "Proportion of major categorization for trumpet, tuning step 3", 
+                     "Proportion of major categorization for trumpet, tuning step 4", 
+                     "Proportion of major categorization for trumpet, tuning step 5", 
+                     "Proportion of major categorization for piano, tuning step 1",
+                     "Proportion of major categorization for piano, tuning step 2",
+                     "Proportion of major categorization for piano, tuning step 3",
+                     "Proportion of major categorization for piano, tuning step 4",
+                     "Proportion of major categorization for piano, tuning step 5",
+                     "Proportion of major categorization for violin, tuning step 1", 
+                     "Proportion of major categorization for violin, tuning step 2", 
+                     "Proportion of major categorization for violin, tuning step 3", 
+                     "Proportion of major categorization for violin, tuning step 4", 
+                     "Proportion of major categorization for violin, tuning step 5", 
+                     "Proportion of major categorization for oboe, tuning step 1",
+                     "Proportion of major categorization for oboe, tuning step 2",
+                     "Proportion of major categorization for oboe, tuning step 3",
+                     "Proportion of major categorization for oboe, tuning step 4",
+                     "Proportion of major categorization for oboe, tuning step 5",
+                     "Explicit valence rating of xylophone", 
+                     "Explicit valence rating of violin", 
+                     "Explicit valence rating of piano",
+                     "Explicit valence rating of trumpet", 
+                     "Explicit valence rating of oboe", 
+                     "Passed practice or not (1 = pass)", "Number of tries taken to pass", 
+                     "Practice score (out of 12)", "", "", "", 
+                     "If not a student or faculty", "", 
+                     "If not a psych of music major", 
+                     "Play instrument or not", 
+                     "At what age they started playing an instrument", 
+                     "Still playing now?", "List of instruments played", 
+                     "Participated in ensemble or not", 
+                     "Taken music courses or not", "List music courses taken", 
+                     "Read music or not", 
+                     "Ability to perceive and remember pitch", 
+                     "Ability to perceive and remember tempo",
+                     "Has perfect pitch or not (1 = yes, 0 = no, -1 = don't know", 
+                     "Time spent making music per week", 
+                     "Time spent listening to music per day", 
+                     "Number of concert attended per year", 
+                     "Proportion of each genre listened to (total 100)", 
+                     "", "", "", "", "", "", "", "", "", "", "", 
+                     "Passed headphone test or not (1 = pass)", 
+                     "Number of correct answers in headphone test")
 codebook <- data.frame(variable_names, variable_meaning)
 kable(codebook)
 ```
@@ -225,42 +267,202 @@ jspsych data
 </tr>
 <tr>
 <td style="text-align:left;">
-cat_xylophone
+xylophone1
 </td>
 <td style="text-align:left;">
-Proportion of major categorization for xylophone
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-cat_trumpet
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for violin
+Proportion of major categorization for xylophone, tuning step 1
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-cat_piano
+xylophone2
 </td>
 <td style="text-align:left;">
-Proportion of major categorization for piano
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-cat_violin
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for trumpet
+Proportion of major categorization for xylophone, tuning step 2
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-cat_oboe
+xylophone3
 </td>
 <td style="text-align:left;">
-Proportion of major categorization for oboe
+Proportion of major categorization for xylophone, tuning step 3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+xylophone4
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for xylophone, tuning step 4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+xylophone5
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for xylophone, tuning step 5
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+trumpet1
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for trumpet, tuning step 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+trumpet2
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for trumpet, tuning step 2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+trumpet3
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for trumpet, tuning step 3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+trumpet4
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for trumpet, tuning step 4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+trumpet5
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for trumpet, tuning step 5
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+piano1
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for piano, tuning step 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+piano2
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for piano, tuning step 2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+piano3
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for piano, tuning step 3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+piano4
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for piano, tuning step 4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+piano5
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for piano, tuning step 5
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+violin1
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for violin, tuning step 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+violin2
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for violin, tuning step 2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+violin3
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for violin, tuning step 3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+violin4
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for violin, tuning step 4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+violin5
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for violin, tuning step 5
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+oboe1
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for oboe, tuning step 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+oboe2
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for oboe, tuning step 2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+oboe3
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for oboe, tuning step 3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+oboe4
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for oboe, tuning step 4
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+oboe5
+</td>
+<td style="text-align:left;">
+Proportion of major categorization for oboe, tuning step 5
 </td>
 </tr>
 <tr>
@@ -384,7 +586,7 @@ Play instrument or not
 Start
 </td>
 <td style="text-align:left;">
-At what age did they start playing an instrument
+At what age they started playing an instrument
 </td>
 </tr>
 <tr>
@@ -400,7 +602,7 @@ Still playing now?
 Inst_list
 </td>
 <td style="text-align:left;">
-List instruments played
+List of instruments played
 </td>
 </tr>
 <tr>
@@ -456,7 +658,7 @@ Ability to perceive and remember tempo
 Perf
 </td>
 <td style="text-align:left;">
-Perfect pitch
+Has perfect pitch or not (1 = yes, 0 = no, -1 = don’t know
 </td>
 </tr>
 <tr>
@@ -682,19 +884,19 @@ all %>%
   filter(block_passed_practice == 2)
 ```
 
-    ## # A tibble: 2 × 48
+    ## # A tibble: 2 × 68
     ## # Groups:   qualtrics_id [2]
-    ##   qualtrics_id cat_xylophone cat_trumpet cat_piano cat_violin cat_oboe
-    ##   <chr>                <dbl>       <dbl>     <dbl>      <dbl>    <dbl>
-    ## 1 2701997442            1           0.8      0.75       0.375    0.3  
-    ## 2 6783315289            0.55        0.65     0.575      0.7      0.525
-    ## # … with 42 more variables: rtg_xylophone <dbl>, rtg_violin <dbl>,
-    ## #   rtg_piano <dbl>, rtg_trumpet <dbl>, rtg_oboe <dbl>, passed_practice <dbl>,
-    ## #   block_passed_practice <dbl>, practice_score <dbl>, Age <dbl>, Gender <chr>,
-    ## #   Year <fct>, Year_6_TEXT <chr>, Major <chr>, Major_5_TEXT <chr>, Inst <int>,
-    ## #   Start <int>, Inst_now <int>, Inst_list <chr>, Ens <int>, Course <int>,
-    ## #   Course_list <chr>, Read <int>, `Pitch&Tempo_1` <int>,
-    ## #   `Pitch&Tempo_2` <int>, Perf <int>, Time_make <chr>, Time_listen <chr>, …
+    ##   qualtrics_id xylophone1 xylophone2 xylophone3 xylophone4 xylophone5 trumpet1
+    ##   <chr>             <dbl>      <dbl>      <dbl>      <dbl>      <dbl>    <dbl>
+    ## 1 2701997442        1            1        1           1           1      0.75 
+    ## 2 6783315289        0.625        0.5      0.375       0.75        0.5    0.625
+    ## # … with 61 more variables: trumpet2 <dbl>, trumpet3 <dbl>, trumpet4 <dbl>,
+    ## #   trumpet5 <dbl>, piano1 <dbl>, piano2 <dbl>, piano3 <dbl>, piano4 <dbl>,
+    ## #   piano5 <dbl>, violin1 <dbl>, violin2 <dbl>, violin3 <dbl>, violin4 <dbl>,
+    ## #   violin5 <dbl>, oboe1 <dbl>, oboe2 <dbl>, oboe3 <dbl>, oboe4 <dbl>,
+    ## #   oboe5 <dbl>, rtg_xylophone <dbl>, rtg_violin <dbl>, rtg_piano <dbl>,
+    ## #   rtg_trumpet <dbl>, rtg_oboe <dbl>, passed_practice <dbl>,
+    ## #   block_passed_practice <dbl>, practice_score <dbl>, Age <dbl>, …
 
 ``` r
 all %>%

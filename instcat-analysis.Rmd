@@ -5,26 +5,29 @@ date: "22/02/2022"
 output: github_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 library(lme4)
 library(tidyverse)
 library(effects)
 library(ordinal)
 library(emmeans)
 library(lmerTest)
+library(reshape2) # to pivot wider
+library(corrplot)
+library(rstatix)
 
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
 ```
 
-## Overview
+### Overview
 
 Project examining how instrumental timbre influences categorization of three-note arpeggios as major versus minor. Middle note of the arpeggios has five steps, ranging from +0c (minor) to +100c (major) in 25c increments. Participants heard five instruments in total (randomized across trial): piano, oboe, violin, trumpet, xylophone.
 
 Judgments should be theoretically independent of instrument. However, if certain timbres are more strongly associated with positive/negative affect, then it is possible that this will be reflected in the categorization task (i.e., "happier" instruments leading to a greater likelihood of responding "major"), despite no explicit instructions to base judgments on affective characteristics.
 
-### 1. Load Packages and Data
+### 1. Load Data
 
-```{r load_data, warning = FALSE, echo = FALSE}
+```{r load, warning = FALSE}
 data <- read_csv("inst-cat-uc-1.csv")
 ```
 
@@ -32,92 +35,95 @@ data <- read_csv("inst-cat-uc-1.csv")
 
 Here we report our main analyses
 
-```{r lmer, echo=TRUE}
-data.cat <- data %>% filter(designation == "MAIN-JUDGMENT")
+```{r model}
+data.cat <- data %>% filter(designation == "MAIN-JUDGMENT") # extract cat data
 
 #first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
-main.model3 <- lmer(selected_major ~ poly(tuning_step,3)*instrument + (1+instrument|participant), data=data.cat)
-main.model2 <- lmer(selected_major ~ poly(tuning_step,2)*instrument + (1+instrument|participant), data=data.cat)
-main.model1 <- lmer(selected_major ~ poly(tuning_step,1)*instrument + (1+instrument|participant), data=data.cat)
+main.model3 <- lmer(selected_major ~ poly(tuning_step, 3)*instrument + (1+instrument|participant), data = data.cat)
+main.model2 <- lmer(selected_major ~ poly(tuning_step, 2)*instrument + (1+instrument|participant), data = data.cat)
+main.model1 <- lmer(selected_major ~ poly(tuning_step, 1)*instrument + (1+instrument|participant), data = data.cat)
 
 anova(main.model3, main.model2) # strong evidence to keep cubic fit (versus just quadratic + linear)
 anova(main.model3, main.model1) # strong evidence to keep cubic fit (versus just linear)
+anova(main.model2, main.model1) # Eva: strong evidence to keep quadratic fit (versus just linear) - I guess that's a given when cubic is sig?
 
-#now let's assess the results from the selected model
+# cat results from the selected cubic model
 summary(main.model3)
 
 cat.emm <- emmeans(main.model3, "instrument")
-pairs(cat.emm)
+pairs(cat.emm) # oboe < all others except piano; xylophone > piano
 
-#assess explicit ratings of instruments
+# assess explicit ratings of instruments
 data.exp <- data %>% filter(designation == "INST-VALENCE-RTG")
 data.exp$explicit_rtg <- ordered(data.exp$explicit_rtg)
 
-explicit.model <- clmm(explicit_rtg ~ instrument + (1|participant), data=data.exp)
-summary(explicit.model) #clear differences in reported capacity for instruments to play happy/sad
+explicit.model <- clmm(explicit_rtg ~ instrument + (1|participant), data = data.exp)
+summary(explicit.model) # clear differences in reported capacity for instruments to play happy/sad
 explicit.emm <- emmeans(explicit.model, "instrument")
-pairs(explicit.emm) # oboe lower than all others, xylophone higher than all others except trumpet
+pairs(explicit.emm) # violin < all others except oboe; xylophone > oboe
+```
 
-#how do categorization results map onto explicit ratings?
-cat.sum <- aggregate(selected_major ~ instrument*participant, FUN=mean,data=data.cat)
-exp.sum <- aggregate(as.numeric(explicit_rtg) ~ instrument*participant, FUN=mean,data=data.exp)
+```{r summarize-pivot}
+# how do categorization results map onto explicit ratings? 
+# [aggregate = summarize (by mean) in dplyr]
+cat.sum <- aggregate(selected_major ~ instrument*participant, FUN = mean, data = data.cat)
+exp.sum <- aggregate(as.numeric(explicit_rtg) ~ instrument*participant, FUN = mean, data = data.exp)
 
-#convert to wide format for correlational analyses
-library(reshape2)
-cat.sum.wide <- dcast(cat.sum, participant ~ instrument)
+#convert to wide format for correlational analyses [= pivot wider]
+cat.sum.wide <- dcast(cat.sum, participant ~ instrument) 
 exp.sum.wide <- dcast(exp.sum, participant ~ instrument)
-cor.data <- cbind(cat.sum.wide[,c(2:6)], exp.sum.wide[,c(2:6)])
+cor.data <- cbind(cat.sum.wide[, c(2:6)], exp.sum.wide[, c(2:6)])
+```
 
-library(corrplot)
-library(rstatix)
+### 3. Cat-rtg correlation plot 
 
+```{r corr-plot}
 names(cor.data) = c("Oboe C", "Piano C", "Trumpet C", "Violin C", "Xylophone C", "Oboe E", "Piano E", "Trumpet E", "Violin E", "Xylophone E")
 corvalues <- cor(cor.data) #cor matrix
 
 col <- colorRampPalette(c("#4477AA",  "#77AADD", "#FFFFFF","#BB4444", "#EE9988"))
-corrplot(corvalues, method="color", col=col(200),    
-         type="upper", 
+corrplot(corvalues, method = "color", col=col(200),    
+         type = "upper", 
          addCoef.col = "black", # Add coefficient of correlation
-         tl.col="black", tl.srt=45, #Text label color and rotation
+         tl.col = "black", tl.srt = 45, # Text label color and rotation
          # Combine with significance
          # hide correlation coefficient on the principal diagonal
-         diag=FALSE 
+         diag = FALSE
          )
+```
 
-####plot the results
-#theme
-plot_theme = theme(
-  text = element_text(size = 10),
-  axis.title.x = element_text(size = 16),
-  axis.title.y = element_text(size = 16),
-  axis.text = element_text(size = 14),
-  legend.title=element_text(size=16),
-  legend.text=element_text(size=16),
-  strip.text = element_text(size=14),
-  panel.background = element_rect(fill = 'white', colour = 'black'),
-  legend.position = c(0.20,0.75),
-  plot.title = element_text(lineheight=.8, face="bold", size = 16),
-  panel.border = element_rect(color = "black", fill=NA, size=1.25),
-  panel.grid.minor = element_blank(),
-  panel.grid.major = element_blank(),
-  axis.line.x = element_line(colour = 'black', size=0.5, linetype='solid'),
-  axis.line.y = element_line(colour = 'black', size=0.5, linetype='solid'))
+### 4. Categorization smooth plot
 
-eff.inst <- as.data.frame(effect(term="poly(tuning_step,3)*instrument", mod=main.model)) # added 3 otherwise wouldn't knit
-str(eff.inst)
-levels(eff.inst$instrument) <- c("Oboe", "Piano", "Trumpet", "Violin", "Xylophone",NA)
+```{r smooth-plot}
+eff.inst <- as.data.frame(effect(term = "poly(tuning_step,3)*instrument", mod = main.model3)) 
+str(eff.inst) # shows structure of df
+levels(eff.inst$instrument) <- c("Oboe", "Piano", "Trumpet", "Violin", "Xylophone", NA)
 
-efplot.main <- ggplot(eff.inst, aes(x=tuning_step, y=fit, group=instrument, color=instrument, fill=instrument)) + 
-  geom_point(size=2) + 
-  geom_errorbar(aes(ymin=fit-se, ymax=fit+se), width=0.1, lwd=1)+
+efplot.main <- ggplot(eff.inst, aes(x = tuning_step, y = fit, color = instrument)) +
+  geom_point(size = 2) + 
+  geom_errorbar(aes(ymin = fit - se, ymax = fit + se), width = 0.1, lwd = 1) +
   #geom_line(size=1.2) +
-  geom_smooth(formula = "y~poly(x,3)", method = "glm", family = binomial, se = FALSE)+
-  scale_x_continuous(labels=c("0", "25", "50", "75", "100"))+
-  labs(y = "'Major' Response (Prop.)", x="Tuning Step", color="Instrument", fill="Instrument") +
-  plot_theme +
-  theme(legend.background = element_rect(color=NA), legend.title = element_text(), legend.box="vertical", legend.margin=margin())
+  geom_smooth(formula = "y ~ poly(x, 3)", method = "glm", family = binomial, se = FALSE) +
+  scale_x_continuous(labels = c("0", "25", "50", "75", "100")) +
+  labs(y = "'Major' Response (Prop.)", x = "Tuning Step", color = "Instrument") +
+  theme(plot.title = element_text(lineheight = .8, face = "bold", size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        legend.box = "vertical", 
+        legend.background = element_rect(color = NA),
+        legend.position = c(0.20, 0.75),
+        panel.background = element_rect(fill = "white", colour = "black"),
+        panel.border = element_rect(color = "black", fill=NA, size=1.25),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
+        axis.text = element_text(size = 14),
+        axis.line.x = element_line(colour = "black", size = 0.5, linetype = "solid"),
+        axis.line.y = element_line(colour = "black", size = 0.5, linetype = "solid"),
+        strip.text = element_text(size = 14))
 
-png("inst-cat-plot.png", height=4, width=5.5, res=300, units="in")
+png("inst-cat-plot.png", height = 4, width = 5.5, res = 300, units = "in")
 efplot.main
 dev.off()
 ```
