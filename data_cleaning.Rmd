@@ -86,7 +86,52 @@ The following code chunk is to extract demographics and headphone test data, com
 demo <- combined_drop_na %>%
   filter(designation == "PRACTICE-PASSED-SUMMARY") %>%
   select(-1, -(3:6), -(10:16), -49) %>% # delete unnecessary data
-  mutate(Inst_yr = as.numeric(gsub(".*?([0-9]+).*", "\\1", Inst_list)), .after = Inst_list)
+  mutate(PT1 = `Pitch&Tempo_1`*0.1, 
+         PT2 = `Pitch&Tempo_2`*0.1,
+         .after = `Pitch&Tempo_2`) %>%
+  mutate(Time_make_num = case_when(Time_make == "Less than one hour" ~ 0,
+                                   Time_make == "1-2 hours" ~ 1,
+                                   Time_make == "3-4 hours" ~ 3,
+                                   Time_make == "5-6 hours" ~ 5,
+                                   Time_make == "More than 6 hours" ~ 6),
+         .after = Time_make) %>%
+  mutate(Time_listen_num = case_when(Time_listen == "Less than one hour" ~ 0,
+                                     Time_listen == "1-2 hours" ~ 1,
+                                     Time_listen == "3-4 hours" ~ 3,
+                                     Time_listen == "5-6 hours" ~ 5,
+                                     Time_listen == "More than 6 hours" ~ 6),
+         .after = Time_listen) %>%
+  # fill manually for those who did not have the longest duration as the 1st #
+  mutate(Inst_yr = case_when(qualtrics_id == 9800773380 ~ 5,
+                             qualtrics_id == 6141459621 ~ 2,
+                             qualtrics_id == 2334472117 ~ 23,
+                             qualtrics_id == 7404697358 ~ 5,
+                             qualtrics_id == 3270768954 ~ 5,
+                             qualtrics_id == 6444402078 ~ 7,
+                             qualtrics_id == 2095686609 ~ 5,
+                             qualtrics_id == 1067596379 ~ 8,
+                             qualtrics_id == 2707228965 ~ 5,
+                             qualtrics_id == 5405144116 ~ 1,
+                             qualtrics_id == 4721459480 ~ 6),
+         # extract the 1st number (the longest duration of playing an instrument) in str
+         Inst_yr = if_else(is.na(Inst_yr), 
+                           # if
+                           as.numeric(gsub(".*?([0-9]+).*", "\\1", Inst_list)), 
+                           # else
+                           Inst_yr),
+         .after = Inst_list)
+
+# manually code number of instruments they played
+demo$Inst_num <- c(2, 1, 2, 3, 2, 1, 0, 2, 3, 2, 3, 0, 0, 3, 1, 2, 1, 0, 1, 1, 2, 1, 1, 3, 1, 2, 2, 1, 3, 1, 1, 0, 2, 1, 1, 2, 0, 1, 1, 2, 2, 2, 0, 1, 1, 1, 0, 2, 1)
+
+# move column
+demo <- demo %>%
+  relocate(Inst_num, .after = Inst_yr)
+
+# arbitrarily summarize music experience using sum of multiple measures
+demo$music_exp <- rowSums(demo[, c(15:18, 20, 23:25, 27, 29:30)], na.rm = TRUE)
+
+demo_exp <- demo %>% select(1:10, music_exp)
 
 # df for headphone test
 test <- combined_drop_na %>%
@@ -100,7 +145,7 @@ test <- combined_drop_na %>%
   select(-n)
 
 # combine headphone test pass/fail result w/ original data
-demo_test <- left_join(demo, test, by = "qualtrics_id")
+demo_test <- left_join(demo_exp, test, by = "qualtrics_id")
 
 # see how many failed the headphone test
 test %>%
@@ -157,11 +202,10 @@ cat_rtg_pivoted <- cat_pivoted %>%
 # mutate(inst_id = case_when(instrument == "oboe" ~ 1, instrument == "violin" ~ 2,
 # instrument == "piano" ~ 3, instrument == "trumpet" ~ 4, instrument == "xylophone" ~ 5))
 
-# each participant = 1 row of data
-all <- left_join(cat_rtg_pivoted, demo_test)
+# each participant = 25 rows of data
+all <- left_join(cat_rtg, demo_test, by = "qualtrics_id")
 
-write_csv(cat_rtg, "cat_rtg.csv")
-write_csv(all, "pivoted_data.csv")
+write_csv(all, "all.csv")
 ```
 
 A snapshot of the data (next step: find a measure to summarize musical background)
@@ -226,7 +270,7 @@ kable(codebook)
 ## Demographic analysis
 
 ```{r demo}
-all %>%
+demo %>%
   filter(Gender != "NA") %>%
   ggplot(aes(Gender, fill = Gender)) +
   geom_bar() +
@@ -236,7 +280,7 @@ all %>%
   theme_minimal() +
   theme(legend.position = "None")
 
-all %>%
+demo %>%
   ggplot(aes(Age)) +
   geom_bar(fill = "lightblue") +
   labs(title = "Participant age distribution",
@@ -244,7 +288,7 @@ all %>%
        y = "Number of participants") +
   theme_minimal()
 
-all %>%
+demo %>%
   filter(Year != "NA") %>%
   ggplot(aes(Year)) +
   geom_bar(fill = "orange") +
@@ -255,7 +299,7 @@ all %>%
 
 
 # 3 psych, 3 double, 43 other; why is the graph like this
-all %>%
+demo %>%
   mutate(Major = case_when(Major == "Psychology" ~ "Psychology",
                            Major == "Music" ~ "Music",
                            Major == "NA" ~ "NA",
@@ -274,32 +318,13 @@ Most participants were aged 18-21, while a few above 22.
 We had the greatest number of sophomores, then freshmen, then juniors, and the lowest number of seniors. 
 Pie chart was a bit odd; need more work. But we can see that most participants were neither a psychology major nor a music major.
 
-## Music courses taken
-
-```{r musical-background}
-# demo$Course is already an integer, why is it still double in the graph
-#all %>%
-#  ggplot(aes("", Course, fill = Course)) +
-#  geom_bar(stat = "identity") +
-#  coord_polar(theta = "y") +
-#  labs(title = "Taken music courses or not") +
-#  theme_void()
-
-all %>%
-  ggplot(aes(Course)) +
-  geom_bar() +
-  labs(title = "Taken music courses or not")
-```
-
-The number of participants who have taken music courses were slightly lower than that of those who haven't.
-
 ## Practice Score
 
 ```{r practice}
-all %>%
+demo %>%
   filter(block_passed_practice == 2)
 
-all %>%
+demo %>%
   ggplot(aes(practice_score)) +
   geom_bar(fill = "lightgreen") +
   labs(title = "Practice score distribution among those who passed (almost all did)",
@@ -314,7 +339,7 @@ Only 2 failed the 1st time. The rest all passed in the 1st try. Most passed with
 ## Categorization
 
 ```{r cat}
-cat %>%
+all %>%
   ggplot(aes(tuning_step, pct_maj, color = instrument)) +
   geom_smooth(se = FALSE) +
   scale_y_continuous(labels = scales::percent) +
@@ -332,7 +357,7 @@ Oboe: overall most likely to be judged as minor when tuning is unclear
 ## Explicit Rating
 
 ```{r rating}
-rtg %>%
+all %>%
   ggplot(aes(instrument, explicit_rtg, fill = instrument)) +
   geom_col() +
   labs(title = "Explicit valence rating for each instrument",
