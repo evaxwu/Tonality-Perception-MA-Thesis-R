@@ -29,6 +29,7 @@ Judgments should be theoretically independent of instrument. However, if certain
 
 ```{r load, warning = FALSE}
 data <- read_csv("inst-cat-uc-1.csv")
+all <- read_csv("all.csv")
 ```
 
 ### 2. Generalized Linear Models
@@ -36,7 +37,9 @@ data <- read_csv("inst-cat-uc-1.csv")
 Here we report our main analyses
 
 ```{r model}
-data.cat <- data %>% filter(designation == "MAIN-JUDGMENT") # extract cat data
+data.cat <- data %>% 
+  filter(participant %in% all$participant) %>% # discard duplicate
+  filter(designation == "MAIN-JUDGMENT") # extract cat data
 
 #first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
 main.model3 <- lmer(selected_major ~ poly(tuning_step, 3)*instrument + (1+instrument|participant), data = data.cat)
@@ -54,10 +57,13 @@ cat.emm <- emmeans(main.model3, "instrument")
 pairs(cat.emm) # oboe < all others except piano; xylophone > piano
 
 # assess explicit ratings of instruments
-data.exp <- data %>% filter(designation == "INST-VALENCE-RTG")
+data.exp <- data %>% 
+  filter(participant %in% all$participant) %>% # discard duplicate
+  filter(designation == "INST-VALENCE-RTG")
+
 data.exp$explicit_rtg <- ordered(data.exp$explicit_rtg)
 
-explicit.model <- clmm(explicit_rtg ~ instrument + (1|participant), data = data.exp)
+explicit.model <- clmm(explicit_rtg ~ instrument + (1 | participant), data = data.exp)
 summary(explicit.model) # clear differences in reported capacity for instruments to play happy/sad
 explicit.emm <- emmeans(explicit.model, "instrument")
 pairs(explicit.emm) # violin < all others except oboe; xylophone > oboe

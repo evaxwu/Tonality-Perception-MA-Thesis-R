@@ -22,6 +22,7 @@ base judgments on affective characteristics.
 
 ``` r
 data <- read_csv("inst-cat-uc-1.csv")
+all <- read_csv("all.csv")
 ```
 
 ### 2. Generalized Linear Models
@@ -29,18 +30,15 @@ data <- read_csv("inst-cat-uc-1.csv")
 Here we report our main analyses
 
 ``` r
-data.cat <- data %>% filter(designation == "MAIN-JUDGMENT") # extract cat data
+data.cat <- data %>% 
+  filter(participant %in% all$participant) %>% # discard duplicate
+  filter(designation == "MAIN-JUDGMENT") # extract cat data
 
 #first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
-main.model3 <- lmer(selected_major ~ poly(tuning_step, 3)*instrument + (1+instrument|participant), data = data.cat)
-main.model2 <- lmer(selected_major ~ poly(tuning_step, 2)*instrument + (1+instrument|participant), data = data.cat)
-main.model1 <- lmer(selected_major ~ poly(tuning_step, 1)*instrument + (1+instrument|participant), data = data.cat)
-```
+main.model3 <- lmer(selected_major ~ poly(tuning_step, 3) * instrument + (1 + instrument | participant), data = data.cat)
+main.model2 <- lmer(selected_major ~ poly(tuning_step, 2) * instrument + (1 + instrument | participant), data = data.cat)
+main.model1 <- lmer(selected_major ~ poly(tuning_step, 1) * instrument + (1 + instrument | participant), data = data.cat)
 
-    ## Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, :
-    ## Model failed to converge with max|grad| = 0.00254061 (tol = 0.002, component 1)
-
-``` r
 anova(main.model3, main.model2) # strong evidence to keep cubic fit (versus just quadratic + linear)
 ```
 
@@ -49,8 +47,8 @@ anova(main.model3, main.model2) # strong evidence to keep cubic fit (versus just
     ## main.model2: selected_major ~ poly(tuning_step, 2) * instrument + (1 + instrument | participant)
     ## main.model3: selected_major ~ poly(tuning_step, 3) * instrument + (1 + instrument | participant)
     ##             npar   AIC   BIC  logLik deviance  Chisq Df Pr(>Chisq)    
-    ## main.model2   31 10794 11018 -5365.8    10732                         
-    ## main.model3   36 10485 10746 -5206.5    10413 318.53  5  < 2.2e-16 ***
+    ## main.model2   31 10388 10610 -5162.8    10326                         
+    ## main.model3   36 10132 10391 -5030.1    10060 265.38  5  < 2.2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -63,8 +61,8 @@ anova(main.model3, main.model1) # strong evidence to keep cubic fit (versus just
     ## main.model1: selected_major ~ poly(tuning_step, 1) * instrument + (1 + instrument | participant)
     ## main.model3: selected_major ~ poly(tuning_step, 3) * instrument + (1 + instrument | participant)
     ##             npar   AIC   BIC  logLik deviance  Chisq Df Pr(>Chisq)    
-    ## main.model1   26 10825 11013 -5386.3    10773                         
-    ## main.model3   36 10485 10746 -5206.5    10413 359.53 10  < 2.2e-16 ***
+    ## main.model1   26 10411 10598 -5179.4    10359                         
+    ## main.model3   36 10132 10391 -5030.1    10060 298.56 10  < 2.2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -77,8 +75,8 @@ anova(main.model2, main.model1) # Eva: strong evidence to keep quadratic fit (ve
     ## main.model1: selected_major ~ poly(tuning_step, 1) * instrument + (1 + instrument | participant)
     ## main.model2: selected_major ~ poly(tuning_step, 2) * instrument + (1 + instrument | participant)
     ##             npar   AIC   BIC  logLik deviance  Chisq Df Pr(>Chisq)    
-    ## main.model1   26 10825 11013 -5386.3    10773                         
-    ## main.model2   31 10794 11018 -5365.8    10732 40.991  5   9.42e-08 ***
+    ## main.model1   26 10411 10598 -5179.4    10359                         
+    ## main.model2   31 10388 10610 -5162.8    10326 33.179  5  3.467e-06 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -94,65 +92,65 @@ summary(main.model3)
     ##     participant)
     ##    Data: data.cat
     ## 
-    ## REML criterion at convergence: 10420.6
+    ## REML criterion at convergence: 10066.9
     ## 
     ## Scaled residuals: 
-    ##      Min       1Q   Median       3Q      Max 
-    ## -3.05280 -0.62342 -0.05556  0.64283  2.84696 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -3.0094 -0.6378 -0.0527  0.6665  2.7813 
     ## 
     ## Random effects:
     ##  Groups      Name                Variance Std.Dev. Corr                   
-    ##  participant (Intercept)         0.01155  0.1075                          
-    ##              instrumentpiano     0.02622  0.1619   -0.78                  
-    ##              instrumenttrumpet   0.01315  0.1147   -0.47  0.69            
-    ##              instrumentviolin    0.02296  0.1515   -0.58  0.67  0.59      
-    ##              instrumentxylophone 0.05460  0.2337   -0.68  0.80  0.50  0.53
-    ##  Residual                        0.15399  0.3924                          
-    ## Number of obs: 10400, groups:  participant, 52
+    ##  participant (Intercept)         0.01227  0.1108                          
+    ##              instrumentpiano     0.02714  0.1648   -0.77                  
+    ##              instrumenttrumpet   0.01395  0.1181   -0.47  0.69            
+    ##              instrumentviolin    0.02399  0.1549   -0.58  0.65  0.58      
+    ##              instrumentxylophone 0.05813  0.2411   -0.69  0.81  0.50  0.54
+    ##  Residual                        0.15788  0.3973                          
+    ## Number of obs: 9800, groups:  participant, 49
     ## 
     ## Fixed effects:
     ##                                             Estimate Std. Error         df
-    ## (Intercept)                                3.962e-01  1.721e-02  5.100e+01
-    ## poly(tuning_step, 3)1                      2.600e+01  8.775e-01  1.012e+04
-    ## poly(tuning_step, 3)2                      3.692e+00  8.775e-01  1.012e+04
-    ## poly(tuning_step, 3)3                     -5.547e+00  8.775e-01  1.012e+04
-    ## instrumentpiano                            1.207e-01  2.554e-02  5.100e+01
-    ## instrumenttrumpet                          1.192e-01  2.002e-02  5.099e+01
-    ## instrumentviolin                           9.663e-02  2.428e-02  5.100e+01
-    ## instrumentxylophone                        1.990e-01  3.461e-02  5.100e+01
-    ## poly(tuning_step, 3)1:instrumentpiano      2.773e+00  1.241e+00  1.012e+04
-    ## poly(tuning_step, 3)2:instrumentpiano      5.860e-02  1.241e+00  1.012e+04
-    ## poly(tuning_step, 3)3:instrumentpiano     -2.427e+00  1.241e+00  1.012e+04
-    ## poly(tuning_step, 3)1:instrumenttrumpet    1.560e+00  1.241e+00  1.012e+04
-    ## poly(tuning_step, 3)2:instrumenttrumpet   -5.714e+00  1.241e+00  1.012e+04
-    ## poly(tuning_step, 3)3:instrumenttrumpet   -2.773e+00  1.241e+00  1.012e+04
-    ## poly(tuning_step, 3)1:instrumentviolin     1.525e+00  1.241e+00  1.012e+04
-    ## poly(tuning_step, 3)2:instrumentviolin    -3.516e+00  1.241e+00  1.012e+04
-    ## poly(tuning_step, 3)3:instrumentviolin    -6.240e-01  1.241e+00  1.012e+04
-    ## poly(tuning_step, 3)1:instrumentxylophone -5.547e-01  1.241e+00  1.012e+04
-    ## poly(tuning_step, 3)2:instrumentxylophone -4.571e+00  1.241e+00  1.012e+04
-    ## poly(tuning_step, 3)3:instrumentxylophone -1.317e+00  1.241e+00  1.012e+04
+    ## (Intercept)                                  0.39388    0.01819   47.99177
+    ## poly(tuning_step, 3)1                       24.35714    0.88849 9540.00026
+    ## poly(tuning_step, 3)2                        3.25988    0.88849 9540.00026
+    ## poly(tuning_step, 3)3                       -4.96429    0.88849 9540.00026
+    ## instrumentpiano                              0.12755    0.02674   47.98876
+    ## instrumenttrumpet                            0.12194    0.02111   47.98987
+    ## instrumentviolin                             0.10255    0.02551   47.98669
+    ## instrumentxylophone                          0.19898    0.03671   47.98967
+    ## poly(tuning_step, 3)1:instrumentpiano        2.82143    1.25651 9540.00026
+    ## poly(tuning_step, 3)2:instrumentpiano        0.03018    1.25651 9540.00026
+    ## poly(tuning_step, 3)3:instrumentpiano       -2.42857    1.25651 9540.00026
+    ## poly(tuning_step, 3)1:instrumenttrumpet      1.64286    1.25651 9540.00026
+    ## poly(tuning_step, 3)2:instrumenttrumpet     -5.55387    1.25651 9540.00026
+    ## poly(tuning_step, 3)3:instrumenttrumpet     -2.75000    1.25651 9540.00026
+    ## poly(tuning_step, 3)1:instrumentviolin       1.46429    1.25651 9540.00026
+    ## poly(tuning_step, 3)2:instrumentviolin      -3.59191    1.25651 9540.00026
+    ## poly(tuning_step, 3)3:instrumentviolin      -0.60714    1.25651 9540.00026
+    ## poly(tuning_step, 3)1:instrumentxylophone   -0.39286    1.25651 9540.00026
+    ## poly(tuning_step, 3)2:instrumentxylophone   -3.59191    1.25651 9540.00026
+    ## poly(tuning_step, 3)3:instrumentxylophone   -1.53571    1.25651 9540.00026
     ##                                           t value Pr(>|t|)    
-    ## (Intercept)                                23.019  < 2e-16 ***
-    ## poly(tuning_step, 3)1                      29.632  < 2e-16 ***
-    ## poly(tuning_step, 3)2                       4.207 2.61e-05 ***
-    ## poly(tuning_step, 3)3                      -6.322 2.70e-10 ***
-    ## instrumentpiano                             4.725 1.85e-05 ***
-    ## instrumenttrumpet                           5.954 2.42e-07 ***
-    ## instrumentviolin                            3.979 0.000219 ***
-    ## instrumentxylophone                         5.750 5.04e-07 ***
-    ## poly(tuning_step, 3)1:instrumentpiano       2.235 0.025439 *  
-    ## poly(tuning_step, 3)2:instrumentpiano       0.047 0.962336    
-    ## poly(tuning_step, 3)3:instrumentpiano      -1.956 0.050536 .  
-    ## poly(tuning_step, 3)1:instrumenttrumpet     1.257 0.208714    
-    ## poly(tuning_step, 3)2:instrumenttrumpet    -4.604 4.19e-06 ***
-    ## poly(tuning_step, 3)3:instrumenttrumpet    -2.235 0.025439 *  
-    ## poly(tuning_step, 3)1:instrumentviolin      1.229 0.219006    
-    ## poly(tuning_step, 3)2:instrumentviolin     -2.833 0.004615 ** 
-    ## poly(tuning_step, 3)3:instrumentviolin     -0.503 0.615062    
-    ## poly(tuning_step, 3)1:instrumentxylophone  -0.447 0.654884    
-    ## poly(tuning_step, 3)2:instrumentxylophone  -3.683 0.000231 ***
-    ## poly(tuning_step, 3)3:instrumentxylophone  -1.062 0.288430    
+    ## (Intercept)                                21.653  < 2e-16 ***
+    ## poly(tuning_step, 3)1                      27.414  < 2e-16 ***
+    ## poly(tuning_step, 3)2                       3.669 0.000245 ***
+    ## poly(tuning_step, 3)3                      -5.587 2.37e-08 ***
+    ## instrumentpiano                             4.770 1.76e-05 ***
+    ## instrumenttrumpet                           5.775 5.52e-07 ***
+    ## instrumentviolin                            4.020 0.000205 ***
+    ## instrumentxylophone                         5.421 1.90e-06 ***
+    ## poly(tuning_step, 3)1:instrumentpiano       2.245 0.024762 *  
+    ## poly(tuning_step, 3)2:instrumentpiano       0.024 0.980835    
+    ## poly(tuning_step, 3)3:instrumentpiano      -1.933 0.053292 .  
+    ## poly(tuning_step, 3)1:instrumenttrumpet     1.307 0.191083    
+    ## poly(tuning_step, 3)2:instrumenttrumpet    -4.420 9.98e-06 ***
+    ## poly(tuning_step, 3)3:instrumenttrumpet    -2.189 0.028650 *  
+    ## poly(tuning_step, 3)1:instrumentviolin      1.165 0.243903    
+    ## poly(tuning_step, 3)2:instrumentviolin     -2.859 0.004264 ** 
+    ## poly(tuning_step, 3)3:instrumentviolin     -0.483 0.628967    
+    ## poly(tuning_step, 3)1:instrumentxylophone  -0.313 0.754548    
+    ## poly(tuning_step, 3)2:instrumentxylophone  -2.859 0.004264 ** 
+    ## poly(tuning_step, 3)3:instrumentxylophone  -1.222 0.221661    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -162,26 +160,29 @@ pairs(cat.emm) # oboe < all others except piano; xylophone > piano
 ```
 
     ##  contrast            estimate     SE  df z.ratio p.value
-    ##  oboe - piano         -0.1200 0.0294 Inf  -4.083  0.0004
-    ##  oboe - trumpet       -0.1862 0.0247 Inf  -7.523  <.0001
-    ##  oboe - violin        -0.1378 0.0283 Inf  -4.870  <.0001
-    ##  oboe - xylophone     -0.2526 0.0375 Inf  -6.728  <.0001
-    ##  piano - trumpet      -0.0662 0.0250 Inf  -2.650  0.0616
-    ##  piano - violin       -0.0179 0.0260 Inf  -0.686  0.9595
-    ##  piano - xylophone    -0.1326 0.0275 Inf  -4.828  <.0001
-    ##  trumpet - violin      0.0484 0.0257 Inf   1.883  0.3265
-    ##  trumpet - xylophone  -0.0664 0.0339 Inf  -1.957  0.2871
-    ##  violin - xylophone   -0.1148 0.0335 Inf  -3.422  0.0056
+    ##  oboe - piano         -0.1272 0.0307 Inf  -4.137  0.0003
+    ##  oboe - trumpet       -0.1890 0.0260 Inf  -7.269  <.0001
+    ##  oboe - violin        -0.1459 0.0297 Inf  -4.916  <.0001
+    ##  oboe - xylophone     -0.2423 0.0397 Inf  -6.102  <.0001
+    ##  piano - trumpet      -0.0618 0.0262 Inf  -2.363  0.1256
+    ##  piano - violin       -0.0187 0.0275 Inf  -0.682  0.9603
+    ##  piano - xylophone    -0.1152 0.0287 Inf  -4.012  0.0006
+    ##  trumpet - violin      0.0431 0.0270 Inf   1.595  0.5005
+    ##  trumpet - xylophone  -0.0534 0.0359 Inf  -1.488  0.5703
+    ##  violin - xylophone   -0.0964 0.0353 Inf  -2.731  0.0495
     ## 
     ## Degrees-of-freedom method: asymptotic 
     ## P value adjustment: tukey method for comparing a family of 5 estimates
 
 ``` r
 # assess explicit ratings of instruments
-data.exp <- data %>% filter(designation == "INST-VALENCE-RTG")
+data.exp <- data %>% 
+  filter(participant %in% all$participant) %>% # discard duplicate
+  filter(designation == "INST-VALENCE-RTG")
+
 data.exp$explicit_rtg <- ordered(data.exp$explicit_rtg)
 
-explicit.model <- clmm(explicit_rtg ~ instrument + (1|participant), data = data.exp)
+explicit.model <- clmm(explicit_rtg ~ instrument + (1 | participant), data = data.exp)
 summary(explicit.model) # clear differences in reported capacity for instruments to play happy/sad
 ```
 
@@ -191,27 +192,27 @@ summary(explicit.model) # clear differences in reported capacity for instruments
     ## data:    data.exp
     ## 
     ##  link  threshold nobs logLik  AIC    niter    max.grad cond.H 
-    ##  logit flexible  260  -280.21 576.41 386(793) 2.78e-04 3.3e+01
+    ##  logit flexible  245  -265.56 547.12 460(932) 8.56e-06 3.4e+01
     ## 
     ## Random effects:
     ##  Groups      Name        Variance Std.Dev.
-    ##  participant (Intercept) 0.3202   0.5659  
-    ## Number of groups:  participant 52 
+    ##  participant (Intercept) 0.2866   0.5354  
+    ## Number of groups:  participant 49 
     ## 
     ## Coefficients:
     ##                     Estimate Std. Error z value Pr(>|z|)    
-    ## instrumentpiano       1.2605     0.3812   3.306 0.000945 ***
-    ## instrumenttrumpet     1.1730     0.3840   3.054 0.002255 ** 
-    ## instrumentviolin     -0.7965     0.3840  -2.074 0.038053 *  
-    ## instrumentxylophone   1.9571     0.4062   4.818 1.45e-06 ***
+    ## instrumentpiano       1.2746     0.3909   3.260  0.00111 ** 
+    ## instrumenttrumpet     1.1884     0.3940   3.016  0.00256 ** 
+    ## instrumentviolin     -0.7076     0.3926  -1.802  0.07149 .  
+    ## instrumentxylophone   1.9490     0.4182   4.661 3.15e-06 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Threshold coefficients:
     ##     Estimate Std. Error z value
-    ## 1|2  -2.1871     0.3472  -6.300
-    ## 2|3   0.6092     0.2843   2.143
-    ## 3|4   3.1683     0.3682   8.605
+    ## 1|2  -2.0592     0.3480  -5.917
+    ## 2|3   0.6563     0.2913   2.253
+    ## 3|4   3.2204     0.3792   8.494
 
 ``` r
 explicit.emm <- emmeans(explicit.model, "instrument")
@@ -219,16 +220,16 @@ pairs(explicit.emm) # violin < all others except oboe; xylophone > oboe
 ```
 
     ##  contrast            estimate    SE  df z.ratio p.value
-    ##  oboe - piano         -1.2605 0.381 Inf  -3.306  0.0084
-    ##  oboe - trumpet       -1.1730 0.384 Inf  -3.054  0.0191
-    ##  oboe - violin         0.7965 0.384 Inf   2.074  0.2312
-    ##  oboe - xylophone     -1.9571 0.406 Inf  -4.818  <.0001
-    ##  piano - trumpet       0.0875 0.375 Inf   0.233  0.9993
-    ##  piano - violin        2.0570 0.403 Inf   5.108  <.0001
-    ##  piano - xylophone    -0.6965 0.387 Inf  -1.800  0.3733
-    ##  trumpet - violin      1.9694 0.404 Inf   4.873  <.0001
-    ##  trumpet - xylophone  -0.7841 0.393 Inf  -1.998  0.2671
-    ##  violin - xylophone   -2.7535 0.429 Inf  -6.422  <.0001
+    ##  oboe - piano         -1.2746 0.391 Inf  -3.260  0.0098
+    ##  oboe - trumpet       -1.1884 0.394 Inf  -3.016  0.0216
+    ##  oboe - violin         0.7076 0.393 Inf   1.802  0.3721
+    ##  oboe - xylophone     -1.9490 0.418 Inf  -4.661  <.0001
+    ##  piano - trumpet       0.0862 0.385 Inf   0.224  0.9994
+    ##  piano - violin        1.9822 0.411 Inf   4.827  <.0001
+    ##  piano - xylophone    -0.6744 0.399 Inf  -1.691  0.4394
+    ##  trumpet - violin      1.8960 0.413 Inf   4.594  <.0001
+    ##  trumpet - xylophone  -0.7607 0.404 Inf  -1.881  0.3274
+    ##  violin - xylophone   -2.6567 0.439 Inf  -6.057  <.0001
     ## 
     ## P value adjustment: tukey method for comparing a family of 5 estimates
 
@@ -257,8 +258,7 @@ corrplot(corvalues, method = "color", col=col(200),
          tl.col = "black", tl.srt = 45, # Text label color and rotation
          # Combine with significance
          # hide correlation coefficient on the principal diagonal
-         diag = FALSE
-         )
+         diag = FALSE)
 ```
 
 ![](instcat-analysis_files/figure-gfm/corr-plot-1.png)<!-- -->
@@ -273,10 +273,10 @@ str(eff.inst) # shows structure of df
     ## 'data.frame':    25 obs. of  6 variables:
     ##  $ tuning_step: num  1 2 3 4 5 1 2 3 4 5 ...
     ##  $ instrument : Factor w/ 6 levels "oboe","piano",..: 1 1 1 1 1 2 2 2 2 2 ...
-    ##  $ fit        : num  0.117 0.117 0.353 0.632 0.762 ...
-    ##  $ se         : num  0.0242 0.0225 0.02 0.0225 0.0242 ...
-    ##  $ lower      : num  0.0698 0.0731 0.3136 0.5876 0.714 ...
-    ##  $ upper      : num  0.165 0.161 0.392 0.676 0.809 ...
+    ##  $ fit        : num  0.121 0.129 0.355 0.619 0.746 ...
+    ##  $ se         : num  0.0254 0.0237 0.0211 0.0237 0.0254 ...
+    ##  $ lower      : num  0.0709 0.0829 0.3131 0.5727 0.6959 ...
+    ##  $ upper      : num  0.171 0.176 0.396 0.666 0.796 ...
     ##  - attr(*, "type")= chr "response"
 
 ``` r
