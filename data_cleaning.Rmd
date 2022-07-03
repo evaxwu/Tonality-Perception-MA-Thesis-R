@@ -205,6 +205,7 @@ cat_rtg_pivoted <- cat_pivoted %>%
 all <- left_join(cat_rtg, demo_test, by = "qualtrics_id")
 
 write_csv(all, "all.csv")
+write_csv(demo_test, "demo_test.csv")
 ```
 
 A snapshot of the data (next step: find a measure to summarize musical background)

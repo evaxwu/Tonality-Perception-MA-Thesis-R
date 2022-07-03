@@ -28,8 +28,10 @@ Judgments should be theoretically independent of instrument. However, if certain
 ### 1. Load Data
 
 ```{r load, warning = FALSE}
-data <- read_csv("inst-cat-uc-1.csv")
-all <- read_csv("all.csv")
+demo_test <- read_csv("demo_test.csv") %>%
+  select(-(2:5))
+data <- read_csv("inst-cat-uc-1.csv") %>%
+  inner_join(demo_test, by = "participant") # discard duplicates, join demo & mus_exp data
 ```
 
 ### 2. Generalized Linear Models
@@ -38,7 +40,6 @@ Here we report our main analyses
 
 ```{r model}
 data.cat <- data %>% 
-  filter(participant %in% all$participant) %>% # discard duplicate
   filter(designation == "MAIN-JUDGMENT") # extract cat data
 
 #first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
@@ -58,7 +59,6 @@ pairs(cat.emm) # oboe < all others except piano; xylophone > piano
 
 # assess explicit ratings of instruments
 data.exp <- data %>% 
-  filter(participant %in% all$participant) %>% # discard duplicate
   filter(designation == "INST-VALENCE-RTG")
 
 data.exp$explicit_rtg <- ordered(data.exp$explicit_rtg)

@@ -21,8 +21,10 @@ base judgments on affective characteristics.
 ### 1. Load Data
 
 ``` r
-data <- read_csv("inst-cat-uc-1.csv")
-all <- read_csv("all.csv")
+demo_test <- read_csv("demo_test.csv") %>%
+  select(-(2:5))
+data <- read_csv("inst-cat-uc-1.csv") %>%
+  inner_join(demo_test, by = "participant") # discard duplicates, join demo & mus_exp data
 ```
 
 ### 2. Generalized Linear Models
@@ -31,13 +33,12 @@ Here we report our main analyses
 
 ``` r
 data.cat <- data %>% 
-  filter(participant %in% all$participant) %>% # discard duplicate
   filter(designation == "MAIN-JUDGMENT") # extract cat data
 
 #first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
-main.model3 <- lmer(selected_major ~ poly(tuning_step, 3) * instrument + (1 + instrument | participant), data = data.cat)
-main.model2 <- lmer(selected_major ~ poly(tuning_step, 2) * instrument + (1 + instrument | participant), data = data.cat)
-main.model1 <- lmer(selected_major ~ poly(tuning_step, 1) * instrument + (1 + instrument | participant), data = data.cat)
+main.model3 <- lmer(selected_major ~ poly(tuning_step, 3)*instrument + (1+instrument|participant), data = data.cat)
+main.model2 <- lmer(selected_major ~ poly(tuning_step, 2)*instrument + (1+instrument|participant), data = data.cat)
+main.model1 <- lmer(selected_major ~ poly(tuning_step, 1)*instrument + (1+instrument|participant), data = data.cat)
 
 anova(main.model3, main.model2) # strong evidence to keep cubic fit (versus just quadratic + linear)
 ```
@@ -177,7 +178,6 @@ pairs(cat.emm) # oboe < all others except piano; xylophone > piano
 ``` r
 # assess explicit ratings of instruments
 data.exp <- data %>% 
-  filter(participant %in% all$participant) %>% # discard duplicate
   filter(designation == "INST-VALENCE-RTG")
 
 data.exp$explicit_rtg <- ordered(data.exp$explicit_rtg)
