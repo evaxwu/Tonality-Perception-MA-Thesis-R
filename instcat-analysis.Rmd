@@ -12,6 +12,8 @@ library(effects)
 library(ordinal)
 library(emmeans)
 library(lmerTest)
+library(lme4) #*
+library(margins) #*
 library(reshape2) # to pivot wider
 library(corrplot)
 library(rstatix)
@@ -42,18 +44,31 @@ Here we report our main analyses
 data.cat <- data %>% 
   filter(designation == "MAIN-JUDGMENT") # extract cat data
 
-#first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
-main.model3 <- lmer(selected_major ~ poly(tuning_step, 3)*instrument + (1+instrument|participant), data = data.cat)
-main.model2 <- lmer(selected_major ~ poly(tuning_step, 2)*instrument + (1+instrument|participant), data = data.cat)
-main.model1 <- lmer(selected_major ~ poly(tuning_step, 1)*instrument + (1+instrument|participant), data = data.cat)
+# first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
+# random effects | random factor
+# random intercepts (1) and (+) random slopes for instrument (instrument) from participant to participant
+main.model3 <- lmer(selected_major ~ poly(tuning_step, 3) * instrument + (1 + instrument | participant), data = data.cat)
+main.model2 <- lmer(selected_major ~ poly(tuning_step, 2) * instrument + (1 + instrument | participant), data = data.cat)
+main.model1 <- lmer(selected_major ~ poly(tuning_step, 1) * instrument + (1 + instrument | participant), data = data.cat)
 
 anova(main.model3, main.model2) # strong evidence to keep cubic fit (versus just quadratic + linear)
 anova(main.model3, main.model1) # strong evidence to keep cubic fit (versus just linear)
-anova(main.model2, main.model1) # Eva: strong evidence to keep quadratic fit (versus just linear) - I guess that's a given when cubic is sig?
+# won't need an anova comparing models 1 & 2 b/c if we include 3, 2 will for sure be included
+
+# logit regression
+main.model4 <- glmer(selected_major ~ poly(tuning_step, 3) * instrument + music_exp + (1 + instrument | participant), family = binomial(link = "logit"), data = data.cat)
+
+summary(main.model4)
+
+# turn log odds back to probability
+log_mod <- margins(main.model4, data = data.cat)
+log_mod
+
+cat.emm_0 <- emmeans(main.model4, "instrument")
+pairs(cat.emm_0)
 
 # cat results from the selected cubic model
 summary(main.model3)
-
 cat.emm <- emmeans(main.model3, "instrument")
 pairs(cat.emm) # oboe < all others except piano; xylophone > piano
 
@@ -69,6 +84,8 @@ explicit.emm <- emmeans(explicit.model, "instrument")
 pairs(explicit.emm) # violin < all others except oboe; xylophone > oboe
 ```
 
+### 3. Cat-rtg correlation plot 
+
 ```{r summarize-pivot}
 # how do categorization results map onto explicit ratings? 
 # [aggregate = summarize (by mean) in dplyr]
@@ -80,8 +97,6 @@ cat.sum.wide <- dcast(cat.sum, participant ~ instrument)
 exp.sum.wide <- dcast(exp.sum, participant ~ instrument)
 cor.data <- cbind(cat.sum.wide[, c(2:6)], exp.sum.wide[, c(2:6)])
 ```
-
-### 3. Cat-rtg correlation plot 
 
 ```{r corr-plot}
 names(cor.data) = c("Oboe C", "Piano C", "Trumpet C", "Violin C", "Xylophone C", "Oboe E", "Piano E", "Trumpet E", "Violin E", "Xylophone E")
@@ -130,5 +145,4 @@ efplot.main <- ggplot(eff.inst, aes(x = tuning_step, y = fit, color = instrument
 
 png("inst-cat-plot.png", height = 4, width = 5.5, res = 300, units = "in")
 efplot.main
-dev.off()
 ```

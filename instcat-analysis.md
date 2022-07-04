@@ -35,10 +35,12 @@ Here we report our main analyses
 data.cat <- data %>% 
   filter(designation == "MAIN-JUDGMENT") # extract cat data
 
-#first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
-main.model3 <- lmer(selected_major ~ poly(tuning_step, 3)*instrument + (1+instrument|participant), data = data.cat)
-main.model2 <- lmer(selected_major ~ poly(tuning_step, 2)*instrument + (1+instrument|participant), data = data.cat)
-main.model1 <- lmer(selected_major ~ poly(tuning_step, 1)*instrument + (1+instrument|participant), data = data.cat)
+# first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
+# random effects | random factor
+# random intercepts (1) and (+) random slopes for instrument (instrument) from participant to participant
+main.model3 <- lmer(selected_major ~ poly(tuning_step, 3) * instrument + (1 + instrument | participant), data = data.cat)
+main.model2 <- lmer(selected_major ~ poly(tuning_step, 2) * instrument + (1 + instrument | participant), data = data.cat)
+main.model1 <- lmer(selected_major ~ poly(tuning_step, 1) * instrument + (1 + instrument | participant), data = data.cat)
 
 anova(main.model3, main.model2) # strong evidence to keep cubic fit (versus just quadratic + linear)
 ```
@@ -68,18 +70,132 @@ anova(main.model3, main.model1) # strong evidence to keep cubic fit (versus just
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-anova(main.model2, main.model1) # Eva: strong evidence to keep quadratic fit (versus just linear) - I guess that's a given when cubic is sig?
+# won't need an anova comparing models 1 & 2 b/c if we include 3, 2 will for sure be included
+
+# logit regression
+main.model4 <- glmer(selected_major ~ poly(tuning_step, 3) * instrument + music_exp + (1 + instrument | participant), family = binomial(link = "logit"), data = data.cat)
 ```
 
-    ## Data: data.cat
-    ## Models:
-    ## main.model1: selected_major ~ poly(tuning_step, 1) * instrument + (1 + instrument | participant)
-    ## main.model2: selected_major ~ poly(tuning_step, 2) * instrument + (1 + instrument | participant)
-    ##             npar   AIC   BIC  logLik deviance  Chisq Df Pr(>Chisq)    
-    ## main.model1   26 10411 10598 -5179.4    10359                         
-    ## main.model2   31 10388 10610 -5162.8    10326 33.179  5  3.467e-06 ***
+    ## Warning: Some predictor variables are on very different scales: consider
+    ## rescaling
+
+    ## Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, :
+    ## Model failed to converge with max|grad| = 0.0850982 (tol = 0.002, component 1)
+
+    ## Warning in checkConv(attr(opt, "derivs"), opt$par, ctrl = control$checkConv, : Model is nearly unidentifiable: large eigenvalue ratio
+    ##  - Rescale variables?
+
+``` r
+summary(main.model4)
+```
+
+    ## Generalized linear mixed model fit by maximum likelihood (Laplace
+    ##   Approximation) [glmerMod]
+    ##  Family: binomial  ( logit )
+    ## Formula: selected_major ~ poly(tuning_step, 3) * instrument + music_exp +  
+    ##     (1 + instrument | participant)
+    ##    Data: data.cat
+    ## 
+    ##      AIC      BIC   logLik deviance df.resid 
+    ##   9769.9  10028.7  -4848.9   9697.9     9764 
+    ## 
+    ## Scaled residuals: 
+    ##      Min       1Q   Median       3Q      Max 
+    ## -11.9973  -0.5280   0.0988   0.5296   5.9003 
+    ## 
+    ## Random effects:
+    ##  Groups      Name                Variance Std.Dev. Corr                   
+    ##  participant (Intercept)         0.5283   0.7269                          
+    ##              instrumentpiano     1.1102   1.0537   -0.80                  
+    ##              instrumenttrumpet   0.5561   0.7457   -0.51  0.71            
+    ##              instrumentviolin    0.9332   0.9660   -0.62  0.67  0.61      
+    ##              instrumentxylophone 2.8771   1.6962   -0.67  0.78  0.51  0.52
+    ## Number of obs: 9800, groups:  participant, 49
+    ## 
+    ## Fixed effects:
+    ##                                             Estimate Std. Error z value
+    ## (Intercept)                                -0.478436   0.197487  -2.423
+    ## poly(tuning_step, 3)1                     129.600209   5.393401  24.029
+    ## poly(tuning_step, 3)2                      10.363136   7.473825   1.387
+    ## poly(tuning_step, 3)3                     -24.515484   5.345857  -4.586
+    ## instrumentpiano                             0.818031   0.172491   4.742
+    ## instrumenttrumpet                           0.711955   0.134780   5.282
+    ## instrumentviolin                            0.604698   0.161111   3.753
+    ## instrumentxylophone                         1.320084   0.258573   5.105
+    ## music_exp                                  -0.006868   0.007054  -0.974
+    ## poly(tuning_step, 3)1:instrumentpiano      15.397716   7.694437   2.001
+    ## poly(tuning_step, 3)2:instrumentpiano      13.987555   9.036739   1.548
+    ## poly(tuning_step, 3)3:instrumentpiano      -8.728300   7.852988  -1.111
+    ## poly(tuning_step, 3)1:instrumenttrumpet     5.174795   8.930976   0.579
+    ## poly(tuning_step, 3)2:instrumenttrumpet   -23.144965   9.222454  -2.510
+    ## poly(tuning_step, 3)3:instrumenttrumpet   -14.102574   7.585095  -1.859
+    ## poly(tuning_step, 3)1:instrumentviolin      6.310142   8.632063   0.731
+    ## poly(tuning_step, 3)2:instrumentviolin    -12.946616  11.667974  -1.110
+    ## poly(tuning_step, 3)3:instrumentviolin     -0.111609   7.534721  -0.015
+    ## poly(tuning_step, 3)1:instrumentxylophone  19.744420   8.433041   2.341
+    ## poly(tuning_step, 3)2:instrumentxylophone  -6.360808   9.623440  -0.661
+    ## poly(tuning_step, 3)3:instrumentxylophone -12.813894   8.325439  -1.539
+    ##                                           Pr(>|z|)    
+    ## (Intercept)                               0.015409 *  
+    ## poly(tuning_step, 3)1                      < 2e-16 ***
+    ## poly(tuning_step, 3)2                     0.165567    
+    ## poly(tuning_step, 3)3                     4.52e-06 ***
+    ## instrumentpiano                           2.11e-06 ***
+    ## instrumenttrumpet                         1.28e-07 ***
+    ## instrumentviolin                          0.000175 ***
+    ## instrumentxylophone                       3.30e-07 ***
+    ## music_exp                                 0.330290    
+    ## poly(tuning_step, 3)1:instrumentpiano     0.045376 *  
+    ## poly(tuning_step, 3)2:instrumentpiano     0.121657    
+    ## poly(tuning_step, 3)3:instrumentpiano     0.266369    
+    ## poly(tuning_step, 3)1:instrumenttrumpet   0.562305    
+    ## poly(tuning_step, 3)2:instrumenttrumpet   0.012086 *  
+    ## poly(tuning_step, 3)3:instrumenttrumpet   0.062992 .  
+    ## poly(tuning_step, 3)1:instrumentviolin    0.464772    
+    ## poly(tuning_step, 3)2:instrumentviolin    0.267178    
+    ## poly(tuning_step, 3)3:instrumentviolin    0.988182    
+    ## poly(tuning_step, 3)1:instrumentxylophone 0.019216 *  
+    ## poly(tuning_step, 3)2:instrumentxylophone 0.508631    
+    ## poly(tuning_step, 3)3:instrumentxylophone 0.123774    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## fit warnings:
+    ## Some predictor variables are on very different scales: consider rescaling
+    ## optimizer (Nelder_Mead) convergence code: 0 (OK)
+    ## Model failed to converge with max|grad| = 0.0850982 (tol = 0.002, component 1)
+    ## Model is nearly unidentifiable: large eigenvalue ratio
+    ##  - Rescale variables?
+
+``` r
+# turn log odds back to probability
+log_mod <- margins(main.model4, data = data.cat)
+log_mod
+```
+
+    ##  tuning_step music_exp instrumentpiano instrumenttrumpet instrumentviolin
+    ##       0.1014 -0.001071          0.1274            0.1224           0.1027
+    ##  instrumentxylophone
+    ##               0.1994
+
+``` r
+cat.emm_0 <- emmeans(main.model4, "instrument")
+pairs(cat.emm_0)
+```
+
+    ##  contrast            estimate    SE  df z.ratio p.value
+    ##  oboe - piano          -0.649 0.196 Inf  -3.319  0.0080
+    ##  oboe - trumpet        -0.991 0.166 Inf  -5.984  <.0001
+    ##  oboe - violin         -0.761 0.202 Inf  -3.773  0.0015
+    ##  oboe - xylophone      -1.397 0.275 Inf  -5.071  <.0001
+    ##  piano - trumpet       -0.342 0.156 Inf  -2.199  0.1801
+    ##  piano - violin        -0.112 0.167 Inf  -0.670  0.9629
+    ##  piano - xylophone     -0.748 0.199 Inf  -3.763  0.0016
+    ##  trumpet - violin       0.230 0.165 Inf   1.398  0.6288
+    ##  trumpet - xylophone   -0.405 0.242 Inf  -1.673  0.4506
+    ##  violin - xylophone    -0.636 0.243 Inf  -2.619  0.0670
+    ## 
+    ## Results are given on the log odds ratio (not the response) scale. 
+    ## P value adjustment: tukey method for comparing a family of 5 estimates
 
 ``` r
 # cat results from the selected cubic model
@@ -233,6 +349,8 @@ pairs(explicit.emm) # violin < all others except oboe; xylophone > oboe
     ## 
     ## P value adjustment: tukey method for comparing a family of 5 estimates
 
+### 3. Cat-rtg correlation plot
+
 ``` r
 # how do categorization results map onto explicit ratings? 
 # [aggregate = summarize (by mean) in dplyr]
@@ -244,8 +362,6 @@ cat.sum.wide <- dcast(cat.sum, participant ~ instrument)
 exp.sum.wide <- dcast(exp.sum, participant ~ instrument)
 cor.data <- cbind(cat.sum.wide[, c(2:6)], exp.sum.wide[, c(2:6)])
 ```
-
-### 3. Cat-rtg correlation plot
 
 ``` r
 names(cor.data) = c("Oboe C", "Piano C", "Trumpet C", "Violin C", "Xylophone C", "Oboe E", "Piano E", "Trumpet E", "Violin E", "Xylophone E")
@@ -312,8 +428,4 @@ efplot.main <- ggplot(eff.inst, aes(x = tuning_step, y = fit, color = instrument
 ``` r
 png("inst-cat-plot.png", height = 4, width = 5.5, res = 300, units = "in")
 efplot.main
-dev.off()
 ```
-
-    ## quartz_off_screen 
-    ##                 2
