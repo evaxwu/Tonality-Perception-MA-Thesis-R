@@ -5,38 +5,171 @@ date: "`r Sys.Date()`"
 output: github_document
 ---
 
-## Statistical Analyses
+```{r setup, include = FALSE}
+library(tidyverse)
+library(ggpubr)
+library(corrplot)
+library(rstatix)
+library(emmeans)
 
-Descriptives, exploratory plot
+data <- read_csv("all.csv")
+desc <- read_csv("descriptives.csv")
+```
+
+Very helpful [link](https://www.datanovia.com/en/lessons/anova-in-r/)!
+
+## Summary Statistics
 
 ```{r descr}
-# save data to be used
-all <- read_csv("pivoted_data.csv")
-cat_rtg <- read_csv("cat_rtg.csv")
-attach(cat_rtg)
-
+attach(data)
 # descriptives
-summary(cat_rtg)
-plot(instrument, pct_maj)
+summary(data)
+
+# marginal means 
+# instrument
+desc %>%
+  group_by(instrument) %>%
+  summarize(mean_pct_inst = mean(mean_pct),
+            sd_pct_inst = sd(mean_pct), # is this the right way to calculate sd? or should this be done in previous steps
+            mean_rtg_inst = mean(mean_rtg),
+            sd_rtg_inst = sd(mean_rtg))
+
+# tuning step
+desc %>%
+  group_by(tuning_step) %>%
+  summarize(mean_pct_tune = mean(mean_pct), 
+            sd_pct_tune = sd(mean_pct),
+            mean_rtg_tune = mean(mean_rtg),
+            sd_rtg_tune = sd(mean_rtg))
+
+# key
+desc %>%
+  group_by(chord) %>%
+  summarize(mean_pct_key = mean(mean_pct), 
+            sd_pct_key = sd(mean_pct),
+            mean_rtg_key = mean(mean_rtg),
+            sd_rtg_key = sd(mean_rtg))
+
+data %>%
+  group_by(instrument, tuning_step, chord) %>%
+  get_summary_stats(pct_maj, explicit_rtg, type = "mean_sd")
 ```
 
-Correlations b/w 1) instrument's presumed valence, 2) mean explicit rating, and 3) tuning step & percent of major categorization, 
-and 4)instrument's presumed valence & mean explicit rating
+## Visualization
 
-```{r cor}
-#cor(cat_rtg$inst_id, cat_rtg$pct_maj)
-#cor(cat_rtg$mean_rtg, cat_rtg$pct_maj)
-#cor(cat_rtg$tuning_step, cat$pct_maj)
-#cor(cat_rtg$inst_id, cat_rtg$mean_rtg)
+```{r graph}
+data %>% 
+  ggplot(aes(tuning_step, pct_maj, color = instrument)) +
+  geom_smooth(se = FALSE) +
+  facet_wrap(~chord) +
+  labs(title = "Proportion of major chord categorization across different instruments and tuning steps",
+       subtitle = "compared between the key of B and C",
+       x = "Tuning step (+0c ~ +100c)", y = "Proportion of major categorization") +
+  theme_bw()
+
+data %>% 
+  ggplot(aes(reorder(instrument, explicit_rtg), explicit_rtg, fill = instrument)) +
+  geom_col() +
+  facet_wrap(~chord) +
+  labs(title = "Mean explicit valence rating across different instruments",
+       subtitle = "compared between the key of B and C",
+       x = "Instrument", y = "Mean explicit valence rating") +
+  theme_bw()
 ```
 
-Logistic regression
+## Check assumptions
+
+### Outliers
+
+```{r outliers}
+# for cat
+data %>%
+  group_by(tuning_step, instrument, chord) %>%
+  identify_outliers(pct_maj) %>%
+  filter(is.extreme == TRUE)
+
+# for rtg
+data %>%
+  group_by(tuning_step, instrument, chord) %>%
+  identify_outliers(explicit_rtg) %>%
+  filter(is.extreme == TRUE)
+
+# why are there so many outliers? I don't think it makes sense; there's only 49 participants anyway
+```
+
+### Normality
+
+```{r}
+norm_model <- lm(pct_maj ~ instrument*poly(tuning_step, 3)*chord, data = data)
+# Create a QQ plot of residuals
+ggqqplot(residuals(norm_model))
+# Compute Shapiro-Wilk test of normality
+shapiro_test(residuals(norm_model))
+```
+
+### Homogeneity of variance
+
+```{r}
+data %>% levene_test(pct_maj ~ instrument*factor(tuning_step)*chord)
+```
+
+## ANOVA
+
+```{r}
+data %>% anova_test(pct_maj ~ instrument*tuning_step*chord)
+```
+
+## Post-hoc tests
+
+```{r post-hoc}
+# Group the data by instrument and fit simple two-way interaction 
+post_model <- lm(pct_maj ~ instrument*tuning_step*chord, data = data)
+data %>%
+  group_by(instrument) %>%
+  anova_test(pct_maj ~ tuning_step*chord, error = post_model)
+
+# p needs to < .01 in order to qualify for Bonferroni-corrected significant
+
+# pairwise comparisons of the effect of instruments
+data %>%
+  group_by(tuning_step, chord) %>%
+  emmeans_test(pct_maj ~ instrument, p.adjust.method = "bonferroni") %>%
+  select(-df, -p) # Remove details
+
+# pairwise comparisons of the effect of tuning_step on pct_maj b/w keys
+data %>%
+  group_by(chord) %>%
+  emmeans_test(pct_maj ~ tuning_step, p.adjust.method = "bonferroni") %>%
+  select(-df, -p) # Remove details
+```
+
+## Correlations b/w DV & other predictors
+
+```{r corr}
+cor.test(data$pct_maj, data$Inst)
+cor.test(data$pct_maj, data$Inst_yr)
+cor.test(data$pct_maj, data$music_exp)
+cor.test(data$pct_maj, data$Read) #*
+cor.test(data$pct_maj, data$headphone)
+cor.test(data$pct_maj, data$Age)
+cor.test(data$pct_maj, data$explicit_rtg) #***
+```
+
+Ability to read music and explicit valence rating were significantly correlated with percent of major categorization
+
+```{r corrplot}
+corrplot(cor(data %>%
+  select(pct_maj, explicit_rtg, practice_score, Age, 16:21), use = "complete.obs"), method = "color")
+# why NA?
+```
+
+## Logistic regression (wrong, should use selected_major as DV)
 
 1) Percent major ~ instrument & tuning step
 
 ```{r log-reg}
 #glm.fit <- glm(pct_maj ~ instrument + tuning_step, family = binomial) 
-# family= binomial tells r to run logistic regression
+# family = binomial tells r to run logistic regression
 #summary(glm.fit)
 ```
 
