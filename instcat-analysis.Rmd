@@ -12,8 +12,6 @@ library(effects)
 library(ordinal)
 library(emmeans)
 library(lmerTest)
-library(lme4) #*
-library(margins) #*
 library(reshape2) # to pivot wider
 library(corrplot)
 library(rstatix)
@@ -47,25 +45,13 @@ data.cat <- data %>%
 # first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
 # random effects | random factor
 # random intercepts (1) and (+) random slopes for instrument (instrument) from participant to participant
-main.model3 <- lmer(selected_major ~ poly(tuning_step, 3) * instrument + (1 + instrument | participant), data = data.cat)
-main.model2 <- lmer(selected_major ~ poly(tuning_step, 2) * instrument + (1 + instrument | participant), data = data.cat)
-main.model1 <- lmer(selected_major ~ poly(tuning_step, 1) * instrument + (1 + instrument | participant), data = data.cat)
+main.model3 <- glmer(selected_major ~ poly(tuning_step, 3) * instrument + (1 + instrument | participant), data = data.cat, family = binomial)
+#main.model2 <- glmer(selected_major ~ poly(tuning_step, 2) * instrument + (1 + instrument | participant), data = data.cat, family = binomial)
+#main.model1 <- glmer(selected_major ~ poly(tuning_step, 1) * instrument + (1 + instrument | participant), data = data.cat, family = binomial)
 
 anova(main.model3, main.model2) # strong evidence to keep cubic fit (versus just quadratic + linear)
 anova(main.model3, main.model1) # strong evidence to keep cubic fit (versus just linear)
 # won't need an anova comparing models 1 & 2 b/c if we include 3, 2 will for sure be included
-
-# logit regression
-main.model4 <- glmer(selected_major ~ poly(tuning_step, 3) * instrument + music_exp + (1 + instrument | participant), family = binomial(link = "logit"), data = data.cat)
-
-summary(main.model4)
-
-# turn log odds back to probability
-log_mod <- margins(main.model4, data = data.cat)
-log_mod
-
-cat.emm_0 <- emmeans(main.model4, "instrument")
-pairs(cat.emm_0)
 
 # cat results from the selected cubic model
 summary(main.model3)
@@ -83,6 +69,34 @@ summary(explicit.model) # clear differences in reported capacity for instruments
 explicit.emm <- emmeans(explicit.model, "instrument")
 pairs(explicit.emm) # violin < all others except oboe; xylophone > oboe
 ```
+
+```{r outliers_slope}
+slopes_data <- as.data.frame(data.cat$qualtrics_id) %>%
+  mutate(slopes = NA) %>%
+  rename(qualtrics_id = `data.cat$qualtrics_id`) %>%
+  filter(qualtrics_id != "participant") %>%
+  unique()
+
+for (i in slopes_data$qualtrics_id) {
+  data_filtered <- data.cat %>%
+    filter(qualtrics_id == i)
+  simple_model <- glm(selected_major ~ tuning_step, data = data_filtered, family = binomial)
+  slopes_data$slopes[slopes_data$qualtrics_id == i] = coef(simple_model)[[2]]
+}
+
+outliers_slope <- slopes_data %>%
+  identify_outliers(slopes)
+
+# examine outliers; they are a combination of 0's and 1's
+data.cat %>%
+  filter(qualtrics_id %in% outliers_slope$qualtrics_id)
+
+slopes_data %>%
+  ggplot(aes(slopes)) +
+  geom_histogram()
+```
+
+link for [logistic regression](http://www.sthda.com/english/articles/36-classification-methods-essentials/151-logistic-regression-essentials-in-r/)
 
 ### 3. Cat-rtg correlation plot 
 
@@ -103,7 +117,7 @@ names(cor.data) = c("Oboe C", "Piano C", "Trumpet C", "Violin C", "Xylophone C",
 corvalues <- cor(cor.data) #cor matrix
 
 col <- colorRampPalette(c("#4477AA",  "#77AADD", "#FFFFFF","#BB4444", "#EE9988"))
-corrplot(corvalues, method = "color", col=col(200),    
+corrplot(corvalues, method = "color", col = col(200),    
          type = "upper", 
          addCoef.col = "black", # Add coefficient of correlation
          tl.col = "black", tl.srt = 45, # Text label color and rotation
