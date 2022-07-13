@@ -16,7 +16,7 @@ data <- read_csv("all.csv")
 desc <- read_csv("descriptives.csv")
 ```
 
-Very helpful [link](https://www.datanovia.com/en/lessons/anova-in-r/)!
+Very helpful [link](https://www.datanovia.com/en/lessons/mixed-anova-in-r/)!
 
 ## Summary Statistics
 
@@ -68,6 +68,14 @@ data %>%
   theme_bw()
 
 data %>% 
+  ggplot(aes(tuning_step, pct_maj, color = chord)) +
+  geom_smooth(se = FALSE) +
+  facet_wrap(~instrument) +
+  labs(title = "Proportion of major chord categorization across different keys and tuning steps",
+       x = "Tuning step (+0c ~ +100c)", y = "Proportion of major categorization") +
+  theme_bw()
+
+data %>% 
   ggplot(aes(reorder(instrument, explicit_rtg), explicit_rtg, fill = instrument)) +
   geom_col() +
   facet_wrap(~chord) +
@@ -84,27 +92,52 @@ data %>%
 ```{r outliers}
 # for cat
 data %>%
-  group_by(tuning_step, instrument, chord) %>%
-  identify_outliers(pct_maj) %>%
-  filter(is.extreme == TRUE)
+  group_by(qualtrics_id) %>%
+  summarize(mean_pct = mean(pct_maj)) %>%
+  ggplot(aes(mean_pct)) +
+  geom_histogram(color = "white")
+
+data %>%
+  group_by(qualtrics_id) %>%
+  summarize(mean_pct = mean(pct_maj)) %>%
+  identify_outliers(mean_pct)
 
 # for rtg
 data %>%
-  group_by(tuning_step, instrument, chord) %>%
-  identify_outliers(explicit_rtg) %>%
-  filter(is.extreme == TRUE)
+  group_by(qualtrics_id) %>%
+  summarize(mean_rtg = mean(explicit_rtg)) %>%
+  ggplot(aes(mean_rtg)) +
+  geom_histogram(color = "white")
 
-# why are there so many outliers? I don't think it makes sense; there's only 49 participants anyway
+data %>%
+  group_by(qualtrics_id) %>%
+  summarize(mean_rtg = mean(explicit_rtg)) %>%
+  identify_outliers(mean_rtg)
+
+# examine outliers
+data %>%
+  filter(qualtrics_id == 1588756489 | qualtrics_id == 6323213291 | qualtrics_id == 6444402078) %>%
+  select(qualtrics_id, instrument, explicit_rtg) %>%
+  unique()
+
+# ignore b/c not extreme
 ```
 
 ### Normality
 
 ```{r}
-norm_model <- lm(pct_maj ~ instrument*poly(tuning_step, 3)*chord, data = data)
+norm_model <- lm(pct_maj ~ instrument*tuning_step*chord, data = data)
 # Create a QQ plot of residuals
 ggqqplot(residuals(norm_model))
 # Compute Shapiro-Wilk test of normality
 shapiro_test(residuals(norm_model))
+
+data %>%
+  group_by(instrument, tuning_step, chord) %>%
+  shapiro_test(pct_maj)
+
+ggqqplot(data, "pct_maj", ggtheme = theme_bw()) +
+  facet_grid(tuning_step ~ instrument, labeller = "label_both")
 ```
 
 ### Homogeneity of variance
@@ -113,15 +146,56 @@ shapiro_test(residuals(norm_model))
 data %>% levene_test(pct_maj ~ instrument*factor(tuning_step)*chord)
 ```
 
+No need to transform for assumption violations b/c ANOVA is robust for these issues. Just report a Greenhouse-Geisser correction.
+
+multiply the Greenhouse–Geisser estimate of epsilon to the degrees of freedom used to 
+calculate the F critical value
+
+The assumption of sphericity will be automatically checked during the computation of the ANOVA test using the R function anova_test() [rstatix package]. The Mauchly’s test is internally used to assess the sphericity assumption.
+
+By using the function get_anova_table() [rstatix] to extract the ANOVA table, the Greenhouse-Geisser sphericity correction is automatically applied to factors violating the sphericity assumption.
+
 ## ANOVA
 
 ```{r}
-data %>% anova_test(pct_maj ~ instrument*tuning_step*chord)
+res.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument, tuning_step), between = chord)
+get_anova_table(res.aov) # sphericity violated but corrected w/ GG
+
+# A significant two-way interaction can be followed up by a simple main effect analysis, 
+# which can be followed up by simple pairwise comparisons if significant.
 ```
 
 ## Post-hoc tests
 
 ```{r post-hoc}
+inst.effect <- data %>%
+  group_by(tuning_step, chord) %>%
+  anova_test(dv = pct_maj, wid = qualtrics_id, within = instrument)
+
+get_anova_table(inst.effect)
+
+tune.effect <- data %>%
+  group_by(instrument, chord) %>%
+  anova_test(dv = pct_maj, wid = qualtrics_id, within = tuning_step)
+
+get_anova_table(tune.effect)
+
+chord.effect <- data %>%
+  group_by(instrument, tuning_step) %>%
+  anova_test(dv = pct_maj, wid = qualtrics_id, between = chord)
+
+get_anova_table(chord.effect)
+
+anova_test(data = data %>% filter(chord == "B"), dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument, tuning_step))
+
+anova_test(data = data %>% filter(tuning_step == 1), dv = pct_maj, wid = qualtrics_id,
+  within = instrument, between = chord)
+
+anova_test(data = data %>% filter(chord == "C"), dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument, tuning_step))
+
 # Group the data by instrument and fit simple two-way interaction 
 post_model <- lm(pct_maj ~ instrument*tuning_step*chord, data = data)
 data %>%
