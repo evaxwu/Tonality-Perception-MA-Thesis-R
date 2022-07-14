@@ -1,7 +1,7 @@
 Eva Analyses
 ================
 Eva Wu
-2022-07-13
+2022-07-14
 
 Very helpful
 [link](https://www.datanovia.com/en/lessons/mixed-anova-in-r/)!
@@ -9,134 +9,61 @@ Very helpful
 ## Summary Statistics
 
 ``` r
-# descriptives
-summary(data)
-```
-
-    ##   qualtrics_id        instrument         tuning_step    chord          
-    ##  Min.   :1.044e+09   Length:1225        Min.   :1    Length:1225       
-    ##  1st Qu.:2.707e+09   Class :character   1st Qu.:2    Class :character  
-    ##  Median :4.476e+09   Mode  :character   Median :3    Mode  :character  
-    ##  Mean   :4.802e+09                      Mean   :3                      
-    ##  3rd Qu.:6.783e+09                      3rd Qu.:4                      
-    ##  Max.   :9.969e+09                      Max.   :5                      
-    ##                                                                        
-    ##     pct_maj        explicit_rtg   participant        passed_practice
-    ##  Min.   :0.0000   Min.   :1.000   Length:1225        Min.   :1      
-    ##  1st Qu.:0.1250   1st Qu.:2.000   Class :character   1st Qu.:1      
-    ##  Median :0.5000   Median :3.000   Mode  :character   Median :1      
-    ##  Mean   :0.5041   Mean   :2.535                      Mean   :1      
-    ##  3rd Qu.:0.8750   3rd Qu.:3.000                      3rd Qu.:1      
-    ##  Max.   :1.0000   Max.   :4.000                      Max.   :1      
-    ##                                                                     
-    ##  block_passed_practice practice_score       Age           Gender         
-    ##  Min.   :1.000         Min.   : 8.00   Min.   :18.00   Length:1225       
-    ##  1st Qu.:1.000         1st Qu.:11.00   1st Qu.:19.00   Class :character  
-    ##  Median :1.000         Median :12.00   Median :20.00   Mode  :character  
-    ##  Mean   :1.041         Mean   :11.18   Mean   :20.14                     
-    ##  3rd Qu.:1.000         3rd Qu.:12.00   3rd Qu.:20.25                     
-    ##  Max.   :2.000         Max.   :12.00   Max.   :32.00                     
-    ##                                        NA's   :125                       
-    ##      Year           Year_6_TEXT           Major                Inst       
-    ##  Length:1225        Length:1225        Length:1225        Min.   :0.0000  
-    ##  Class :character   Class :character   Class :character   1st Qu.:1.0000  
-    ##  Mode  :character   Mode  :character   Mode  :character   Median :1.0000  
-    ##                                                           Mean   :0.8367  
-    ##                                                           3rd Qu.:1.0000  
-    ##                                                           Max.   :1.0000  
-    ##                                                                           
-    ##     Inst_yr          Read          music_exp       headphone     
-    ##  Min.   : 1.0   Min.   :0.0000   Min.   : 1.00   Min.   :0.0000  
-    ##  1st Qu.: 4.0   1st Qu.:0.0000   1st Qu.:15.70   1st Qu.:1.0000  
-    ##  Median : 6.0   Median :1.0000   Median :22.30   Median :1.0000  
-    ##  Mean   : 7.5   Mean   :0.6122   Mean   :22.39   Mean   :0.8367  
-    ##  3rd Qu.:10.0   3rd Qu.:1.0000   3rd Qu.:27.90   3rd Qu.:1.0000  
-    ##  Max.   :23.0   Max.   :1.0000   Max.   :50.00   Max.   :1.0000  
-    ##  NA's   :325                                                     
-    ##    test_corr    
-    ##  Min.   :0.000  
-    ##  1st Qu.:4.000  
-    ##  Median :6.000  
-    ##  Mean   :4.837  
-    ##  3rd Qu.:6.000  
-    ##  Max.   :6.000  
-    ## 
-
-``` r
-# marginal means 
-# instrument
-desc %>%
-  group_by(instrument) %>%
-  summarize(mean_pct_inst = mean(mean_pct),
-            sd_pct_inst = sd(mean_pct), # is this the right way to calculate sd? or should this be done in previous steps
-            mean_rtg_inst = mean(mean_rtg),
-            sd_rtg_inst = sd(mean_rtg))
-```
-
-    ## # A tibble: 5 × 5
-    ##   instrument mean_pct_inst sd_pct_inst mean_rtg_inst sd_rtg_inst
-    ##   <chr>              <dbl>       <dbl>         <dbl>       <dbl>
-    ## 1 oboe               0.393       0.278          2.24      0.0273
-    ## 2 piano              0.521       0.311          2.76      0.157 
-    ## 3 trumpet            0.516       0.300          2.71      0.0185
-    ## 4 violin             0.494       0.295          2.01      0.130 
-    ## 5 xylophone          0.591       0.277          2.96      0.0405
-
-``` r
-# tuning step
-desc %>%
-  group_by(tuning_step) %>%
-  summarize(mean_pct_tune = mean(mean_pct), 
-            sd_pct_tune = sd(mean_pct),
-            mean_rtg_tune = mean(mean_rtg),
-            sd_rtg_tune = sd(mean_rtg))
-```
-
-    ## # A tibble: 5 × 5
-    ##   tuning_step mean_pct_tune sd_pct_tune mean_rtg_tune sd_rtg_tune
-    ##         <dbl>         <dbl>       <dbl>         <dbl>       <dbl>
-    ## 1           1         0.188      0.0905          2.54       0.386
-    ## 2           2         0.236      0.0980          2.54       0.386
-    ## 3           3         0.470      0.118           2.54       0.386
-    ## 4           4         0.790      0.0993          2.54       0.386
-    ## 5           5         0.830      0.0826          2.54       0.386
-
-``` r
-# key
-desc %>%
-  group_by(chord) %>%
-  summarize(mean_pct_key = mean(mean_pct), 
-            sd_pct_key = sd(mean_pct),
-            mean_rtg_key = mean(mean_rtg),
-            sd_rtg_key = sd(mean_rtg))
-```
-
-    ## # A tibble: 2 × 5
-    ##   chord mean_pct_key sd_pct_key mean_rtg_key sd_rtg_key
-    ##   <chr>        <dbl>      <dbl>        <dbl>      <dbl>
-    ## 1 B            0.52       0.234         2.48      0.375
-    ## 2 C            0.486      0.337         2.59      0.363
-
-``` r
+# mean & sd for instrument
 data %>%
-  group_by(instrument, tuning_step, chord) %>%
-  get_summary_stats(pct_maj, explicit_rtg, type = "mean_sd")
+  group_by(instrument) %>%
+  get_summary_stats(pct_maj, type = "mean_sd") %>%
+  select(-variable, -n)
 ```
 
-    ## # A tibble: 100 × 7
-    ##    instrument tuning_step chord variable         n  mean    sd
-    ##    <chr>            <dbl> <chr> <chr>        <dbl> <dbl> <dbl>
-    ##  1 oboe                 1 B     explicit_rtg    26 2.27  0.724
-    ##  2 oboe                 1 B     pct_maj         26 0.183 0.232
-    ##  3 oboe                 1 C     explicit_rtg    23 2.22  0.6  
-    ##  4 oboe                 1 C     pct_maj         23 0.038 0.07 
-    ##  5 oboe                 2 B     explicit_rtg    26 2.27  0.724
-    ##  6 oboe                 2 B     pct_maj         26 0.183 0.201
-    ##  7 oboe                 2 C     explicit_rtg    23 2.22  0.6  
-    ##  8 oboe                 2 C     pct_maj         23 0.12  0.116
-    ##  9 oboe                 3 B     explicit_rtg    26 2.27  0.724
-    ## 10 oboe                 3 B     pct_maj         26 0.389 0.243
-    ## # … with 90 more rows
+    ## # A tibble: 5 × 3
+    ##   instrument  mean    sd
+    ##   <chr>      <dbl> <dbl>
+    ## 1 oboe       0.394 0.357
+    ## 2 piano      0.521 0.373
+    ## 3 trumpet    0.516 0.368
+    ## 4 violin     0.496 0.367
+    ## 5 xylophone  0.593 0.384
+
+``` r
+# mean & sd for tuning step
+data %>%
+  group_by(tuning_step) %>%
+  get_summary_stats(pct_maj, type = "mean_sd") %>%
+  select(-variable, -n)
+```
+
+    ## # A tibble: 5 × 3
+    ##   tuning_step  mean    sd
+    ##         <dbl> <dbl> <dbl>
+    ## 1           1 0.191 0.258
+    ## 2           2 0.24  0.266
+    ## 3           3 0.474 0.294
+    ## 4           4 0.788 0.255
+    ## 5           5 0.827 0.248
+
+``` r
+# mean & sd for each condition
+data %>%
+  group_by(instrument, tuning_step) %>%
+  get_summary_stats(pct_maj, type = "mean_sd") %>%
+  select(-variable, -n)
+```
+
+    ## # A tibble: 25 × 4
+    ##    instrument tuning_step  mean    sd
+    ##    <chr>            <dbl> <dbl> <dbl>
+    ##  1 oboe                 1 0.115 0.189
+    ##  2 oboe                 2 0.153 0.168
+    ##  3 oboe                 3 0.319 0.238
+    ##  4 oboe                 4 0.643 0.308
+    ##  5 oboe                 5 0.74  0.323
+    ##  6 piano                1 0.217 0.266
+    ##  7 piano                2 0.237 0.244
+    ##  8 piano                3 0.429 0.276
+    ##  9 piano                4 0.837 0.195
+    ## 10 piano                5 0.888 0.198
+    ## # … with 15 more rows
 
 ## Visualization
 
@@ -144,9 +71,7 @@ data %>%
 data %>% 
   ggplot(aes(tuning_step, pct_maj, color = instrument)) +
   geom_smooth(se = FALSE) +
-  facet_wrap(~chord) +
-  labs(title = "Proportion of major chord categorization across different instruments and tuning steps",
-       subtitle = "compared between the key of B and C",
+  labs(title = "Proportion of major chord categorization \nacross different instruments and tuning steps",
        x = "Tuning step (+0c ~ +100c)", y = "Proportion of major categorization") +
   theme_bw()
 ```
@@ -382,6 +307,34 @@ get_anova_table(aov)
     ## 2            tuning_step  1.55  74.48 104.352 8.42e-20     * 0.522
     ## 3 instrument:tuning_step 10.64 510.95   4.078 1.23e-05     * 0.015
 
+``` r
+aov
+```
+
+    ## ANOVA Table (type III tests)
+    ## 
+    ## $ANOVA
+    ##                   Effect DFn DFd       F        p p<.05   ges
+    ## 1             instrument   4 192  14.056 4.45e-10     * 0.060
+    ## 2            tuning_step   4 192 104.352 4.68e-47     * 0.522
+    ## 3 instrument:tuning_step  16 768   4.078 1.50e-07     * 0.015
+    ## 
+    ## $`Mauchly's Test for Sphericity`
+    ##                   Effect     W        p p<.05
+    ## 1             instrument 0.475 7.33e-05     *
+    ## 2            tuning_step 0.015 3.00e-37     *
+    ## 3 instrument:tuning_step 0.013 4.00e-03     *
+    ## 
+    ## $`Sphericity Corrections`
+    ##                   Effect   GGe        DF[GG]    p[GG] p[GG]<.05   HFe
+    ## 1             instrument 0.697  2.79, 133.91 1.15e-07         * 0.745
+    ## 2            tuning_step 0.388   1.55, 74.48 8.42e-20         * 0.398
+    ## 3 instrument:tuning_step 0.665 10.64, 510.95 1.23e-05         * 0.869
+    ##          DF[HF]    p[HF] p[HF]<.05
+    ## 1  2.98, 143.02 4.79e-08         *
+    ## 2   1.59, 76.51 2.85e-20         *
+    ## 3 13.91, 667.66 8.33e-07         *
+
 ## Post-hoc tests
 
 ``` r
@@ -389,7 +342,7 @@ get_anova_table(aov)
 data %>%
   pairwise_t_test(
     pct_maj ~ instrument, paired = TRUE, 
-    p.adjust.method = "bonferroni"
+    p.adjust.method = "hommel"
     ) %>% 
   select(-`.y.`, -p)
 ```
@@ -397,23 +350,23 @@ data %>%
     ## # A tibble: 10 × 8
     ##    group1  group2       n1    n2 statistic    df    p.adj p.adj.signif
     ##    <chr>   <chr>     <int> <int>     <dbl> <dbl>    <dbl> <chr>       
-    ##  1 oboe    piano       245   245    -7.57    244 7.77e-12 ****        
-    ##  2 oboe    trumpet     245   245    -8.29    244 7.65e-14 ****        
-    ##  3 oboe    violin      245   245    -6.63    244 2.17e- 9 ****        
+    ##  1 oboe    piano       245   245    -7.57    244 6.22e-12 ****        
+    ##  2 oboe    trumpet     245   245    -8.29    244 6.88e-14 ****        
+    ##  3 oboe    violin      245   245    -6.63    244 1.52e- 9 ****        
     ##  4 oboe    xylophone   245   245   -10.1     244 3.21e-19 ****        
-    ##  5 piano   trumpet     245   245     0.362   244 1   e+ 0 ns          
-    ##  6 piano   violin      245   245     1.72    244 8.73e- 1 ns          
-    ##  7 piano   xylophone   245   245    -4.42    244 1.47e- 4 ***         
-    ##  8 trumpet violin      245   245     1.37    244 1   e+ 0 ns          
-    ##  9 trumpet xylophone   245   245    -4.23    244 3.33e- 4 ***         
-    ## 10 violin  xylophone   245   245    -5.45    244 1.25e- 6 ****
+    ##  5 piano   trumpet     245   245     0.362   244 7.18e- 1 ns          
+    ##  6 piano   violin      245   245     1.72    244 2.56e- 1 ns          
+    ##  7 piano   xylophone   245   245    -4.42    244 7.35e- 5 ****        
+    ##  8 trumpet violin      245   245     1.37    244 3.42e- 1 ns          
+    ##  9 trumpet xylophone   245   245    -4.23    244 1.33e- 4 ***         
+    ## 10 violin  xylophone   245   245    -5.45    244 7.5 e- 7 ****
 
 ``` r
 # post hoc for main eff of tuning
 data %>%
   pairwise_t_test(
     pct_maj ~ tuning_step, paired = TRUE, 
-    p.adjust.method = "bonferroni"
+    p.adjust.method = "hommel"
     ) %>% 
   select(-`.y.`, -p)
 ```
@@ -421,24 +374,41 @@ data %>%
     ## # A tibble: 10 × 8
     ##    group1 group2    n1    n2 statistic    df    p.adj p.adj.signif
     ##    <chr>  <chr>  <int> <int>     <dbl> <dbl>    <dbl> <chr>       
-    ##  1 1      2        245   245     -4.46   244 1.28e- 4 ***         
-    ##  2 1      3        245   245    -14.3    244 3.98e-33 ****        
-    ##  3 1      4        245   245    -24.3    244 5.03e-66 ****        
+    ##  1 1      2        245   245     -4.46   244 2.56e- 5 ****        
+    ##  2 1      3        245   245    -14.3    244 1.59e-33 ****        
+    ##  3 1      4        245   245    -24.3    244 4.53e-66 ****        
     ##  4 1      5        245   245    -24.9    244 4.84e-68 ****        
-    ##  5 2      3        245   245    -11.7    244 2.39e-24 ****        
-    ##  6 2      4        245   245    -21.7    244 9.88e-58 ****        
-    ##  7 2      5        245   245    -22.4    244 3.39e-60 ****        
-    ##  8 3      4        245   245    -15.3    244 2.09e-36 ****        
-    ##  9 3      5        245   245    -15.2    244 4.51e-36 ****        
-    ## 10 4      5        245   245     -3.48   244 6   e- 3 **
+    ##  5 2      3        245   245    -11.7    244 7.17e-25 ****        
+    ##  6 2      4        245   245    -21.7    244 6.92e-58 ****        
+    ##  7 2      5        245   245    -22.4    244 2.71e-60 ****        
+    ##  8 3      4        245   245    -15.3    244 1.25e-36 ****        
+    ##  9 3      5        245   245    -15.2    244 2.26e-36 ****        
+    ## 10 4      5        245   245     -3.48   244 5.88e- 4 ***
 
 ``` r
-# post hoc for int
+# post hoc for int pt 1
+get_anova_table(data %>%
+  group_by(tuning_step) %>%
+  anova_test(dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument)))
+```
+
+    ## # A tibble: 5 × 8
+    ##   tuning_step Effect       DFn   DFd     F            p `p<.05`   ges
+    ##         <dbl> <chr>      <dbl> <dbl> <dbl>        <dbl> <chr>   <dbl>
+    ## 1           1 instrument  2.69  129.  6.63 0.000556     *       0.051
+    ## 2           2 instrument  3.09  148.  9.3  0.00000899   *       0.056
+    ## 3           3 instrument  4     192  11.5  0.0000000208 *       0.098
+    ## 4           4 instrument  3.24  155. 12.6  0.000000083  *       0.102
+    ## 5           5 instrument  3.16  152.  6.61 0.000242     *       0.048
+
+``` r
+# pairwise for int
 data %>%
   group_by(tuning_step) %>%
   pairwise_t_test(
     pct_maj ~ instrument, paired = TRUE, 
-    p.adjust.method = "BH" # try different options
+    p.adjust.method = "hommel" # try different options
     ) %>% 
   select(-`.y.`, -p)
 ```
@@ -446,20 +416,21 @@ data %>%
     ## # A tibble: 50 × 9
     ##    tuning_step group1  group2       n1    n2 statistic    df p.adj p.adj.signif
     ##          <dbl> <chr>   <chr>     <int> <int>     <dbl> <dbl> <dbl> <chr>       
-    ##  1           1 oboe    piano        49    49    -2.94     48 0.021 *           
-    ##  2           1 oboe    trumpet      49    49    -2.45     48 0.036 *           
-    ##  3           1 oboe    violin       49    49    -1.61     48 0.144 ns          
+    ##  1           1 oboe    piano        49    49    -2.94     48 0.04  *           
+    ##  2           1 oboe    trumpet      49    49    -2.45     48 0.103 ns          
+    ##  3           1 oboe    violin       49    49    -1.61     48 0.322 ns          
     ##  4           1 oboe    xylophone    49    49    -3.91     48 0.003 **          
-    ##  5           1 piano   trumpet      49    49     1.26     48 0.239 ns          
-    ##  6           1 piano   violin       49    49     1.60     48 0.144 ns          
-    ##  7           1 piano   xylophone    49    49    -2.18     48 0.057 ns          
+    ##  5           1 piano   trumpet      49    49     1.26     48 0.43  ns          
+    ##  6           1 piano   violin       49    49     1.60     48 0.322 ns          
+    ##  7           1 piano   xylophone    49    49    -2.18     48 0.172 ns          
     ##  8           1 trumpet violin       49    49     0.365    48 0.717 ns          
-    ##  9           1 trumpet xylophone    49    49    -2.50     48 0.036 *           
-    ## 10           1 violin  xylophone    49    49    -2.86     48 0.021 *           
+    ##  9           1 trumpet xylophone    49    49    -2.50     48 0.095 ns          
+    ## 10           1 violin  xylophone    49    49    -2.86     48 0.048 *           
     ## # … with 40 more rows
 
 ``` r
 # table for significant rows to present
+# chose Hommel correction method b/c neither too stringent nor too lenient
 ```
 
 ## Correlations b/w DV & other predictors

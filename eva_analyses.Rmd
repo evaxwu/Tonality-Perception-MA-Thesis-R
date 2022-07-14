@@ -20,38 +20,24 @@ Very helpful [link](https://www.datanovia.com/en/lessons/mixed-anova-in-r/)!
 
 ## Summary Statistics
 
-```{r descr}
-# descriptives
-summary(data)
-
-# marginal means 
-# instrument
-desc %>%
-  group_by(instrument) %>%
-  summarize(mean_pct_inst = mean(mean_pct),
-            sd_pct_inst = sd(mean_pct), # is this the right way to calculate sd? or should this be done in previous steps
-            mean_rtg_inst = mean(mean_rtg),
-            sd_rtg_inst = sd(mean_rtg))
-
-# tuning step
-desc %>%
-  group_by(tuning_step) %>%
-  summarize(mean_pct_tune = mean(mean_pct), 
-            sd_pct_tune = sd(mean_pct),
-            mean_rtg_tune = mean(mean_rtg),
-            sd_rtg_tune = sd(mean_rtg))
-
-# key
-desc %>%
-  group_by(chord) %>%
-  summarize(mean_pct_key = mean(mean_pct), 
-            sd_pct_key = sd(mean_pct),
-            mean_rtg_key = mean(mean_rtg),
-            sd_rtg_key = sd(mean_rtg))
-
+```{r descriptives}
+# mean & sd for instrument
 data %>%
-  group_by(instrument, tuning_step, chord) %>%
-  get_summary_stats(pct_maj, explicit_rtg, type = "mean_sd")
+  group_by(instrument) %>%
+  get_summary_stats(pct_maj, type = "mean_sd") %>%
+  select(-variable, -n)
+
+# mean & sd for tuning step
+data %>%
+  group_by(tuning_step) %>%
+  get_summary_stats(pct_maj, type = "mean_sd") %>%
+  select(-variable, -n)
+
+# mean & sd for each condition
+data %>%
+  group_by(instrument, tuning_step) %>%
+  get_summary_stats(pct_maj, type = "mean_sd") %>%
+  select(-variable, -n)
 ```
 
 ## Visualization
@@ -60,9 +46,7 @@ data %>%
 data %>% 
   ggplot(aes(tuning_step, pct_maj, color = instrument)) +
   geom_smooth(se = FALSE) +
-  facet_wrap(~chord) +
-  labs(title = "Proportion of major chord categorization across different instruments and tuning steps",
-       subtitle = "compared between the key of B and C",
+  labs(title = "Proportion of major chord categorization \nacross different instruments and tuning steps",
        x = "Tuning step (+0c ~ +100c)", y = "Proportion of major categorization") +
   theme_bw()
 
@@ -166,6 +150,7 @@ get_anova_table(mus.aov)
 aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
   within = c(instrument, tuning_step))
 get_anova_table(aov)
+aov
 ```
 
 ## Post-hoc tests
@@ -175,7 +160,7 @@ get_anova_table(aov)
 data %>%
   pairwise_t_test(
     pct_maj ~ instrument, paired = TRUE, 
-    p.adjust.method = "bonferroni"
+    p.adjust.method = "hommel"
     ) %>% 
   select(-`.y.`, -p)
 
@@ -183,20 +168,27 @@ data %>%
 data %>%
   pairwise_t_test(
     pct_maj ~ tuning_step, paired = TRUE, 
-    p.adjust.method = "bonferroni"
+    p.adjust.method = "hommel"
     ) %>% 
   select(-`.y.`, -p)
 
-# post hoc for int
+# post hoc for int pt 1
+get_anova_table(data %>%
+  group_by(tuning_step) %>%
+  anova_test(dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument)))
+
+# pairwise for int
 data %>%
   group_by(tuning_step) %>%
   pairwise_t_test(
     pct_maj ~ instrument, paired = TRUE, 
-    p.adjust.method = "BH" # try different options
+    p.adjust.method = "hommel" # try different options
     ) %>% 
   select(-`.y.`, -p)
 
 # table for significant rows to present
+# chose Hommel correction method b/c neither too stringent nor too lenient
 ```
 
 ## Correlations b/w DV & other predictors
