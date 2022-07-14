@@ -21,7 +21,6 @@ Very helpful [link](https://www.datanovia.com/en/lessons/mixed-anova-in-r/)!
 ## Summary Statistics
 
 ```{r descr}
-attach(data)
 # descriptives
 summary(data)
 
@@ -91,11 +90,9 @@ data %>%
 
 ```{r outliers}
 # for cat
-data %>%
-  group_by(qualtrics_id) %>%
-  summarize(mean_pct = mean(pct_maj)) %>%
-  ggplot(aes(mean_pct)) +
-  geom_histogram(color = "white")
+data_summary <- data %>%
+  group_by(qualtrics_id, tuning_step) %>%
+  summarize(mean_pct = mean(pct_maj))
 
 data %>%
   group_by(qualtrics_id) %>%
@@ -126,12 +123,7 @@ data %>%
 ### Normality
 
 ```{r}
-norm_model <- lm(pct_maj ~ instrument*tuning_step*chord, data = data)
-# Create a QQ plot of residuals
-ggqqplot(residuals(norm_model))
-# Compute Shapiro-Wilk test of normality
-shapiro_test(residuals(norm_model))
-
+# violated but fine
 data %>%
   group_by(instrument, tuning_step, chord) %>%
   shapiro_test(pct_maj)
@@ -146,75 +138,65 @@ ggqqplot(data, "pct_maj", ggtheme = theme_bw()) +
 data %>% levene_test(pct_maj ~ instrument*factor(tuning_step)*chord)
 ```
 
-No need to transform for assumption violations b/c ANOVA is robust for these issues. Just report a Greenhouse-Geisser correction.
-
-multiply the Greenhouse–Geisser estimate of epsilon to the degrees of freedom used to 
-calculate the F critical value
+No need to transform for assumption violations b/c ANOVA is robust for these issues. Just report a Greenhouse-Geisser correction (epsilon * df).
 
 The assumption of sphericity will be automatically checked during the computation of the ANOVA test using the R function anova_test() [rstatix package]. The Mauchly’s test is internally used to assess the sphericity assumption.
 
-By using the function get_anova_table() [rstatix] to extract the ANOVA table, the Greenhouse-Geisser sphericity correction is automatically applied to factors violating the sphericity assumption.
+By using the function get_anova_table() [rstatix] to extract the ANOVA table, the Greenhouse-Geisser correction is automatically applied to factors violating the sphericity assumption.
 
 ## ANOVA
 
 ```{r}
-res.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
+chord.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
   within = c(instrument, tuning_step), between = chord)
-get_anova_table(res.aov) # sphericity violated but corrected w/ GG
+get_anova_table(chord.aov) # sphericity violated but corrected w/ GG
+
+# no main effect of chord / 3-way int (no change in main effects/int of interest), so left it out for the sake of parsimony
+
+mus.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument, tuning_step), covariate = Inst_yr)
+get_anova_table(mus.aov)
+
+# adding musical training doesn't change effects of main interest, same as chord
+# int may be due to steeper slope for more trained participants, but has nothing to do with our hypotheses
 
 # A significant two-way interaction can be followed up by a simple main effect analysis, 
 # which can be followed up by simple pairwise comparisons if significant.
+
+aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument, tuning_step))
+get_anova_table(aov)
 ```
 
 ## Post-hoc tests
 
 ```{r post-hoc}
-inst.effect <- data %>%
-  group_by(tuning_step, chord) %>%
-  anova_test(dv = pct_maj, wid = qualtrics_id, within = instrument)
-
-get_anova_table(inst.effect)
-
-tune.effect <- data %>%
-  group_by(instrument, chord) %>%
-  anova_test(dv = pct_maj, wid = qualtrics_id, within = tuning_step)
-
-get_anova_table(tune.effect)
-
-chord.effect <- data %>%
-  group_by(instrument, tuning_step) %>%
-  anova_test(dv = pct_maj, wid = qualtrics_id, between = chord)
-
-get_anova_table(chord.effect)
-
-anova_test(data = data %>% filter(chord == "B"), dv = pct_maj, wid = qualtrics_id,
-  within = c(instrument, tuning_step))
-
-anova_test(data = data %>% filter(tuning_step == 1), dv = pct_maj, wid = qualtrics_id,
-  within = instrument, between = chord)
-
-anova_test(data = data %>% filter(chord == "C"), dv = pct_maj, wid = qualtrics_id,
-  within = c(instrument, tuning_step))
-
-# Group the data by instrument and fit simple two-way interaction 
-post_model <- lm(pct_maj ~ instrument*tuning_step*chord, data = data)
+# post hoc for main eff of instrument
 data %>%
-  group_by(instrument) %>%
-  anova_test(pct_maj ~ tuning_step*chord, error = post_model)
+  pairwise_t_test(
+    pct_maj ~ instrument, paired = TRUE, 
+    p.adjust.method = "bonferroni"
+    ) %>% 
+  select(-`.y.`, -p)
 
-# p needs to < .01 in order to qualify for Bonferroni-corrected significant
-
-# pairwise comparisons of the effect of instruments
+# post hoc for main eff of tuning
 data %>%
-  group_by(tuning_step, chord) %>%
-  emmeans_test(pct_maj ~ instrument, p.adjust.method = "bonferroni") %>%
-  select(-df, -p) # Remove details
+  pairwise_t_test(
+    pct_maj ~ tuning_step, paired = TRUE, 
+    p.adjust.method = "bonferroni"
+    ) %>% 
+  select(-`.y.`, -p)
 
-# pairwise comparisons of the effect of tuning_step on pct_maj b/w keys
+# post hoc for int
 data %>%
-  group_by(chord) %>%
-  emmeans_test(pct_maj ~ tuning_step, p.adjust.method = "bonferroni") %>%
-  select(-df, -p) # Remove details
+  group_by(tuning_step) %>%
+  pairwise_t_test(
+    pct_maj ~ instrument, paired = TRUE, 
+    p.adjust.method = "BH" # try different options
+    ) %>% 
+  select(-`.y.`, -p)
+
+# table for significant rows to present
 ```
 
 ## Correlations b/w DV & other predictors
