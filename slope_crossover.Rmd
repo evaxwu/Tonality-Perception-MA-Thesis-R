@@ -1,0 +1,161 @@
+---
+title: "Calculating Individual Slopes and Crossovers"
+author: "Eva Wu"
+date: '2022-07-01'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rstatix)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+## Import data
+
+```{r load}
+demo_test <- read_csv("demo_test.csv") %>%
+  select(-(2:5))
+data <- read_csv("inst-cat-uc-1.csv") %>%
+  inner_join(demo_test, by = "participant") # join demo & mus_exp data, discard duplicates
+
+data.cat <- data %>% 
+  filter(designation == "MAIN-JUDGMENT") # extract cat data
+```
+
+## GLM 
+
+Run a simple GLM (without cubic and random effects) for each participant-instrument pair, and input slope and 50% crossover threshold in an empty data frame.
+
+```{r prep_for_reg}
+data.cat1 <- data.cat %>%
+  group_by(qualtrics_id, instrument, tuning_step) %>%
+  summarize(pct_maj = mean(selected_major)) %>%
+  # convert tuning step to ratio data from 0 to 100
+  mutate(tuning_step = (tuning_step - 1)*25)
+
+# create an empty data frame to input each participant's calculated results (each row = 1 participant)
+result <- as.data.frame(data.cat$qualtrics_id) %>%
+  unique() %>%
+  # crossover = tuning step point where proportion of major categorization = 50%
+  mutate(instrument = NA, slopes = NA, crossover = NA) %>%
+  rename(qualtrics_id = `data.cat$qualtrics_id`)
+
+# each participant will have 5 rows, each row for an instrument
+results <- result %>%
+  mutate(instrument = "oboe") %>%
+  rbind(result) %>% 
+  mutate(instrument = case_when(is.na(instrument) ~ "violin",
+                                !is.na(instrument) ~ instrument)) %>%
+  rbind(result) %>%
+  mutate(instrument = case_when(is.na(instrument) ~ "piano",
+                                !is.na(instrument) ~ instrument)) %>%
+  rbind(result) %>%
+  mutate(instrument = case_when(is.na(instrument) ~ "trumpet",
+                                !is.na(instrument) ~ instrument)) %>%
+  rbind(result) %>%
+  mutate(instrument = case_when(is.na(instrument) ~ "xylophone",
+                                !is.na(instrument) ~ instrument)) %>%
+  arrange(qualtrics_id)
+```
+
+```{r reg}
+# run a GLM model for each participant-instrument pair (a total of 245 models, which is why we are using the simpler model, or R will crash), input their slope and 50% crossover in the above data frame
+for (i in results$qualtrics_id) {
+  for (j in results$instrument %>% unique()) {
+    data_filtered <- data.cat1 %>%
+      filter(qualtrics_id == i & instrument == j)
+    simple_model <- glm(pct_maj ~ tuning_step, data = data_filtered, family = binomial)
+    results$slopes[results$qualtrics_id == i & results$instrument == j] = coef(simple_model)[[2]]
+    results$crossover[results$qualtrics_id == i & results$instrument == j] = -coef(simple_model)[[1]] / coef(simple_model)[[2]]
+  }
+}
+```
+
+Reference for [logistic regression](http://www.sthda.com/english/articles/36-classification-methods-essentials/151-logistic-regression-essentials-in-r/).
+
+## Descriptives
+
+```{r descriptives}
+print("summary statistics for slope")
+results %>%
+  group_by(instrument) %>%
+  get_summary_stats(slopes, type = "mean_sd") %>%
+  select(-variable, -n)
+  
+print("summary statistics for crossover")
+results %>% 
+  filter(crossover > -1000 & crossover < 1000) %>%
+  group_by(instrument) %>%
+  get_summary_stats(crossover, type = "mean_sd") %>%
+  select(-variable, -n)
+```
+
+## Visualizations
+
+```{r graph}
+results %>%
+  filter(crossover < 1000 & crossover > -1000) %>%
+  group_by(instrument) %>%
+  summarize(sl = mean(slopes)) %>%
+  ggplot(aes(reorder(instrument, sl), sl, fill = instrument)) +
+  geom_col() +
+  labs(title = "Slope for each instrument",
+       x = "Instrument", y = "Slope") +
+  theme_bw()
+# eliminate outliers outside of this bound that disrupt our analyses (> 1e15) without eliminating too much info
+
+results %>%
+  filter(crossover < 1000 & crossover > -1000) %>%
+  group_by(instrument) %>%
+  summarize(co = mean(crossover)) %>%
+  ggplot(aes(reorder(instrument, co), co, fill = instrument)) +
+  geom_col() +
+  labs(title = "50% threshold for each instrument",
+       x = "Instrument", y = "Threshold") +
+  theme_bw()
+# eliminate outliers outside of this bound that disrupt our analyses (> 1e15) without eliminating too much info
+```
+
+Seems like xylophone has the steepest slope, then piano, then trumpet, then violin, and oboe has the least steep slope. So the proportion of major categorization for oboe increases slowest as tuning step increases, while that for xylophone increases fastest. This is the same as our expectation because it follows the same trend as average proportion of major categorization.
+
+Seems like oboe has the highest crossover, then trumpet, then xylophone, then violin, and piano has the lowest crossover. So the middle note of a chord played on oboe will need to be tuned sharper for participants to switch from minor to major categorization, while  that on piano will least need to be tuned sharper for participants to switch from minor to major categorization. This is a little surprising because it's different from the trend in all other analyses we conducted.
+
+## ANOVA
+
+```{r check-assumptions}
+# check outliers
+
+results %>%
+  identify_outliers(slopes) %>%
+  filter(is.extreme == TRUE)
+print("No extreme outlier for slopes")
+
+results %>%
+  identify_outliers(crossover) %>%
+  filter(is.extreme == TRUE)
+print("23 extreme outliers for crossover")
+
+# set arbitrary bound +/-1000 for outliers
+results %>%
+  filter(crossover < 1000 & crossover > -1000) %>%
+  group_by(instrument) %>%
+  shapiro_test(crossover)
+print("Normality assumption violated, which is a given for proportion data, but it's fine since we have a large and balanced sample")
+  
+results %>% 
+  filter(crossover < 1000 & crossover > -1000) %>%
+  levene_test(crossover ~ instrument) 
+print("Homoscedasticity assumption not violated")
+```
+
+```{r anova}
+# crossover
+cross_aov <- anova_test(data = results %>% filter(crossover < 1000 & crossover > -1000), dv = crossover, wid = qualtrics_id, within = instrument)
+get_anova_table(cross_aov)
+
+slope_aov <- anova_test(data = results %>% filter(crossover < 1000 & crossover > -1000), dv = slopes, wid = qualtrics_id, within = instrument)
+get_anova_table(slope_aov)
+```
+
+Neither slope nor 50% crossover threshold was statistically significantly different across instruments, though similar trends were observed from visualizations.

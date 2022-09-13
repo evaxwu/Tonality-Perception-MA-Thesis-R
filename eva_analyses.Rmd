@@ -7,20 +7,34 @@ output: github_document
 
 ```{r setup, include = FALSE}
 library(tidyverse)
+library(rstatix)
 library(ggpubr)
 library(corrplot)
-library(rstatix)
-library(emmeans)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
 
 data <- read_csv("all.csv")
 desc <- read_csv("descriptives.csv")
 ```
 
-Very helpful [link](https://www.datanovia.com/en/lessons/mixed-anova-in-r/)!
+In this document, I first presented summary statistics for some demographics variables. Then, I checked ANOVA assumptions. After that, I calculated ANOVA results for how instrument and tuning step affect tonality perception and how explicit valence rating differed across instruments. Results showed that both instrument and tuning step had significant main effect on tonality perception, and there was also a significant interaction between the two. Results also showed that explicit valence ratings differed significantly across instruments.
+
+We also conducted ANOVA for exploratory variables, but eventually did not include them in our main analysis because adding them did not change the significance level of our main variables of interests. Then, we performed post hoc tests for both tonality perception and explicit valence rating, with tables presented below. 
+
+Afterwards, we created some visualizations to represent the relationship between instrument, tuning step, & some other exploratory variables and tonality perception & explicit valence rating. At the end of our document, we added another method of analysis - one-way ANOVA for tonality categorization at the most ambiguous tuning step (3) only. Finally, we calculated whether proportion of major categorization and explicit rating were correlated - turns out they were! This could potentially explain that the effect of instrument on tonality perception may be because of the difference in emotional association across instruments. 
 
 ## Summary Statistics
 
-```{r descriptives}
+```{r descriptives, echo = TRUE}
+# age
+data %>%
+  get_summary_stats(Age, type = "mean_sd") %>%
+  select(-n)
+
+# practice score
+data %>%
+  get_summary_stats(practice_score, type = "mean_sd") %>%
+  select(-n)
+
 # mean & sd for instrument
 data %>%
   group_by(instrument) %>%
@@ -33,39 +47,19 @@ data %>%
   get_summary_stats(pct_maj, type = "mean_sd") %>%
   select(-variable, -n)
 
-# mean & sd for each condition
+# mean & sd for proportion of major categorization across instruments
 data %>%
   group_by(instrument, tuning_step) %>%
   get_summary_stats(pct_maj, type = "mean_sd") %>%
   select(-variable, -n)
-```
 
-## Visualization
-
-```{r graph}
-data %>% 
-  ggplot(aes(tuning_step, pct_maj, color = instrument)) +
-  geom_smooth(se = FALSE) +
-  labs(title = "Proportion of major chord categorization \nacross different instruments and tuning steps",
-       x = "Tuning step (+0c ~ +100c)", y = "Proportion of major categorization") +
-  theme_bw()
-
-data %>% 
-  ggplot(aes(tuning_step, pct_maj, color = chord)) +
-  geom_smooth(se = FALSE) +
-  facet_wrap(~instrument) +
-  labs(title = "Proportion of major chord categorization across different keys and tuning steps",
-       x = "Tuning step (+0c ~ +100c)", y = "Proportion of major categorization") +
-  theme_bw()
-
-data %>% 
-  ggplot(aes(reorder(instrument, explicit_rtg), explicit_rtg, fill = instrument)) +
-  geom_col() +
-  facet_wrap(~chord) +
-  labs(title = "Mean explicit valence rating across different instruments",
-       subtitle = "compared between the key of B and C",
-       x = "Instrument", y = "Mean explicit valence rating") +
-  theme_bw()
+# mean & sd for explicit emotional valence rating across instruments
+data %>%
+  select(instrument, explicit_rtg, qualtrics_id) %>%
+  unique() %>%
+  group_by(instrument) %>%
+  get_summary_stats(explicit_rtg, type = "mean_sd") %>%
+  select(-variable, -n)
 ```
 
 ## Check assumptions
@@ -73,40 +67,25 @@ data %>%
 ### Outliers
 
 ```{r outliers}
-# for cat
-data_summary <- data %>%
-  group_by(qualtrics_id, tuning_step) %>%
-  summarize(mean_pct = mean(pct_maj))
-
+# find outlier based on mean cat
 data %>%
   group_by(qualtrics_id) %>%
   summarize(mean_pct = mean(pct_maj)) %>%
   identify_outliers(mean_pct)
+print("No outliers for tonality categorization.")
 
-# for rtg
+# find outlier based on mean rtg
 data %>%
   group_by(qualtrics_id) %>%
   summarize(mean_rtg = mean(explicit_rtg)) %>%
-  ggplot(aes(mean_rtg)) +
-  geom_histogram(color = "white")
-
-data %>%
-  group_by(qualtrics_id) %>%
-  summarize(mean_rtg = mean(explicit_rtg)) %>%
-  identify_outliers(mean_rtg)
-
-# examine outliers
-data %>%
-  filter(qualtrics_id == 1588756489 | qualtrics_id == 6323213291 | qualtrics_id == 6444402078) %>%
-  select(qualtrics_id, instrument, explicit_rtg) %>%
-  unique()
-
-# ignore b/c not extreme
+  identify_outliers(mean_rtg) %>%
+  filter(is.extreme == TRUE)
+print("No extreme outliers for explicit ratings.")
 ```
 
 ### Normality
 
-```{r}
+```{r normality}
 # violated but fine
 data %>%
   group_by(instrument, tuning_step, chord) %>%
@@ -116,13 +95,16 @@ ggqqplot(data, "pct_maj", ggtheme = theme_bw()) +
   facet_grid(tuning_step ~ instrument, labeller = "label_both")
 ```
 
+Normality assumption violated, which is a given for proportion data, but it's fine since we had large sample size and balanced groups.
+
 ### Homogeneity of variance
 
 ```{r}
 data %>% levene_test(pct_maj ~ instrument*factor(tuning_step)*chord)
+# sphericity violated but corrected w/ GG
 ```
 
-No need to transform for assumption violations b/c ANOVA is robust for these issues. Just report a Greenhouse-Geisser correction (epsilon * df).
+Homoscedasticity assumption violated, but no need to transform for assumption violations because ANOVA is robust for these issues. Just report a Greenhouse-Geisser correction (epsilon * df).
 
 The assumption of sphericity will be automatically checked during the computation of the ANOVA test using the R function anova_test() [rstatix package]. The Mauchly’s test is internally used to assess the sphericity assumption.
 
@@ -130,33 +112,103 @@ By using the function get_anova_table() [rstatix] to extract the ANOVA table, th
 
 ## ANOVA
 
-```{r}
-chord.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
-  within = c(instrument, tuning_step), between = chord)
-get_anova_table(chord.aov) # sphericity violated but corrected w/ GG
+### Proportion of major categorization ~ intrument * tuning step
 
-# no main effect of chord / 3-way int (no change in main effects/int of interest), so left it out for the sake of parsimony
-
-mus.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
-  within = c(instrument, tuning_step), covariate = Inst_yr)
-get_anova_table(mus.aov)
-
-# adding musical training doesn't change effects of main interest, same as chord
-# int may be due to steeper slope for more trained participants, but has nothing to do with our hypotheses
-
-# A significant two-way interaction can be followed up by a simple main effect analysis, 
-# which can be followed up by simple pairwise comparisons if significant.
-
+```{r cat_anova}
+# cat aov
 aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
   within = c(instrument, tuning_step))
 get_anova_table(aov)
-aov
 ```
+
+Two-way mixed ANOVA showed that instrument and tuning step both had main effects on tonality perception, and there was a significant interaction between instrument and tuning step.
+
+#### Adding headphone test score as covariate
+
+```{r headphone}
+headphone.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument, tuning_step), covariate = test_corr)
+get_anova_table(headphone.aov)
+```
+
+Three-way mixed ANCOVA showed that there was a significant main effect of instrument, tuning step on tonality perception, and significant interaction between headphone test score and tuning step as well as between instrument and tuning step. Since the key effects of interests were not changed as compared between the model with the headphone score added and that without, and neither the main effect of headphone score nor the three-way interaction was significant, we decided to drop headphone score from the model.
+
+#### Adding practice score as covariate
+
+```{r practice}
+test.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument, tuning_step), covariate = practice_score)
+get_anova_table(test.aov)
+```
+
+Similar to above, 3-way mixed ANCOVA showed that there was no difference in the main effects and interaction of interests before vs. after adding practice score to the model, so we decided to drop the practice score variable.
+
+#### Adding key as a between-subjects variable
+
+```{r key}
+chord.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument, tuning_step), between = chord)
+get_anova_table(chord.aov) 
+```
+
+Similar to above, 3-way mixed ANOVA showed that there was no difference in the main effects and interaction of interests before vs. after adding key to the model, so we decided to drop the key variable.
+
+#### Adding number of years playing instruments as covariate
+
+```{r mus_exp}
+mus.aov <- anova_test(data, dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument, tuning_step), covariate = Inst_yr)
+get_anova_table(mus.aov)
+```
+
+Similar to above, 3-way mixed ANCOVA showed that there was no difference in the main effects and interaction of interests before vs. after adding years of instrument playing to the model, so we decided to drop that variable.
+
+#### Adding ability to read music as between-subjects variable
+
+```{r read}
+read.aov <- anova_test(data, dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument, tuning_step), between = Read)
+get_anova_table(read.aov)
+```
+
+Similar to above, 3-way mixed ANOVA showed that there was no difference in the main effects and interaction of interests before vs. after adding ability to read music to the model, so we decided to drop that variable.
+
+#### Adding whether individuals had experience playing instruments as between-subjects variable
+
+```{r instrument}
+inst.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
+  within = c(instrument, tuning_step), between = Inst)
+get_anova_table(inst.aov)
+```
+
+Similar to above, 3-way mixed ANOVA showed that there was no difference in the main effects and interaction of interests before vs. after adding whether individuals had experience playing instruments to the model, so we decided to drop that variable.
+
+### Individuals' explicit ratings of each instrument's emotional valence ~ intrument
+
+```{r rtg_anova}
+# rtg aov
+aov_rtg <- anova_test(data = data %>% select(qualtrics_id, instrument, explicit_rtg) %>% unique(), dv = explicit_rtg, wid = qualtrics_id, within = instrument)
+get_anova_table(aov_rtg)
+```
+
+A one-way repeated-measures ANOVA showed that explicit valence ratings for each instrument significantly differed among each other.
+
+```{r rtg_exploratory}
+# no effect of key on rtg
+get_anova_table(anova_test(data = data %>% select(qualtrics_id, instrument, explicit_rtg, chord) %>% unique(), dv = explicit_rtg, wid = qualtrics_id, within = instrument, between = chord))
+
+# no effect of mus_exp on rtg
+get_anova_table(anova_test(data = data %>% select(qualtrics_id, instrument, explicit_rtg, Inst_yr) %>% unique(), dv = explicit_rtg, wid = qualtrics_id, within = instrument, covariate = Inst_yr))
+```
+
+Adding key and years of instrument experience did not change the fact that instrument had a significant effect on explicit valence rating, and the main effect of key and years of instrument experience as well as the interaction were non-significant, so we decided to drop these variables.
 
 ## Post-hoc tests
 
+A significant two-way interaction can be followed up by a simple main effect analysis, which can be followed up by simple pairwise comparisons if significant. Here we're using Hommel correction method because it's neither too stringent nor too lenient.
+
 ```{r post-hoc}
-# post hoc for main eff of instrument
+print("post hoc for main effect of instrument on tonality categorization") 
 data %>%
   pairwise_t_test(
     pct_maj ~ instrument, paired = TRUE, 
@@ -164,7 +216,7 @@ data %>%
     ) %>% 
   select(-`.y.`, -p)
 
-# post hoc for main eff of tuning
+print("post hoc for main effect of tuning step on tonality categorization") 
 data %>%
   pairwise_t_test(
     pct_maj ~ tuning_step, paired = TRUE, 
@@ -172,75 +224,168 @@ data %>%
     ) %>% 
   select(-`.y.`, -p)
 
-# post hoc for int pt 1
+print("post hoc for instrument * tuning step interaction on tonality categorization") 
 get_anova_table(data %>%
   group_by(tuning_step) %>%
   anova_test(dv = pct_maj, wid = qualtrics_id,
   within = c(instrument)))
 
-# pairwise for int
+print("pairwise comparisons for instrument * tuning step interaction on tonality categorization,
+      only presenting significant rows to save space") 
 data %>%
   group_by(tuning_step) %>%
   pairwise_t_test(
     pct_maj ~ instrument, paired = TRUE, 
     p.adjust.method = "hommel" # try different options
     ) %>% 
-  select(-`.y.`, -p)
-
+  select(-`.y.`, -p) %>%
+  filter(p.adj.signif != "ns")
 # table for significant rows to present
-# chose Hommel correction method b/c neither too stringent nor too lenient
+
+print("post hoc for the effect of instrument on explicit rating")
+data %>%
+  pairwise_t_test(
+    explicit_rtg ~ instrument, paired = TRUE, 
+    p.adjust.method = "hommel" # try different options
+    ) %>% 
+  select(-`.y.`, -p) %>%
+  filter(p.adj.signif != "ns")
 ```
 
-## Correlations b/w DV & other predictors
+## Visualization
+
+```{r graph}
+# main finding: cat ~ inst * tune
+data %>% 
+  mutate(tuning_step = (tuning_step-1)*25) %>%
+  ggplot(aes(tuning_step, pct_maj, color = instrument, linetype = instrument)) +
+  geom_smooth(se = FALSE) +
+  labs(title = "Proportion of major chord categorization \nacross different instruments and tuning steps",
+       x = "Tuning step (cents)", y = "Proportion of major categorization",
+       color = "instrument", linetype = "instrument") +
+  theme_bw()
+
+# steeper slope for C than B
+data %>% 
+  mutate(tuning_step = (tuning_step-1)*25) %>%
+  ggplot(aes(tuning_step, pct_maj, color = chord, linetype = chord)) +
+  geom_smooth(se = FALSE) +
+  labs(title = "Proportion of major chord categorization across tuning steps",
+       subtitle = "Compared between keys",
+       x = "Tuning step (cents)", y = "Proportion of major categorization",
+       color = "key", linetype = "key") +
+  theme_bw()
+
+# steeper slope for Inst = 1 than = 0
+data %>% 
+  mutate(`Instrument Training Experience` = factor(Inst, 
+                                                   levels = c(0, 1),
+                                                   labels = c("Never played any instrument", "Had experience playing instrument(s)"))) %>%
+  ggplot(aes(tuning_step, pct_maj, color = `Instrument Training Experience`)) +
+  geom_smooth(se = FALSE) +
+  facet_wrap(~ instrument) +
+  labs(title = "Proportion of major chord categorization across instruments and tuning steps",
+       subtitle = "Compared between participants who played vs. never played a musical instrument",
+       x = "Tuning step (+0c ~ +100c)", y = "Proportion of major categorization") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+# steeper slope for Read = 1 than = 0
+data %>% 
+  mutate(`Ability to read music` = factor(Read, 
+                                          levels = c(0, 1),
+                                          labels = c("Can't read music", "Can read music"))) %>%
+  mutate(tuning_step = (tuning_step-1)*25) %>%
+  ggplot(aes(tuning_step, pct_maj, color = `Ability to read music`, linetype = `Ability to read music`)) +
+  geom_smooth(se = FALSE) +
+  labs(title = "Proportion of major chord categorization across tuning steps",
+       subtitle = "Compared between participants who know vs. don't know how to read music",
+       x = "Tuning step (cents)", y = "Proportion of major categorization") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+# cat ~ inst
+data %>% 
+  ggplot(aes(reorder(instrument, pct_maj), pct_maj, fill = instrument)) +
+  geom_col() +
+  labs(title = "Mean proportion of major categorization across different instruments",
+       x = "Instrument", y = "Mean proportion of major categorization") +
+  theme_bw()
+
+# rtg ~ inst
+data %>% 
+  ggplot(aes(reorder(instrument, explicit_rtg), explicit_rtg, fill = instrument)) +
+  geom_col() +
+  labs(title = "Mean explicit valence rating across different instruments",
+       x = "Instrument", y = "Mean explicit valence rating") +
+  theme_bw()
+```
+
+Seems like slope of the curve for proportion of major categorization against tuning step is steeper for the key of C than B, for individuals who had experience playing instruments than not, and for those who can read music than those who can't. So maybe familiarity with music is related to steeper slope (since people are surely more familiar with the key of C than B), meaning that changes in tuning step would lead to greater changes in tonality perception? - An interesting future direction.
+
+Also, from the last 2 column plots, we can see same patterns for categorization vs. rating, except for oboe and violin being reversed.
+
+## Analyzing categorization ~ instrument at tuning step = 3 (in the middle of major & minor)
+
+```{r tune3}
+# descriptives
+data %>%
+  filter(tuning_step == 3) %>%
+  group_by(instrument) %>%
+  get_summary_stats(pct_maj, type = "mean_sd")
+
+# aov
+aov_tune3 <- anova_test(data = data %>% select(qualtrics_id, instrument, tuning_step, pct_maj) %>% filter(tuning_step == 3) %>% unique(), dv = pct_maj, wid = qualtrics_id, within = instrument)
+get_anova_table(aov_tune3)
+print("Significant effect of instrument on tonality perception at tuning step 3")
+
+# post hoc for cat ~ inst at tune = 3
+data %>%
+  filter(tuning_step == 3) %>%
+  pairwise_t_test(
+    pct_maj ~ instrument, paired = TRUE, 
+    p.adjust.method = "hommel"
+    ) %>% 
+  select(-`.y.`, -p) 
+
+# visualization
+data %>%
+  filter(tuning_step == 3) %>%
+  ggplot(aes(reorder(instrument, pct_maj), pct_maj, fill = instrument)) +
+  geom_col() +
+  labs(title = "Proportion of major categorization when tuning is exactly in the middle",
+       x = "Instrument", y = "Proportion of major categorization") +
+  theme_bw()
+```
+
+This trend is slightly different from mean categorization, mean rating, slope, and crossover trends, but overall they are very similar.
+
+## Correlations b/w C & E
+
+Helpful [guide](http://www.sthda.com/english/wiki/correlation-test-between-two-variables-in-r) for correlation tests.
 
 ```{r corr}
-cor.test(data$pct_maj, data$Inst)
-cor.test(data$pct_maj, data$Inst_yr)
-cor.test(data$pct_maj, data$music_exp)
-cor.test(data$pct_maj, data$Read) #*
-cor.test(data$pct_maj, data$headphone)
-cor.test(data$pct_maj, data$Age)
-cor.test(data$pct_maj, data$explicit_rtg) #***
+corr_data <- data %>%
+  group_by(instrument, qualtrics_id) %>%
+  summarize(cat = mean(pct_maj),
+            exp = mean(explicit_rtg))
+
+cor.test(corr_data$cat, corr_data$exp)
 ```
 
-Ability to read music and explicit valence rating were significantly correlated with percent of major categorization
+Significant positive correlation between categorization and explicit rating.
 
 ```{r corrplot}
+ggplot(corr_data, aes(exp, cat)) +
+  geom_jitter(alpha = .5) +
+  labs(title = "Relationship between tonality perception and explicit valence ratings of instruments",
+       x = "Explicit valence rating", y = "Tonality categorization") +
+  theme_bw()
+
 corrplot(cor(data %>%
-  select(pct_maj, explicit_rtg, practice_score, Age, 16:21), use = "complete.obs"), method = "color")
-# why NA?
+  select(pct_maj, explicit_rtg, Inst_yr, music_exp, practice_score, test_corr, Age), use = "complete.obs"), method = "color", title = "Correlation plot")
 ```
 
-## Logistic regression (wrong, should use selected_major as DV)
+## Reference
 
-1) Percent major ~ instrument & tuning step
-
-```{r log-reg}
-#glm.fit <- glm(pct_maj ~ instrument + tuning_step, family = binomial) 
-# family = binomial tells r to run logistic regression
-#summary(glm.fit)
-```
-
-2) Percent major ~ mean explicit rating of each instrument & tuning step
-
-```{r log-reg2}
-#glm.fit2 <- glm(pct_maj ~ mean_rtg + tuning_step, family = binomial) 
-# family= binomial tells r to run logistic regression
-#summary(glm.fit2)
-```
-
-Linear regression
-
-```{r lm-fit-both}
-#lm.fit2 <- lm(pct_maj ~ tuning_step, data = cat)
-#lm.fit <- lm(pct_maj ~ instrument + tuning_step, data = cat) 
-#summary(lm.fit)
-```
-
-ANOVA exploring 1) whether adding instrument as a predictor significantly improves model, 
-and 2) whether adding both predictors is significantly better than null model
-
-```{r lm-anova}
-#anova(lm.fit, lm.fit2) # adding instrument significantly improves model
-#anova(lm.fit) # adding both predictors significantly better than null model
-```
+Very helpful [link](https://www.datanovia.com/en/lessons/mixed-anova-in-r/) for performing mixed ANOVA in R!

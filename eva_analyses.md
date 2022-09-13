@@ -1,12 +1,59 @@
 Eva Analyses
 ================
 Eva Wu
-2022-07-14
+2022-09-12
 
-Very helpful
-[link](https://www.datanovia.com/en/lessons/mixed-anova-in-r/)!
+In this document, I first presented summary statistics for some
+demographics variables. Then, I checked ANOVA assumptions. After that, I
+calculated ANOVA results for how instrument and tuning step affect
+tonality perception and how explicit valence rating differed across
+instruments. Results showed that both instrument and tuning step had
+significant main effect on tonality perception, and there was also a
+significant interaction between the two. Results also showed that
+explicit valence ratings differed significantly across instruments.
+
+We also conducted ANOVA for exploratory variables, but eventually did
+not include them in our main analysis because adding them did not change
+the significance level of our main variables of interests. Then, we
+performed post hoc tests for both tonality perception and explicit
+valence rating, with tables presented below.
+
+Afterwards, we created some visualizations to represent the relationship
+between instrument, tuning step, & some other exploratory variables and
+tonality perception & explicit valence rating. At the end of our
+document, we added another method of analysis - one-way ANOVA for
+tonality categorization at the most ambiguous tuning step (3) only.
+Finally, we calculated whether proportion of major categorization and
+explicit rating were correlated - turns out they were! This could
+potentially explain that the effect of instrument on tonality perception
+may be because of the difference in emotional association across
+instruments.
 
 ## Summary Statistics
+
+``` r
+# age
+data %>%
+  get_summary_stats(Age, type = "mean_sd") %>%
+  select(-n)
+```
+
+    ## # A tibble: 1 × 3
+    ##   variable  mean    sd
+    ##   <chr>    <dbl> <dbl>
+    ## 1 Age       20.1  2.34
+
+``` r
+# practice score
+data %>%
+  get_summary_stats(practice_score, type = "mean_sd") %>%
+  select(-n)
+```
+
+    ## # A tibble: 1 × 3
+    ##   variable        mean    sd
+    ##   <chr>          <dbl> <dbl>
+    ## 1 practice_score  11.2  1.27
 
 ``` r
 # mean & sd for instrument
@@ -43,7 +90,7 @@ data %>%
     ## 5           5 0.827 0.248
 
 ``` r
-# mean & sd for each condition
+# mean & sd for proportion of major categorization across instruments
 data %>%
   group_by(instrument, tuning_step) %>%
   get_summary_stats(pct_maj, type = "mean_sd") %>%
@@ -65,138 +112,41 @@ data %>%
     ## 10 piano                5 0.888 0.198
     ## # … with 15 more rows
 
-## Visualization
-
 ``` r
-data %>% 
-  ggplot(aes(tuning_step, pct_maj, color = instrument)) +
-  geom_smooth(se = FALSE) +
-  labs(title = "Proportion of major chord categorization \nacross different instruments and tuning steps",
-       x = "Tuning step (+0c ~ +100c)", y = "Proportion of major categorization") +
-  theme_bw()
+# mean & sd for explicit emotional valence rating across instruments
+data %>%
+  select(instrument, explicit_rtg, qualtrics_id) %>%
+  unique() %>%
+  group_by(instrument) %>%
+  get_summary_stats(explicit_rtg, type = "mean_sd") %>%
+  select(-variable, -n)
 ```
 
-    ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
-
-![](eva_analyses_files/figure-gfm/graph-1.png)<!-- -->
-
-``` r
-data %>% 
-  ggplot(aes(tuning_step, pct_maj, color = chord)) +
-  geom_smooth(se = FALSE) +
-  facet_wrap(~instrument) +
-  labs(title = "Proportion of major chord categorization across different keys and tuning steps",
-       x = "Tuning step (+0c ~ +100c)", y = "Proportion of major categorization") +
-  theme_bw()
-```
-
-    ## `geom_smooth()` using method = 'loess' and formula 'y ~ x'
-
-![](eva_analyses_files/figure-gfm/graph-2.png)<!-- -->
-
-``` r
-data %>% 
-  ggplot(aes(reorder(instrument, explicit_rtg), explicit_rtg, fill = instrument)) +
-  geom_col() +
-  facet_wrap(~chord) +
-  labs(title = "Mean explicit valence rating across different instruments",
-       subtitle = "compared between the key of B and C",
-       x = "Instrument", y = "Mean explicit valence rating") +
-  theme_bw()
-```
-
-![](eva_analyses_files/figure-gfm/graph-3.png)<!-- -->
+    ## # A tibble: 5 × 3
+    ##   instrument  mean    sd
+    ##   <chr>      <dbl> <dbl>
+    ## 1 oboe        2.24 0.662
+    ## 2 piano       2.76 0.662
+    ## 3 trumpet     2.71 0.764
+    ## 4 violin      2    0.677
+    ## 5 xylophone   2.96 0.865
 
 ## Check assumptions
 
 ### Outliers
 
-``` r
-# for cat
-data_summary <- data %>%
-  group_by(qualtrics_id, tuning_step) %>%
-  summarize(mean_pct = mean(pct_maj))
-```
-
-    ## `summarise()` has grouped output by 'qualtrics_id'. You can override using the
-    ## `.groups` argument.
-
-``` r
-data %>%
-  group_by(qualtrics_id) %>%
-  summarize(mean_pct = mean(pct_maj)) %>%
-  identify_outliers(mean_pct)
-```
-
     ## [1] qualtrics_id mean_pct     is.outlier   is.extreme  
     ## <0 rows> (or 0-length row.names)
 
-``` r
-# for rtg
-data %>%
-  group_by(qualtrics_id) %>%
-  summarize(mean_rtg = mean(explicit_rtg)) %>%
-  ggplot(aes(mean_rtg)) +
-  geom_histogram(color = "white")
-```
+    ## [1] "No outliers for tonality categorization."
 
-    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+    ## # A tibble: 0 × 4
+    ## # … with 4 variables: qualtrics_id <dbl>, mean_rtg <dbl>, is.outlier <lgl>,
+    ## #   is.extreme <lgl>
 
-![](eva_analyses_files/figure-gfm/outliers-1.png)<!-- -->
-
-``` r
-data %>%
-  group_by(qualtrics_id) %>%
-  summarize(mean_rtg = mean(explicit_rtg)) %>%
-  identify_outliers(mean_rtg)
-```
-
-    ## # A tibble: 3 × 4
-    ##   qualtrics_id mean_rtg is.outlier is.extreme
-    ##          <dbl>    <dbl> <lgl>      <lgl>     
-    ## 1   1588756489      3.4 TRUE       FALSE     
-    ## 2   6323213291      1.6 TRUE       FALSE     
-    ## 3   6444402078      3.4 TRUE       FALSE
-
-``` r
-# examine outliers
-data %>%
-  filter(qualtrics_id == 1588756489 | qualtrics_id == 6323213291 | qualtrics_id == 6444402078) %>%
-  select(qualtrics_id, instrument, explicit_rtg) %>%
-  unique()
-```
-
-    ## # A tibble: 15 × 3
-    ##    qualtrics_id instrument explicit_rtg
-    ##           <dbl> <chr>             <dbl>
-    ##  1   1588756489 xylophone             4
-    ##  2   1588756489 trumpet               4
-    ##  3   1588756489 piano                 3
-    ##  4   1588756489 violin                3
-    ##  5   1588756489 oboe                  3
-    ##  6   6323213291 xylophone             1
-    ##  7   6323213291 trumpet               1
-    ##  8   6323213291 piano                 2
-    ##  9   6323213291 violin                2
-    ## 10   6323213291 oboe                  2
-    ## 11   6444402078 xylophone             4
-    ## 12   6444402078 trumpet               3
-    ## 13   6444402078 piano                 4
-    ## 14   6444402078 violin                3
-    ## 15   6444402078 oboe                  3
-
-``` r
-# ignore b/c not extreme
-```
+    ## [1] "No extreme outliers for explicit ratings."
 
 ### Normality
-
-``` r
-# violated but fine
-data %>%
-  group_by(instrument, tuning_step, chord) %>%
-  shapiro_test(pct_maj)
-```
 
     ## # A tibble: 50 × 6
     ##    instrument tuning_step chord variable statistic           p
@@ -213,27 +163,21 @@ data %>%
     ## 10 oboe                 5 C     pct_maj      0.672 0.00000615 
     ## # … with 40 more rows
 
-``` r
-ggqqplot(data, "pct_maj", ggtheme = theme_bw()) +
-  facet_grid(tuning_step ~ instrument, labeller = "label_both")
-```
+![](eva_analyses_files/figure-gfm/normality-1.png)<!-- -->
 
-![](eva_analyses_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+Normality assumption violated, which is a given for proportion data, but
+it’s fine since we had large sample size and balanced groups.
 
 ### Homogeneity of variance
-
-``` r
-data %>% levene_test(pct_maj ~ instrument*factor(tuning_step)*chord)
-```
 
     ## # A tibble: 1 × 4
     ##     df1   df2 statistic        p
     ##   <int> <int>     <dbl>    <dbl>
     ## 1    49  1175      3.07 2.62e-11
 
-No need to transform for assumption violations b/c ANOVA is robust for
-these issues. Just report a Greenhouse-Geisser correction (epsilon \*
-df).
+Homoscedasticity assumption violated, but no need to transform for
+assumption violations because ANOVA is robust for these issues. Just
+report a Greenhouse-Geisser correction (epsilon \* df).
 
 The assumption of sphericity will be automatically checked during the
 computation of the ANOVA test using the R function anova_test()
@@ -246,11 +190,68 @@ factors violating the sphericity assumption.
 
 ## ANOVA
 
-``` r
-chord.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
-  within = c(instrument, tuning_step), between = chord)
-get_anova_table(chord.aov) # sphericity violated but corrected w/ GG
-```
+### Proportion of major categorization \~ intrument \* tuning step
+
+    ## ANOVA Table (type III tests)
+    ## 
+    ##                   Effect   DFn    DFd       F        p p<.05   ges
+    ## 1             instrument  2.79 133.91  14.056 1.15e-07     * 0.060
+    ## 2            tuning_step  1.55  74.48 104.352 8.42e-20     * 0.522
+    ## 3 instrument:tuning_step 10.64 510.95   4.078 1.23e-05     * 0.015
+
+Two-way mixed ANOVA showed that instrument and tuning step both had main
+effects on tonality perception, and there was a significant interaction
+between instrument and tuning step.
+
+#### Adding headphone test score as covariate
+
+    ## ANOVA Table (type II tests)
+    ## 
+    ##                             Effect   DFn    DFd       F        p p<.05      ges
+    ## 1                        test_corr  1.00  47.00   0.221 6.40e-01       0.000544
+    ## 2                       instrument  2.68 125.73  14.381 1.46e-07     * 0.064000
+    ## 3                      tuning_step  1.63  76.60 115.637 1.06e-21     * 0.540000
+    ## 4             test_corr:instrument  2.68 125.73   2.108 1.10e-01       0.010000
+    ## 5            test_corr:tuning_step  1.63  76.60   6.191 6.00e-03     * 0.059000
+    ## 6           instrument:tuning_step 10.58 497.16   4.087 1.27e-05     * 0.016000
+    ## 7 test_corr:instrument:tuning_step 10.58 497.16   1.105 3.55e-01       0.004000
+
+Three-way mixed ANCOVA showed that there was a significant main effect
+of instrument, tuning step on tonality perception, and significant
+interaction between headphone test score and tuning step as well as
+between instrument and tuning step. Since the key effects of interests
+were not changed as compared between the model with the headphone score
+added and that without, and neither the main effect of headphone score
+nor the three-way interaction was significant, we decided to drop
+headphone score from the model.
+
+#### Adding practice score as covariate
+
+    ## ANOVA Table (type II tests)
+    ## 
+    ##                                  Effect   DFn    DFd       F        p p<.05
+    ## 1                        practice_score  1.00  47.00   0.281 5.99e-01      
+    ## 2                            instrument  2.91 136.81  15.012 2.42e-08     *
+    ## 3                           tuning_step  1.97  92.46 167.281 3.22e-31     *
+    ## 4             practice_score:instrument  2.91 136.81   4.265 7.00e-03     *
+    ## 5            practice_score:tuning_step  1.97  92.46  29.946 1.19e-10     *
+    ## 6                instrument:tuning_step 10.49 493.10   4.110 1.25e-05     *
+    ## 7 practice_score:instrument:tuning_step 10.49 493.10   1.368 1.88e-01      
+    ##       ges
+    ## 1 0.00082
+    ## 2 0.07500
+    ## 3 0.58300
+    ## 4 0.02300
+    ## 5 0.20000
+    ## 6 0.01900
+    ## 7 0.00600
+
+Similar to above, 3-way mixed ANCOVA showed that there was no difference
+in the main effects and interaction of interests before vs. after adding
+practice score to the model, so we decided to drop the practice score
+variable.
+
+#### Adding key as a between-subjects variable
 
     ## ANOVA Table (type III tests)
     ## 
@@ -263,19 +264,11 @@ get_anova_table(chord.aov) # sphericity violated but corrected w/ GG
     ## 6       instrument:tuning_step 10.46 491.53   4.092 1.38e-05     * 0.016
     ## 7 chord:instrument:tuning_step 10.46 491.53   0.784 6.49e-01       0.003
 
-``` r
-# no main effect of chord / 3-way int (no change in main effects/int of interest), so left it out for the sake of parsimony
+Similar to above, 3-way mixed ANOVA showed that there was no difference
+in the main effects and interaction of interests before vs. after adding
+key to the model, so we decided to drop the key variable.
 
-mus.aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
-  within = c(instrument, tuning_step), covariate = Inst_yr)
-```
-
-    ## Warning: NA detected in rows: 176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,276,277,278,279,280,281,282,283,284,285,286,287,288,289,290,291,292,293,294,295,296,297,298,299,300,376,377,378,379,380,381,382,383,384,385,386,387,388,389,390,391,392,393,394,395,396,397,398,399,400,451,452,453,454,455,456,457,458,459,460,461,462,463,464,465,466,467,468,469,470,471,472,473,474,475,701,702,703,704,705,706,707,708,709,710,711,712,713,714,715,716,717,718,719,720,721,722,723,724,725,751,752,753,754,755,756,757,758,759,760,761,762,763,764,765,766,767,768,769,770,771,772,773,774,775,776,777,778,779,780,781,782,783,784,785,786,787,788,789,790,791,792,793,794,795,796,797,798,799,800,876,877,878,879,880,881,882,883,884,885,886,887,888,889,890,891,892,893,894,895,896,897,898,899,900,901,902,903,904,905,906,907,908,909,910,911,912,913,914,915,916,917,918,919,920,921,922,923,924,925,951,952,953,954,955,956,957,958,959,960,961,962,963,964,965,966,967,968,969,970,971,972,973,974,975,1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013,1014,1015,1016,1017,1018,1019,1020,1021,1022,1023,1024,1025,1151,1152,1153,1154,1155,1156,1157,1158,1159,1160,1161,1162,1163,1164,1165,1166,1167,1168,1169,1170,1171,1172,1173,1174,1175,1201,1202,1203,1204,1205,1206,1207,1208,1209,1210,1211,1212,1213,1214,1215,1216,1217,1218,1219,1220,1221,1222,1223,1224,1225.
-    ## Removing this rows before the analysis.
-
-``` r
-get_anova_table(mus.aov)
-```
+#### Adding number of years playing instruments as covariate
 
     ## ANOVA Table (type II tests)
     ## 
@@ -288,64 +281,83 @@ get_anova_table(mus.aov)
     ## 6         instrument:tuning_step 8.65 293.96   4.275 4.15e-05     * 0.024
     ## 7 Inst_yr:instrument:tuning_step 8.65 293.96   0.956 4.75e-01       0.006
 
-``` r
-# adding musical training doesn't change effects of main interest, same as chord
-# int may be due to steeper slope for more trained participants, but has nothing to do with our hypotheses
+Similar to above, 3-way mixed ANCOVA showed that there was no difference
+in the main effects and interaction of interests before vs. after adding
+years of instrument playing to the model, so we decided to drop that
+variable.
 
-# A significant two-way interaction can be followed up by a simple main effect analysis, 
-# which can be followed up by simple pairwise comparisons if significant.
-
-aov <- anova_test(data = data, dv = pct_maj, wid = qualtrics_id,
-  within = c(instrument, tuning_step))
-get_anova_table(aov)
-```
+#### Adding ability to read music as between-subjects variable
 
     ## ANOVA Table (type III tests)
     ## 
-    ##                   Effect   DFn    DFd       F        p p<.05   ges
-    ## 1             instrument  2.79 133.91  14.056 1.15e-07     * 0.060
-    ## 2            tuning_step  1.55  74.48 104.352 8.42e-20     * 0.522
-    ## 3 instrument:tuning_step 10.64 510.95   4.078 1.23e-05     * 0.015
+    ##                        Effect   DFn    DFd       F        p p<.05   ges
+    ## 1                        Read  1.00  47.00   3.389 7.20e-02       0.008
+    ## 2                  instrument  2.83 133.05  15.917 1.40e-08     * 0.073
+    ## 3                 tuning_step  1.69  79.61 104.049 3.53e-21     * 0.505
+    ## 4             Read:instrument  2.83 133.05   2.276 8.60e-02       0.011
+    ## 5            Read:tuning_step  1.69  79.61  10.950 1.55e-04     * 0.097
+    ## 6      instrument:tuning_step 10.55 495.62   3.519 1.20e-04     * 0.014
+    ## 7 Read:instrument:tuning_step 10.55 495.62   1.423 1.62e-01       0.006
 
-``` r
-aov
-```
+Similar to above, 3-way mixed ANOVA showed that there was no difference
+in the main effects and interaction of interests before vs. after adding
+ability to read music to the model, so we decided to drop that variable.
+
+#### Adding whether individuals had experience playing instruments as between-subjects variable
 
     ## ANOVA Table (type III tests)
     ## 
-    ## $ANOVA
-    ##                   Effect DFn DFd       F        p p<.05   ges
-    ## 1             instrument   4 192  14.056 4.45e-10     * 0.060
-    ## 2            tuning_step   4 192 104.352 4.68e-47     * 0.522
-    ## 3 instrument:tuning_step  16 768   4.078 1.50e-07     * 0.015
+    ##                        Effect   DFn    DFd      F        p p<.05   ges
+    ## 1                        Inst  1.00  47.00  1.134 2.92e-01       0.003
+    ## 2                  instrument  2.79 131.07 10.392 6.35e-06     * 0.048
+    ## 3                 tuning_step  1.63  76.70 39.885 2.98e-11     * 0.289
+    ## 4             Inst:instrument  2.79 131.07  1.195 3.13e-01       0.006
+    ## 5            Inst:tuning_step  1.63  76.70  5.678 8.00e-03     * 0.055
+    ## 6      instrument:tuning_step 10.41 489.29  2.520 5.00e-03     * 0.010
+    ## 7 Inst:instrument:tuning_step 10.41 489.29  1.580 1.06e-01       0.006
+
+Similar to above, 3-way mixed ANOVA showed that there was no difference
+in the main effects and interaction of interests before vs. after adding
+whether individuals had experience playing instruments to the model, so
+we decided to drop that variable.
+
+### Individuals’ explicit ratings of each instrument’s emotional valence \~ intrument
+
+    ## ANOVA Table (type III tests)
     ## 
-    ## $`Mauchly's Test for Sphericity`
-    ##                   Effect     W        p p<.05
-    ## 1             instrument 0.475 7.33e-05     *
-    ## 2            tuning_step 0.015 3.00e-37     *
-    ## 3 instrument:tuning_step 0.013 4.00e-03     *
+    ##       Effect  DFn    DFd      F        p p<.05   ges
+    ## 1 instrument 3.27 156.77 15.606 1.95e-09     * 0.194
+
+A one-way repeated-measures ANOVA showed that explicit valence ratings
+for each instrument significantly differed among each other.
+
+    ## ANOVA Table (type III tests)
     ## 
-    ## $`Sphericity Corrections`
-    ##                   Effect   GGe        DF[GG]    p[GG] p[GG]<.05   HFe
-    ## 1             instrument 0.697  2.79, 133.91 1.15e-07         * 0.745
-    ## 2            tuning_step 0.388   1.55, 74.48 8.42e-20         * 0.398
-    ## 3 instrument:tuning_step 0.665 10.64, 510.95 1.23e-05         * 0.869
-    ##          DF[HF]    p[HF] p[HF]<.05
-    ## 1  2.98, 143.02 4.79e-08         *
-    ## 2   1.59, 76.51 2.85e-20         *
-    ## 3 13.91, 667.66 8.33e-07         *
+    ##             Effect  DFn    DFd      F        p p<.05   ges
+    ## 1            chord 1.00  47.00  1.012 3.20e-01       0.005
+    ## 2       instrument 3.28 154.12 15.391 2.50e-09     * 0.196
+    ## 3 chord:instrument 3.28 154.12  0.623 6.15e-01       0.010
+
+    ## ANOVA Table (type II tests)
+    ## 
+    ##               Effect  DFn   DFd      F        p p<.05   ges
+    ## 1            Inst_yr 1.00 34.00  0.287 5.96e-01       0.003
+    ## 2         instrument 2.91 98.97 11.261 2.60e-06     * 0.183
+    ## 3 Inst_yr:instrument 2.91 98.97  1.975 1.25e-01       0.038
+
+Adding key and years of instrument experience did not change the fact
+that instrument had a significant effect on explicit valence rating, and
+the main effect of key and years of instrument experience as well as the
+interaction were non-significant, so we decided to drop these variables.
 
 ## Post-hoc tests
 
-``` r
-# post hoc for main eff of instrument
-data %>%
-  pairwise_t_test(
-    pct_maj ~ instrument, paired = TRUE, 
-    p.adjust.method = "hommel"
-    ) %>% 
-  select(-`.y.`, -p)
-```
+A significant two-way interaction can be followed up by a simple main
+effect analysis, which can be followed up by simple pairwise comparisons
+if significant. Here we’re using Hommel correction method because it’s
+neither too stringent nor too lenient.
+
+    ## [1] "post hoc for main effect of instrument on tonality categorization"
 
     ## # A tibble: 10 × 8
     ##    group1  group2       n1    n2 statistic    df    p.adj p.adj.signif
@@ -361,15 +373,7 @@ data %>%
     ##  9 trumpet xylophone   245   245    -4.23    244 1.33e- 4 ***         
     ## 10 violin  xylophone   245   245    -5.45    244 7.5 e- 7 ****
 
-``` r
-# post hoc for main eff of tuning
-data %>%
-  pairwise_t_test(
-    pct_maj ~ tuning_step, paired = TRUE, 
-    p.adjust.method = "hommel"
-    ) %>% 
-  select(-`.y.`, -p)
-```
+    ## [1] "post hoc for main effect of tuning step on tonality categorization"
 
     ## # A tibble: 10 × 8
     ##    group1 group2    n1    n2 statistic    df    p.adj p.adj.signif
@@ -385,13 +389,7 @@ data %>%
     ##  9 3      5        245   245    -15.2    244 2.26e-36 ****        
     ## 10 4      5        245   245     -3.48   244 5.88e- 4 ***
 
-``` r
-# post hoc for int pt 1
-get_anova_table(data %>%
-  group_by(tuning_step) %>%
-  anova_test(dv = pct_maj, wid = qualtrics_id,
-  within = c(instrument)))
-```
+    ## [1] "post hoc for instrument * tuning step interaction on tonality categorization"
 
     ## # A tibble: 5 × 8
     ##   tuning_step Effect       DFn   DFd     F            p `p<.05`   ges
@@ -402,200 +400,116 @@ get_anova_table(data %>%
     ## 4           4 instrument  3.24  155. 12.6  0.000000083  *       0.102
     ## 5           5 instrument  3.16  152.  6.61 0.000242     *       0.048
 
-``` r
-# pairwise for int
-data %>%
-  group_by(tuning_step) %>%
-  pairwise_t_test(
-    pct_maj ~ instrument, paired = TRUE, 
-    p.adjust.method = "hommel" # try different options
-    ) %>% 
-  select(-`.y.`, -p)
-```
+    ## [1] "pairwise comparisons for instrument * tuning step interaction on tonality categorization,\n      only presenting significant rows to save space"
 
-    ## # A tibble: 50 × 9
-    ##    tuning_step group1  group2       n1    n2 statistic    df p.adj p.adj.signif
-    ##          <dbl> <chr>   <chr>     <int> <int>     <dbl> <dbl> <dbl> <chr>       
-    ##  1           1 oboe    piano        49    49    -2.94     48 0.04  *           
-    ##  2           1 oboe    trumpet      49    49    -2.45     48 0.103 ns          
-    ##  3           1 oboe    violin       49    49    -1.61     48 0.322 ns          
-    ##  4           1 oboe    xylophone    49    49    -3.91     48 0.003 **          
-    ##  5           1 piano   trumpet      49    49     1.26     48 0.43  ns          
-    ##  6           1 piano   violin       49    49     1.60     48 0.322 ns          
-    ##  7           1 piano   xylophone    49    49    -2.18     48 0.172 ns          
-    ##  8           1 trumpet violin       49    49     0.365    48 0.717 ns          
-    ##  9           1 trumpet xylophone    49    49    -2.50     48 0.095 ns          
-    ## 10           1 violin  xylophone    49    49    -2.86     48 0.048 *           
-    ## # … with 40 more rows
+    ## # A tibble: 22 × 9
+    ##    tuning_step group1  group2       n1    n2 statistic    df    p.adj p.adj.si…¹
+    ##          <dbl> <chr>   <chr>     <int> <int>     <dbl> <dbl>    <dbl> <chr>     
+    ##  1           1 oboe    piano        49    49     -2.94    48 0.04     *         
+    ##  2           1 oboe    xylophone    49    49     -3.91    48 0.003    **        
+    ##  3           1 violin  xylophone    49    49     -2.86    48 0.048    *         
+    ##  4           2 oboe    piano        49    49     -2.81    48 0.035    *         
+    ##  5           2 oboe    trumpet      49    49     -2.90    48 0.028    *         
+    ##  6           2 oboe    xylophone    49    49     -4.71    48 0.000216 ***       
+    ##  7           2 piano   xylophone    49    49     -3.46    48 0.009    **        
+    ##  8           2 trumpet xylophone    49    49     -3.17    48 0.017    *         
+    ##  9           2 violin  xylophone    49    49     -3.44    48 0.01     **        
+    ## 10           3 oboe    piano        49    49     -2.97    48 0.023    *         
+    ## # … with 12 more rows, and abbreviated variable name ¹​p.adj.signif
 
-``` r
-# table for significant rows to present
-# chose Hommel correction method b/c neither too stringent nor too lenient
-```
+    ## [1] "post hoc for the effect of instrument on explicit rating"
 
-## Correlations b/w DV & other predictors
+    ## # A tibble: 9 × 8
+    ##   group1  group2       n1    n2 statistic    df    p.adj p.adj.signif
+    ##   <chr>   <chr>     <int> <int>     <dbl> <dbl>    <dbl> <chr>       
+    ## 1 oboe    piano       245   245     -8.20   244 6.7 e-14 ****        
+    ## 2 oboe    trumpet     245   245     -8.78   244 1.81e-15 ****        
+    ## 3 oboe    violin      245   245      4.18   244 1.63e- 4 ***         
+    ## 4 oboe    xylophone   245   245    -10.4    244 1.77e-20 ****        
+    ## 5 piano   violin      245   245     17.2    244 6.1 e-43 ****        
+    ## 6 piano   xylophone   245   245     -3.29   244 2   e- 3 **          
+    ## 7 trumpet violin      245   245     11.3    244 4.23e-23 ****        
+    ## 8 trumpet xylophone   245   245     -3.48   244 2   e- 3 **          
+    ## 9 violin  xylophone   245   245    -13.1    244 3.73e-29 ****
 
-``` r
-cor.test(data$pct_maj, data$Inst)
-```
+## Visualization
+
+![](eva_analyses_files/figure-gfm/graph-1.png)<!-- -->![](eva_analyses_files/figure-gfm/graph-2.png)<!-- -->![](eva_analyses_files/figure-gfm/graph-3.png)<!-- -->![](eva_analyses_files/figure-gfm/graph-4.png)<!-- -->![](eva_analyses_files/figure-gfm/graph-5.png)<!-- -->![](eva_analyses_files/figure-gfm/graph-6.png)<!-- -->
+
+Seems like slope of the curve for proportion of major categorization
+against tuning step is steeper for the key of C than B, for individuals
+who had experience playing instruments than not, and for those who can
+read music than those who can’t. So maybe familiarity with music is
+related to steeper slope (since people are surely more familiar with the
+key of C than B), meaning that changes in tuning step would lead to
+greater changes in tonality perception? - An interesting future
+direction.
+
+Also, from the last 2 column plots, we can see same patterns for
+categorization vs. rating, except for oboe and violin being reversed.
+
+## Analyzing categorization \~ instrument at tuning step = 3 (in the middle of major & minor)
+
+    ## # A tibble: 5 × 5
+    ##   instrument variable     n  mean    sd
+    ##   <chr>      <chr>    <dbl> <dbl> <dbl>
+    ## 1 oboe       pct_maj     49 0.319 0.238
+    ## 2 piano      pct_maj     49 0.429 0.276
+    ## 3 trumpet    pct_maj     49 0.554 0.272
+    ## 4 violin     pct_maj     49 0.5   0.291
+    ## 5 xylophone  pct_maj     49 0.569 0.324
+
+    ## ANOVA Table (type III tests)
+    ## 
+    ##       Effect DFn DFd      F        p p<.05   ges
+    ## 1 instrument   4 192 11.527 2.08e-08     * 0.098
+
+    ## [1] "Significant effect of instrument on tonality perception at tuning step 3"
+
+    ## # A tibble: 10 × 8
+    ##    group1  group2       n1    n2 statistic    df      p.adj p.adj.signif
+    ##    <chr>   <chr>     <int> <int>     <dbl> <dbl>      <dbl> <chr>       
+    ##  1 oboe    piano        49    49    -2.97     48 0.023      *           
+    ##  2 oboe    trumpet      49    49    -5.89     48 0.00000373 ****        
+    ##  3 oboe    violin       49    49    -5.12     48 0.0000423  ****        
+    ##  4 oboe    xylophone    49    49    -5.07     48 0.0000508  ****        
+    ##  5 piano   trumpet      49    49    -3.02     48 0.021      *           
+    ##  6 piano   violin       49    49    -2.01     48 0.2        ns          
+    ##  7 piano   xylophone    49    49    -2.81     48 0.036      *           
+    ##  8 trumpet violin       49    49     1.46     48 0.3        ns          
+    ##  9 trumpet xylophone    49    49    -0.305    48 0.762      ns          
+    ## 10 violin  xylophone    49    49    -1.43     48 0.318      ns
+
+![](eva_analyses_files/figure-gfm/tune3-1.png)<!-- -->
+
+This trend is slightly different from mean categorization, mean rating,
+slope, and crossover trends, but overall they are very similar.
+
+## Correlations b/w C & E
+
+Helpful
+[guide](http://www.sthda.com/english/wiki/correlation-test-between-two-variables-in-r)
+for correlation tests.
 
     ## 
     ##  Pearson's product-moment correlation
     ## 
-    ## data:  data$pct_maj and data$Inst
-    ## t = -1.198, df = 1223, p-value = 0.2311
+    ## data:  corr_data$cat and corr_data$exp
+    ## t = 3.9554, df = 243, p-value = 0.0001003
     ## alternative hypothesis: true correlation is not equal to 0
     ## 95 percent confidence interval:
-    ##  -0.09007283  0.02181426
-    ## sample estimates:
-    ##         cor 
-    ## -0.03423656
-
-``` r
-cor.test(data$pct_maj, data$Inst_yr)
-```
-
-    ## 
-    ##  Pearson's product-moment correlation
-    ## 
-    ## data:  data$pct_maj and data$Inst_yr
-    ## t = -0.77761, df = 898, p-value = 0.437
-    ## alternative hypothesis: true correlation is not equal to 0
-    ## 95 percent confidence interval:
-    ##  -0.0911340  0.0394745
-    ## sample estimates:
-    ##         cor 
-    ## -0.02594045
-
-``` r
-cor.test(data$pct_maj, data$music_exp)
-```
-
-    ## 
-    ##  Pearson's product-moment correlation
-    ## 
-    ## data:  data$pct_maj and data$music_exp
-    ## t = -1.6555, df = 1223, p-value = 0.09809
-    ## alternative hypothesis: true correlation is not equal to 0
-    ## 95 percent confidence interval:
-    ##  -0.103020514  0.008747799
-    ## sample estimates:
-    ##         cor 
-    ## -0.04728436
-
-``` r
-cor.test(data$pct_maj, data$Read) #*
-```
-
-    ## 
-    ##  Pearson's product-moment correlation
-    ## 
-    ## data:  data$pct_maj and data$Read
-    ## t = -2.0261, df = 1223, p-value = 0.04297
-    ## alternative hypothesis: true correlation is not equal to 0
-    ## 95 percent confidence interval:
-    ##  -0.113480299 -0.001835886
-    ## sample estimates:
-    ##         cor 
-    ## -0.05783893
-
-``` r
-cor.test(data$pct_maj, data$headphone)
-```
-
-    ## 
-    ##  Pearson's product-moment correlation
-    ## 
-    ## data:  data$pct_maj and data$headphone
-    ## t = -1.0432, df = 1223, p-value = 0.2971
-    ## alternative hypothesis: true correlation is not equal to 0
-    ## 95 percent confidence interval:
-    ##  -0.08568194  0.02623677
-    ## sample estimates:
-    ##         cor 
-    ## -0.02981603
-
-``` r
-cor.test(data$pct_maj, data$Age)
-```
-
-    ## 
-    ##  Pearson's product-moment correlation
-    ## 
-    ## data:  data$pct_maj and data$Age
-    ## t = 0.098373, df = 1098, p-value = 0.9217
-    ## alternative hypothesis: true correlation is not equal to 0
-    ## 95 percent confidence interval:
-    ##  -0.05614801  0.06206477
-    ## sample estimates:
-    ##         cor 
-    ## 0.002968749
-
-``` r
-cor.test(data$pct_maj, data$explicit_rtg) #***
-```
-
-    ## 
-    ##  Pearson's product-moment correlation
-    ## 
-    ## data:  data$pct_maj and data$explicit_rtg
-    ## t = 3.6567, df = 1223, p-value = 0.0002663
-    ## alternative hypothesis: true correlation is not equal to 0
-    ## 95 percent confidence interval:
-    ##  0.0482674 0.1590777
+    ##  0.1244514 0.3601710
     ## sample estimates:
     ##       cor 
-    ## 0.1039952
+    ## 0.2459441
 
-Ability to read music and explicit valence rating were significantly
-correlated with percent of major categorization
+Significant positive correlation between categorization and explicit
+rating.
 
-``` r
-corrplot(cor(data %>%
-  select(pct_maj, explicit_rtg, practice_score, Age, 16:21), use = "complete.obs"), method = "color")
-```
+![](eva_analyses_files/figure-gfm/corrplot-1.png)<!-- -->![](eva_analyses_files/figure-gfm/corrplot-2.png)<!-- -->
 
-    ## Warning in cor(data %>% select(pct_maj, explicit_rtg, practice_score, Age, : the
-    ## standard deviation is zero
+## Reference
 
-![](eva_analyses_files/figure-gfm/corrplot-1.png)<!-- -->
-
-``` r
-# why NA?
-```
-
-## Logistic regression (wrong, should use selected_major as DV)
-
-1)  Percent major \~ instrument & tuning step
-
-``` r
-#glm.fit <- glm(pct_maj ~ instrument + tuning_step, family = binomial) 
-# family = binomial tells r to run logistic regression
-#summary(glm.fit)
-```
-
-2)  Percent major \~ mean explicit rating of each instrument & tuning
-    step
-
-``` r
-#glm.fit2 <- glm(pct_maj ~ mean_rtg + tuning_step, family = binomial) 
-# family= binomial tells r to run logistic regression
-#summary(glm.fit2)
-```
-
-Linear regression
-
-``` r
-#lm.fit2 <- lm(pct_maj ~ tuning_step, data = cat)
-#lm.fit <- lm(pct_maj ~ instrument + tuning_step, data = cat) 
-#summary(lm.fit)
-```
-
-ANOVA exploring 1) whether adding instrument as a predictor
-significantly improves model, and 2) whether adding both predictors is
-significantly better than null model
-
-``` r
-#anova(lm.fit, lm.fit2) # adding instrument significantly improves model
-#anova(lm.fit) # adding both predictors significantly better than null model
-```
+Very helpful
+[link](https://www.datanovia.com/en/lessons/mixed-anova-in-r/) for
+performing mixed ANOVA in R!

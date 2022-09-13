@@ -5,107 +5,34 @@ Eva Wu
 
 ## Data Cleaning
 
+### Import data
+
 This code chunk is to import concatenated data, delete irrelevant
-variables and metadata to prepare for further data cleaning.
+variables and metadata to prepare for further data cleaning. We have
+data from both jspsych and Qualtrics, and the two were linked by
+participants’ `qualtrics_id` (10-digit random number assigned by
+Qualtrics; this was copied automatically to jspsych) and their
+`jspsych_id` (14-digit random letters and numbers assigned at the end of
+jspsych task; they were asked to manually copy and paste this code to
+Qualtrics to show that they finished the jspsych task; all but one
+pasted the right code).
 
-``` r
-# jspsych data
-df_j <- read_csv("inst-cat-uc-1.csv") %>% # load exp1 data
-  filter(designation != "NA" & designation != "practice-intro" & designation != "practice-resp" & 
-         qualtrics_id != "NA" & qualtrics_id != "9643222579") %>% # delete pilot data
-  select(participant, qualtrics_id, chord, designation, response, # delete meta data
-         correct, passed_practice, block_passed_practice, practice_score, 
-         instrument, valence, tuning_step, selected_major, explicit_rtg) %>% 
-  # for some reason 2 participant's qualtrics id was "participant", so I recoded according to their id on Qualtrics
-  mutate(qualtrics_id = if_else(participant == "ch4dg75c7th9g1", "1706631024", qualtrics_id), 
-         qualtrics_id = if_else(participant == "ept8xz3drgq38w", "4475978126", qualtrics_id),
-         instrument = factor(instrument, levels = c("xylophone", "trumpet", "piano", "violin", "oboe")))
+### Drop NA
 
-# qualtrics data
-df_q <- read_csv("Qualtrics_5:4.csv") %>%
-  filter(row_number() > 7) %>% # delete pilot data
-  select(-(2:16), -50) %>% # delete unnecessary meta data
-  mutate(Age = as.numeric(Age),
-         Year = factor(Year, levels = c("Freshman", "Sophomore", "Junior", "Senior", "Graduate", "Other (please specify):")),
-         Inst = as.integer(if_else(Inst == "Yes", 1, 0)),
-         Start = if_else(Start == "10 Years Old", "10", Start), # so that this won't be coerced to NA when mutating to numeric; only this one didn't write an integer in this question
-         Start = as.integer(Start),
-         Inst_now = as.integer(if_else(Inst_now == "Yes", 1, 0)),
-         Ens = as.integer(if_else(Ens == "Yes", 1, 0)),
-         Course = as.integer(if_else(Course == "Yes", 1, 0)),
-         Read = as.integer(if_else(Read == "Yes", 1, 0)),
-         `Pitch&Tempo_1` = as.integer(`Pitch&Tempo_1`),
-         `Pitch&Tempo_2` = as.integer(`Pitch&Tempo_2`),
-         Perf = as.integer(case_when(Perf == "Yes" ~ 1,
-                                     Perf == "No" ~ 0,
-                                     Perf == "Not sure" ~ -1)),
-         Concert = as.integer(Concert))
-
-# join qualtrics & jspsych data by embedded qualtrics id
-# discard those who do not have a matching qualtrics_id in qualtrics data, keep everyone in jspsych data
-combined <- left_join(df_j, df_q, by = c("qualtrics_id" = "participant"))
-```
-
-This code chunk is to filter out participants who did not do anything in
-the survey/categorization task. Since there were problems with SONA,
-some participants had duplicate rows, one with data and the other
-without. Others had two rows, one with Qualtrics response but blank
-jspsych response, the other with filled jspsych response but blank
+This code chunk exists only because there were problems with the linking
+of Qualtrics and jspsych data. This code chunck is to filter out
+participants who did not do anything in the survey/categorization task.
+Some participants had duplicate rows, one with response and the other
+blank. Others had two rows, one with Qualtrics response but blank
+jspsych response, the other with full jspsych response but blank
 Qualtrics response. This step is to make sure we delete duplicates and
-combine same participants’ Qualtrics and jspsych data into one row.
+combine each participant’s Qualtrics and jspsych data into one row.
 
-``` r
-# those who only have j data but not q
-na_q <- combined %>%
-  filter(is.na(Gender)) %>%
-  select(1:14) # delete q columns
-# there are 4 of them w/ blank qualtrics data but full jspsych data
-
-# those who only have q data but not j
-na_j <- df_q %>%
-  # assume 22-0159 in q is 5281kj47nhoboj in j
-  mutate(jspsych_id = if_else(jspsych_id == "22-0159", "5281kj47nhoboj", jspsych_id)) %>% 
-  semi_join(na_q, by = c("jspsych_id" = "participant"))
-
-# join the half-full data together according to jspsych id
-na_combined <- full_join(na_q, na_j, by = c("participant" = "jspsych_id"), keep = TRUE) %>%
-  select(-participant.y) %>%
-  rename(participant = participant.x)
-
-# bind them back to combined, delete the half-full rows
-combined_drop_na <- rbind(combined, na_combined) %>%
-  filter(!is.na(Gender))
-```
+### Demographics and headphone test data
 
 The following code chunk is to extract demographics and headphone test
 data, combine them together, and filter out those who did not pass the
 headphone test.
-
-``` r
-# df for demographics
-# need to find a way to summarize musical expertise
-demo <- combined_drop_na %>%
-  filter(designation == "PRACTICE-PASSED-SUMMARY") %>%
-  select(-1, -(3:6), -(10:16), -49) # delete unnecessary data
-
-# df for headphone test
-test <- combined_drop_na %>%
-  filter(designation == "headphone-test") %>%
-  select(2, 6) %>%
-  group_by(qualtrics_id) %>%
-  summarize(n = sum(correct)) %>%
-  # set 4 out of 6 as passed headphone test
-  mutate(headphone = if_else(n >= 4, 1, 0),
-         test_corr = n) %>%
-  select(-n)
-
-# combine headphone test pass/fail result w/ original data
-demo_test <- left_join(demo, test, by = "qualtrics_id")
-
-# see how many failed the headphone test
-test %>%
-  filter(headphone == 0)
-```
 
     ## # A tibble: 8 × 3
     ##   qualtrics_id headphone test_corr
@@ -124,125 +51,20 @@ pass the headphone test (answered fewer than 4 questions correctly). For
 now I’ll keep them, but later we can see if deleting them makes a big
 difference, and then decide whether to keep them.
 
+### Tonality categorization and explicit emotional valence ratings data
+
 The following code chunk extracts categorization and explicit rating
-data respectively, and manipulate them to create 2 new data frames, 1
-with participants’ categorization with explicit ratings combined
-([cat_rtg.csv](cat_rtg.csv)), the other with participants’ demographics
-and average percent of major categorization and explicit rating of each
-instrument combined ([pivoted_data.csv](pivoted_data.csv)).
+data respectively, and manipulates them to create 3 new data frames, one
+with participants’ categorization, explicit ratings, and demographics
+combined ([all.csv](all.csv)), another with participants’ demographics,
+including headphone test and music experience
+([demo_test.csv](demo_test.csv)), and still another with the
+descriptives and categorization and explicit ratings data
+([descriptives.csv](descriptives.csv)).
 
-``` r
-# df for categorization
-cat <- combined_drop_na %>%
-  filter(designation == "MAIN-JUDGMENT") %>%
-  select(2:3, 10:13) %>%
-  group_by(qualtrics_id, instrument, tuning_step) %>%
-  summarize(pct_maj = mean(selected_major))
-  
-# each person's mean major choice proportion 
-cat_pivoted <- cat %>%
-  group_by(qualtrics_id, instrument, tuning_step) %>%
-  summarize(mean_cat = mean(pct_maj)) %>%
-  mutate(instrument = paste0(instrument, tuning_step)) %>%
-  select(-tuning_step) %>%
-  pivot_wider(names_from = instrument, values_from = mean_cat)
+## Cleaned data!
 
-# delete since no point of having 25 cols for major judgment
-# pivot_wider(names_from = c(instrument, tuning_step), values_from = pct_maj)
-
-# df for explicit rating
-rtg <- combined_drop_na %>%
-  filter(designation == "INST-VALENCE-RTG") %>%
-  select(qualtrics_id, instrument, explicit_rtg)
-
-# pivot so that one person has one row
-rtg_pivoted <- rtg %>%
-  mutate(instrument = paste0("rtg_", instrument)) %>%
-  pivot_wider(names_from = instrument, values_from = explicit_rtg)
-
-# df for both combined
-cat_rtg <- left_join(cat, rtg)
-
-# each instrument's mean cat & rtg
-cat_rtg_summary <- cat_rtg %>%
-  group_by(instrument) %>%
-  summarize(mean_pct = mean(pct_maj),
-         mean_rtg = mean(explicit_rtg))
-
-# both pivoted combined
-cat_rtg_pivoted <- cat_pivoted %>% 
-  left_join(rtg_pivoted, by = c("qualtrics_id"))
-
-# delete the following since no need
-# mutate(inst_id = case_when(instrument == "oboe" ~ 1, instrument == "violin" ~ 2,
-# instrument == "piano" ~ 3, instrument == "trumpet" ~ 4, instrument == "xylophone" ~ 5))
-
-# each participant = 1 row of data
-all <- left_join(cat_rtg_pivoted, demo_test)
-
-write_csv(cat_rtg, "cat_rtg.csv")
-write_csv(all, "pivoted_data.csv")
-```
-
-A snapshot of the data (next step: find a measure to summarize musical
-background)
-
-``` r
-variable_names <- colnames(all)
-variable_meaning = c("Random 10-digit ID assigned by Qualtrics, used to join Qualtrics and jspsych data", 
-                     "Proportion of major categorization for xylophone, tuning step 1", 
-                     "Proportion of major categorization for xylophone, tuning step 2", 
-                     "Proportion of major categorization for xylophone, tuning step 3", 
-                     "Proportion of major categorization for xylophone, tuning step 4", 
-                     "Proportion of major categorization for xylophone, tuning step 5", 
-                     "Proportion of major categorization for trumpet, tuning step 1", 
-                     "Proportion of major categorization for trumpet, tuning step 2", 
-                     "Proportion of major categorization for trumpet, tuning step 3", 
-                     "Proportion of major categorization for trumpet, tuning step 4", 
-                     "Proportion of major categorization for trumpet, tuning step 5", 
-                     "Proportion of major categorization for piano, tuning step 1",
-                     "Proportion of major categorization for piano, tuning step 2",
-                     "Proportion of major categorization for piano, tuning step 3",
-                     "Proportion of major categorization for piano, tuning step 4",
-                     "Proportion of major categorization for piano, tuning step 5",
-                     "Proportion of major categorization for violin, tuning step 1", 
-                     "Proportion of major categorization for violin, tuning step 2", 
-                     "Proportion of major categorization for violin, tuning step 3", 
-                     "Proportion of major categorization for violin, tuning step 4", 
-                     "Proportion of major categorization for violin, tuning step 5", 
-                     "Proportion of major categorization for oboe, tuning step 1",
-                     "Proportion of major categorization for oboe, tuning step 2",
-                     "Proportion of major categorization for oboe, tuning step 3",
-                     "Proportion of major categorization for oboe, tuning step 4",
-                     "Proportion of major categorization for oboe, tuning step 5",
-                     "Explicit valence rating of xylophone", 
-                     "Explicit valence rating of violin", 
-                     "Explicit valence rating of piano",
-                     "Explicit valence rating of trumpet", 
-                     "Explicit valence rating of oboe", 
-                     "Passed practice or not (1 = pass)", "Number of tries taken to pass", 
-                     "Practice score (out of 12)", "", "", "", 
-                     "If not a student or faculty", "", 
-                     "If not a psych of music major", 
-                     "Play instrument or not", 
-                     "At what age they started playing an instrument", 
-                     "Still playing now?", "List of instruments played", 
-                     "Participated in ensemble or not", 
-                     "Taken music courses or not", "List music courses taken", 
-                     "Read music or not", 
-                     "Ability to perceive and remember pitch", 
-                     "Ability to perceive and remember tempo",
-                     "Has perfect pitch or not (1 = yes, 0 = no, -1 = don't know", 
-                     "Time spent making music per week", 
-                     "Time spent listening to music per day", 
-                     "Number of concert attended per year", 
-                     "Proportion of each genre listened to (total 100)", 
-                     "", "", "", "", "", "", "", "", "", "", "", 
-                     "Passed headphone test or not (1 = pass)", 
-                     "Number of correct answers in headphone test")
-codebook <- data.frame(variable_names, variable_meaning)
-kable(codebook)
-```
+A snapshot of the data (aka codebook):
 
 <table>
 <thead>
@@ -267,242 +89,52 @@ jspsych data
 </tr>
 <tr>
 <td style="text-align:left;">
-xylophone1
+instrument
 </td>
 <td style="text-align:left;">
-Proportion of major categorization for xylophone, tuning step 1
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-xylophone2
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for xylophone, tuning step 2
+Instrument used to "play" the stimuli
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-xylophone3
+tuning_step
 </td>
 <td style="text-align:left;">
-Proportion of major categorization for xylophone, tuning step 3
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-xylophone4
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for xylophone, tuning step 4
+Tuning step of 3rd (middle note) of the chord (1 = absolute minor, 5 =
+absolute major, 2-4 = ambiguous tonality)
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-xylophone5
+chord
 </td>
 <td style="text-align:left;">
-Proportion of major categorization for xylophone, tuning step 5
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-trumpet1
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for trumpet, tuning step 1
+Key stimuli were in
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-trumpet2
+pct_maj
 </td>
 <td style="text-align:left;">
-Proportion of major categorization for trumpet, tuning step 2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-trumpet3
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for trumpet, tuning step 3
+Percent proportion of chords categorized as major
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-trumpet4
+explicit_rtg
 </td>
 <td style="text-align:left;">
-Proportion of major categorization for trumpet, tuning step 4
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-trumpet5
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for trumpet, tuning step 5
+Explicit valence rating of instrument
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-piano1
+participant
 </td>
 <td style="text-align:left;">
-Proportion of major categorization for piano, tuning step 1
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-piano2
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for piano, tuning step 2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-piano3
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for piano, tuning step 3
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-piano4
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for piano, tuning step 4
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-piano5
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for piano, tuning step 5
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-violin1
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for violin, tuning step 1
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-violin2
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for violin, tuning step 2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-violin3
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for violin, tuning step 3
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-violin4
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for violin, tuning step 4
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-violin5
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for violin, tuning step 5
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-oboe1
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for oboe, tuning step 1
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-oboe2
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for oboe, tuning step 2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-oboe3
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for oboe, tuning step 3
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-oboe4
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for oboe, tuning step 4
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-oboe5
-</td>
-<td style="text-align:left;">
-Proportion of major categorization for oboe, tuning step 5
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-rtg_xylophone
-</td>
-<td style="text-align:left;">
-Explicit valence rating of xylophone
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-rtg_violin
-</td>
-<td style="text-align:left;">
-Explicit valence rating of violin
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-rtg_piano
-</td>
-<td style="text-align:left;">
-Explicit valence rating of piano
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-rtg_trumpet
-</td>
-<td style="text-align:left;">
-Explicit valence rating of trumpet
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-rtg_oboe
-</td>
-<td style="text-align:left;">
-Explicit valence rating of oboe
+Random 14-digit combination of letters and numbers, used to verify
+completion of jspsych task
 </td>
 </tr>
 <tr>
@@ -518,7 +150,7 @@ Passed practice or not (1 = pass)
 block_passed_practice
 </td>
 <td style="text-align:left;">
-Number of tries taken to pass
+Number of attempts taken to pass
 </td>
 </tr>
 <tr>
@@ -570,7 +202,7 @@ Major
 Major_5\_TEXT
 </td>
 <td style="text-align:left;">
-If not a psych of music major
+If not a psych or music major
 </td>
 </tr>
 <tr>
@@ -578,7 +210,7 @@ If not a psych of music major
 Inst
 </td>
 <td style="text-align:left;">
-Play instrument or not
+If they have ever played an instrument or not
 </td>
 </tr>
 <tr>
@@ -607,10 +239,26 @@ List of instruments played
 </tr>
 <tr>
 <td style="text-align:left;">
+Inst_yr
+</td>
+<td style="text-align:left;">
+Years they played their most trained instrument
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Inst_num
+</td>
+<td style="text-align:left;">
+Number of instruments played
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Ens
 </td>
 <td style="text-align:left;">
-Participated in ensemble or not
+If they have ever participated in ensemble or not
 </td>
 </tr>
 <tr>
@@ -626,7 +274,7 @@ Taken music courses or not
 Course_list
 </td>
 <td style="text-align:left;">
-List music courses taken
+List of music courses taken
 </td>
 </tr>
 <tr>
@@ -642,7 +290,7 @@ Read music or not
 Pitch&Tempo_1
 </td>
 <td style="text-align:left;">
-Ability to perceive and remember pitch
+Self-rated ability to perceive and remember pitch
 </td>
 </tr>
 <tr>
@@ -650,7 +298,25 @@ Ability to perceive and remember pitch
 Pitch&Tempo_2
 </td>
 <td style="text-align:left;">
-Ability to perceive and remember tempo
+Self-rated ability to perceive and remember tempo
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+PT1
+</td>
+<td style="text-align:left;">
+Self-rated ability to perceive and remember pitch / 10, used to
+calculate overall music experience
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+PT2
+</td>
+<td style="text-align:left;">
+Self-rated ability to perceive and remember tempo / 10, used to
+calculate overall music experience
 </td>
 </tr>
 <tr>
@@ -671,6 +337,14 @@ Time spent making music per week
 </tr>
 <tr>
 <td style="text-align:left;">
+Time_make_num
+</td>
+<td style="text-align:left;">
+Time spent making music per week converted to numeric
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Time_listen
 </td>
 <td style="text-align:left;">
@@ -679,10 +353,18 @@ Time spent listening to music per day
 </tr>
 <tr>
 <td style="text-align:left;">
+Time_listen_num
+</td>
+<td style="text-align:left;">
+Time spent listening to music per day converted to numeric
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Concert
 </td>
 <td style="text-align:left;">
-Number of concert attended per year
+Number of concerts attended per year
 </td>
 </tr>
 <tr>
@@ -768,6 +450,15 @@ Genre_15
 Genre_15_TEXT
 </td>
 <td style="text-align:left;">
+Other genres not mentioned
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+music_exp
+</td>
+<td style="text-align:left;">
+Arbitrary summary of music experience
 </td>
 </tr>
 <tr>
@@ -789,144 +480,94 @@ Number of correct answers in headphone test
 </tbody>
 </table>
 
+## Descriptives
+
+    ## [1] "descriptives for categorization in the key of B"
+
+    ## # A tibble: 5 × 6
+    ## # Groups:   instrument [5]
+    ##   instrument   `1`   `2`   `3`   `4`   `5`
+    ##   <fct>      <dbl> <dbl> <dbl> <dbl> <dbl>
+    ## 1 xylophone   0.36  0.43  0.62  0.84  0.84
+    ## 2 trumpet     0.22  0.29  0.58  0.75  0.74
+    ## 3 piano       0.24  0.3   0.48  0.8   0.84
+    ## 4 violin      0.24  0.31  0.59  0.74  0.76
+    ## 5 oboe        0.18  0.18  0.39  0.61  0.69
+
+    ## [1] "descriptives for categorization in the key of C"
+
+    ## # A tibble: 5 × 6
+    ## # Groups:   instrument [5]
+    ##   instrument   `1`   `2`   `3`   `4`   `5`
+    ##   <fct>      <dbl> <dbl> <dbl> <dbl> <dbl>
+    ## 1 xylophone   0.21  0.26  0.51  0.92  0.93
+    ## 2 trumpet     0.12  0.16  0.53  0.9   0.88
+    ## 3 piano       0.19  0.16  0.38  0.88  0.94
+    ## 4 violin      0.08  0.15  0.4   0.79  0.89
+    ## 5 oboe        0.04  0.12  0.24  0.68  0.8
+
+    ## [1] "descriptives for explicit ratings in the key of B"
+
+    ## # A tibble: 5 × 6
+    ## # Groups:   instrument [5]
+    ##   instrument   `1`   `2`   `3`   `4`   `5`
+    ##   <fct>      <dbl> <dbl> <dbl> <dbl> <dbl>
+    ## 1 xylophone   0.36  0.43  0.62  0.84  0.84
+    ## 2 trumpet     0.22  0.29  0.58  0.75  0.74
+    ## 3 piano       0.24  0.3   0.48  0.8   0.84
+    ## 4 violin      0.24  0.31  0.59  0.74  0.76
+    ## 5 oboe        0.18  0.18  0.39  0.61  0.69
+
+    ## [1] "descriptives for explicit ratings in the key of C"
+
+    ## # A tibble: 5 × 6
+    ## # Groups:   instrument [5]
+    ##   instrument   `1`   `2`   `3`   `4`   `5`
+    ##   <fct>      <dbl> <dbl> <dbl> <dbl> <dbl>
+    ## 1 xylophone   3     3     3     3     3   
+    ## 2 trumpet     2.7   2.7   2.7   2.7   2.7 
+    ## 3 piano       2.91  2.91  2.91  2.91  2.91
+    ## 4 violin      2.13  2.13  2.13  2.13  2.13
+    ## 5 oboe        2.22  2.22  2.22  2.22  2.22
+
 ## Demographic analysis
 
-``` r
-all %>%
-  filter(Gender != "NA") %>%
-  ggplot(aes(Gender, fill = Gender)) +
-  geom_bar() +
-  labs(title = "Participant gender distribution",
-       x = "Gender",
-       y = "Number of participants") +
-  theme_minimal() +
-  theme(legend.position = "None")
-```
-
-![](data_cleaning_files/figure-gfm/demo-1.png)<!-- -->
-
-``` r
-all %>%
-  ggplot(aes(Age)) +
-  geom_bar(fill = "lightblue") +
-  labs(title = "Participant age distribution",
-       x = "Age",
-       y = "Number of participants") +
-  theme_minimal()
-```
-
-![](data_cleaning_files/figure-gfm/demo-2.png)<!-- -->
-
-``` r
-all %>%
-  filter(Year != "NA") %>%
-  ggplot(aes(Year)) +
-  geom_bar(fill = "orange") +
-  labs(title = "Participant year of school distribution",
-       x = "Year",
-       y = "Number of participants") +
-  theme_minimal()
-```
-
-![](data_cleaning_files/figure-gfm/demo-3.png)<!-- -->
-
-``` r
-# 3 psych, 3 double, 43 other; why is the graph like this
-all %>%
-  mutate(Major = case_when(Major == "Psychology" ~ "Psychology",
-                           Major == "Music" ~ "Music",
-                           Major == "NA" ~ "NA",
-                           Major == "Music,Other (please specify):" ~ "Double major in music and another subject",
-                           Major == "Other (please specify):" ~ "Other",
-                           Major == "Psychology,Other (please specify):" ~ "Double major in psychology and another subject")) %>%
-  ggplot(aes("", Major, fill = Major)) +
-  geom_bar(stat = "identity") +
-  coord_polar(theta = "y") +
-  labs(title = "Participant major distribution") +
-  theme_void()
-```
-
-![](data_cleaning_files/figure-gfm/demo-4.png)<!-- -->
+![](data_cleaning_files/figure-gfm/demo-1.png)<!-- -->![](data_cleaning_files/figure-gfm/demo-2.png)<!-- -->![](data_cleaning_files/figure-gfm/demo-3.png)<!-- -->![](data_cleaning_files/figure-gfm/demo-4.png)<!-- -->
 
 Turns out the number of female and male participants did not differ
 much. Most participants were aged 18-21, while a few above 22. We had
-the greatest number of sophomores, then freshmen, then juniors, and the
-lowest number of seniors. Pie chart was a bit odd; need more work. But
-we can see that most participants were neither a psychology major nor a
+greater number of sophomores, than freshmen, than juniors, than seniors,
+than others. Most participants were neither a psychology major nor a
 music major.
-
-## Music courses taken
-
-``` r
-# demo$Course is already an integer, why is it still double in the graph
-#all %>%
-#  ggplot(aes("", Course, fill = Course)) +
-#  geom_bar(stat = "identity") +
-#  coord_polar(theta = "y") +
-#  labs(title = "Taken music courses or not") +
-#  theme_void()
-
-all %>%
-  ggplot(aes(Course)) +
-  geom_bar() +
-  labs(title = "Taken music courses or not")
-```
-
-![](data_cleaning_files/figure-gfm/musical-background-1.png)<!-- -->
-
-The number of participants who have taken music courses were slightly
-lower than that of those who haven’t.
 
 ## Practice Score
 
-``` r
-all %>%
-  filter(block_passed_practice == 2)
-```
+Participants who failed their first attempt in the practice section
+could re-do it for a second time. Let’s check how many passed in their
+2nd attempt. Let’s also check the distribution of practice score.
 
-    ## # A tibble: 2 × 68
-    ## # Groups:   qualtrics_id [2]
-    ##   qualtrics_id xylophone1 xylophone2 xylophone3 xylophone4 xylophone5 trumpet1
-    ##   <chr>             <dbl>      <dbl>      <dbl>      <dbl>      <dbl>    <dbl>
-    ## 1 2701997442        1            1        1           1           1      0.75 
-    ## 2 6783315289        0.625        0.5      0.375       0.75        0.5    0.625
-    ## # … with 61 more variables: trumpet2 <dbl>, trumpet3 <dbl>, trumpet4 <dbl>,
-    ## #   trumpet5 <dbl>, piano1 <dbl>, piano2 <dbl>, piano3 <dbl>, piano4 <dbl>,
-    ## #   piano5 <dbl>, violin1 <dbl>, violin2 <dbl>, violin3 <dbl>, violin4 <dbl>,
-    ## #   violin5 <dbl>, oboe1 <dbl>, oboe2 <dbl>, oboe3 <dbl>, oboe4 <dbl>,
-    ## #   oboe5 <dbl>, rtg_xylophone <dbl>, rtg_violin <dbl>, rtg_piano <dbl>,
-    ## #   rtg_trumpet <dbl>, rtg_oboe <dbl>, passed_practice <dbl>,
-    ## #   block_passed_practice <dbl>, practice_score <dbl>, Age <dbl>, …
-
-``` r
-all %>%
-  ggplot(aes(practice_score)) +
-  geom_bar(fill = "lightgreen") +
-  labs(title = "Practice score distribution among those who passed (almost all did)",
-       subtitle = "Pass: getting ≥ 8 out of 12 correct",
-       x = "Number of correct responses out of 12",
-       y = "Number of participants") +
-  theme_minimal()
-```
+    ## # A tibble: 2 × 44
+    ##   participant   qualt…¹ passe…² block…³ pract…⁴   Age Gender Year  Year_…⁵ Major
+    ##   <chr>         <chr>     <dbl>   <dbl>   <dbl> <dbl> <chr>  <fct> <chr>   <chr>
+    ## 1 c1vn7ym2gp4m… 270199…       1       2       9    19 Female Fres… <NA>    Psyc…
+    ## 2 5281kj47nhob… 678331…       1       2       8    20 Male   Soph… <NA>    Othe…
+    ## # … with 34 more variables: Major_5_TEXT <chr>, Inst <int>, Start <int>,
+    ## #   Inst_now <int>, Inst_list <chr>, Inst_yr <dbl>, Inst_num <dbl>, Ens <int>,
+    ## #   Course <int>, Course_list <chr>, Read <int>, `Pitch&Tempo_1` <int>,
+    ## #   `Pitch&Tempo_2` <int>, PT1 <dbl>, PT2 <dbl>, Perf <int>, Time_make <chr>,
+    ## #   Time_make_num <dbl>, Time_listen <chr>, Time_listen_num <dbl>,
+    ## #   Concert <int>, Genre_18 <chr>, Genre_8 <chr>, Genre_9 <chr>,
+    ## #   Genre_17 <chr>, Genre_10 <chr>, Genre_11 <chr>, Genre_12 <chr>, …
 
 ![](data_cleaning_files/figure-gfm/practice-1.png)<!-- -->
 
 Only 2 failed the 1st time. The rest all passed in the 1st try. Most
 passed with 12/12.
 
-## Categorization
+## Categorization exploratory plot
 
-``` r
-cat %>%
-  ggplot(aes(tuning_step, pct_maj, color = instrument)) +
-  geom_smooth(se = FALSE) +
-  scale_y_continuous(labels = scales::percent) +
-  # need to come up w/ a better palette
-  # scale_color_discrete_sequential("Viridis", rev = TRUE) + 
-  labs(title = "Proportion of major choices vs. tuning step & instruments",
-       x = "Tuning step", y = "Percept of major choices") +
-  theme_minimal()
-```
+Plot a smooth line graph to see how instrument and tuning step affected
+tonality categorization.
 
 ![](data_cleaning_files/figure-gfm/cat-1.png)<!-- -->
 
@@ -935,17 +576,7 @@ unclear
 
 Oboe: overall most likely to be judged as minor when tuning is unclear
 
-## Explicit Rating
-
-``` r
-rtg %>%
-  ggplot(aes(instrument, explicit_rtg, fill = instrument)) +
-  geom_col() +
-  labs(title = "Explicit valence rating for each instrument",
-       x = "Instrument", y = "Mean rating") +
-  theme_minimal() +
-  theme(legend.position = "None")
-```
+## Explicit emotional valence rating exploratory plot
 
 ![](data_cleaning_files/figure-gfm/rating-1.png)<!-- -->
 
@@ -953,22 +584,6 @@ Xylophone: rated “happiest” on average, then piano, then trumpet, then
 oboe, and violin rated the “saddest”.
 
 ## Compare trend between tonality judgment and explicit rating
-
-``` r
-cat_rtg_summary %>%
-  pivot_longer(cols = c(mean_pct, mean_rtg), names_to = "type", values_to = "value") %>%
-  mutate(type = if_else(type == "mean_pct", "Mean percent proportion of major categorization", 
-                        "Mean explicit valence rating")) %>%
-  ggplot(aes(instrument, value, group = 1, color = type)) +
-  geom_line() +
-  facet_wrap(~type, ncol = 1, scales = "free_y") +
-  labs(title = "Compare trend b/w tonality categorization & valence rating",
-       x = "Instrument", y = NULL) +
-  theme(axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        panel.grid.major.y = element_blank(),
-        legend.position = "None")
-```
 
 ![](data_cleaning_files/figure-gfm/compare-cat-valence-1.png)<!-- -->
 

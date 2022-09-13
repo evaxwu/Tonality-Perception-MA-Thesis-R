@@ -35,6 +35,6 @@ data <- do.call(smartbind, All) #use function and bind the read csv files be row
 ### Save combined data frame
 
 ```{r save_csv}
-write.csv(data,"inst-cat-uc-2.csv", row.names=FALSE) #save the large data frame as its own csv file
+write.csv(data, "inst-cat-uc-2.csv", row.names = FALSE) #save the large data frame as its own csv file
 ```
 

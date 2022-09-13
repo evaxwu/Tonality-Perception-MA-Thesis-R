@@ -31,23 +31,25 @@ Judgments should be theoretically independent of instrument. However, if certain
 demo_test <- read_csv("demo_test.csv") %>%
   select(-(2:5))
 data <- read_csv("inst-cat-uc-1.csv") %>%
-  inner_join(demo_test, by = "participant") # discard duplicates, join demo & mus_exp data
+  inner_join(demo_test, by = "participant") # join demo & mus_exp data, discard duplicates
+
+data.cat <- data %>% 
+  filter(designation == "MAIN-JUDGMENT") # extract cat data
+data.exp <- data %>% 
+  filter(designation == "INST-VALENCE-RTG") # extract rtg data
 ```
 
 ### 2. Generalized Linear Models
 
 Here we report our main analyses
 
-```{r model}
-data.cat <- data %>% 
-  filter(designation == "MAIN-JUDGMENT") # extract cat data
-
+```{r GLM}
 # first, let's confirm that the inclusion of linear/quadratic/cubic effects is warranted via nested models
 # random effects | random factor
 # random intercepts (1) and (+) random slopes for instrument (instrument) from participant to participant
 main.model3 <- glmer(selected_major ~ poly(tuning_step, 3) * instrument + (1 + instrument | participant), data = data.cat, family = binomial)
-#main.model2 <- glmer(selected_major ~ poly(tuning_step, 2) * instrument + (1 + instrument | participant), data = data.cat, family = binomial)
-#main.model1 <- glmer(selected_major ~ poly(tuning_step, 1) * instrument + (1 + instrument | participant), data = data.cat, family = binomial)
+main.model2 <- glmer(selected_major ~ poly(tuning_step, 2) * instrument + (1 + instrument | participant), data = data.cat, family = binomial)
+main.model1 <- glmer(selected_major ~ poly(tuning_step, 1) * instrument + (1 + instrument | participant), data = data.cat, family = binomial)
 
 anova(main.model3, main.model2) # strong evidence to keep cubic fit (versus just quadratic + linear)
 anova(main.model3, main.model1) # strong evidence to keep cubic fit (versus just linear)
@@ -56,49 +58,22 @@ anova(main.model3, main.model1) # strong evidence to keep cubic fit (versus just
 # cat results from the selected cubic model
 summary(main.model3)
 cat.emm <- emmeans(main.model3, "instrument")
+# post hoc - paired comparisons
 pairs(cat.emm) # oboe < all others except piano; xylophone > piano
 
 # assess explicit ratings of instruments
-data.exp <- data %>% 
-  filter(designation == "INST-VALENCE-RTG")
-
 data.exp$explicit_rtg <- ordered(data.exp$explicit_rtg)
 
 explicit.model <- clmm(explicit_rtg ~ instrument + (1 | participant), data = data.exp)
 summary(explicit.model) # clear differences in reported capacity for instruments to play happy/sad
 explicit.emm <- emmeans(explicit.model, "instrument")
+# post hoc - paired comparisons
 pairs(explicit.emm) # violin < all others except oboe; xylophone > oboe
 ```
 
-```{r outliers_slope}
-slopes_data <- as.data.frame(data.cat$qualtrics_id) %>%
-  mutate(slopes = NA) %>%
-  rename(qualtrics_id = `data.cat$qualtrics_id`) %>%
-  filter(qualtrics_id != "participant") %>%
-  unique()
-
-for (i in slopes_data$qualtrics_id) {
-  data_filtered <- data.cat %>%
-    filter(qualtrics_id == i)
-  simple_model <- glm(selected_major ~ tuning_step, data = data_filtered, family = binomial)
-  slopes_data$slopes[slopes_data$qualtrics_id == i] = coef(simple_model)[[2]]
-}
-
-outliers_slope <- slopes_data %>%
-  identify_outliers(slopes)
-
-# examine outliers; they are a combination of 0's and 1's
-data.cat %>%
-  filter(qualtrics_id %in% outliers_slope$qualtrics_id)
-
-slopes_data %>%
-  ggplot(aes(slopes)) +
-  geom_histogram()
-```
-
-link for [logistic regression](http://www.sthda.com/english/articles/36-classification-methods-essentials/151-logistic-regression-essentials-in-r/)
-
 ### 3. Cat-rtg correlation plot 
+
+This is to explore whether categorization and explicit rating results are correlated. 
 
 ```{r summarize-pivot}
 # how do categorization results map onto explicit ratings? 
@@ -127,6 +102,8 @@ corrplot(corvalues, method = "color", col = col(200),
 ```
 
 ### 4. Categorization smooth plot
+
+This plot shows how the smooth curve of proportion of major categorization against tuning step differs across instruments.
 
 ```{r smooth-plot}
 eff.inst <- as.data.frame(effect(term = "poly(tuning_step,3)*instrument", mod = main.model3)) 
@@ -157,6 +134,5 @@ efplot.main <- ggplot(eff.inst, aes(x = tuning_step, y = fit, color = instrument
         axis.line.y = element_line(colour = "black", size = 0.5, linetype = "solid"),
         strip.text = element_text(size = 14))
 
-png("inst-cat-plot.png", height = 4, width = 5.5, res = 300, units = "in")
 efplot.main
 ```
