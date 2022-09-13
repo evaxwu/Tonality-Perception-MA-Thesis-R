@@ -18,7 +18,7 @@ This is an R Markdown document that can be dropped one level up from a folder wi
 ### Load individual csvs
 
 ```{r concatenate, warning=FALSE}
-setwd("raw2") #this is the folder name that contains the individual csvs from exp1
+setwd("raw1") #this is the folder name that contains the individual csvs from exp1
 filenames <- list.files(full.names=TRUE) #lists each file in the folder
 
 data <- data.frame()

@@ -349,7 +349,7 @@ efplot.main <- ggplot(eff.inst, aes(x = tuning_step, y = fit, color = instrument
     ## Warning: Ignoring unknown parameters: family
 
 ``` r
-# save plot
-png("inst-cat-plot.png", height = 4, width = 5.5, res = 300, units = "in")
 efplot.main
 ```
+
+![](instcat-analysis_files/figure-gfm/smooth-plot-1.png)<!-- -->

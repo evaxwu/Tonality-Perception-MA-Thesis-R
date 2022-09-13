@@ -45,9 +45,9 @@ explicit rating of instrument valence at the end
 
 ## File directory
 
-* [cancatenate.Rmd](cancatenate.Rmd): concatenate raw data into 1 csv - by Steve
+* [cancatenate.md](cancatenate.Rmd): concatenate raw data into 1 csv - by Steve
 
-* [instcat-analysis.Rmd](instcat-analysis.Rmd): GLM analyses - by Steve
+* [instcat-analysis.md](instcat-analysis.Rmd): GLM analyses - by Steve
 
 * [data_cleaning.md](data_cleaning.md): data cleaning and wrangling & pre-analysis exploratory graphs - by Eva
 
