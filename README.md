@@ -45,10 +45,12 @@ explicit rating of instrument valence at the end
 
 ## File directory
 
-* [cancatenate.Rmd](cancatenate.Rmd): Steve's script to concatenate raw data into 1 csv
+* [cancatenate.Rmd](cancatenate.Rmd): concatenate raw data into 1 csv - by Steve
 
-* [instcat-analysis.Rmd](instcat-analysis.Rmd): Steve's script for statistcal analyses
+* [instcat-analysis.Rmd](instcat-analysis.Rmd): GLM analyses - by Steve
 
-* [data_cleaning.md](data_cleaning.md): data cleaning and exploratory graphs
+* [data_cleaning.md](data_cleaning.md): data cleaning and wrangling - by Eva
 
-* [eva_analyses.md](eva_analyses.md): statistical analysis attempt by Eva
+* [eva_analyses.md](eva_analyses.md): ANOVA of mean categorization and rating across instruments & tuning step - by Eva
+
+* [slope_crossover.md](slope_crossover.md): ANOVA of each individual's regression slope and 50% crossover point
