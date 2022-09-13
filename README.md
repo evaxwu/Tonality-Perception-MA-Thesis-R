@@ -54,3 +54,9 @@ explicit rating of instrument valence at the end
 * [eva_analyses.md](eva_analyses.md): ANOVA of mean categorization and rating across instruments & tuning step - by Eva
 
 * [slope_crossover.md](slope_crossover.md): ANOVA of each individual's regression slope and 50% crossover point
+
+* [inst-cat-uc-1.csv](inst-cat-uc-1.csv): raw jspsych data concatenated into one csv file
+
+* [all.csv](all.csv): cleaned data with jspsych and demographics (qualtrics) combined
+
+* [demo_test.csv](demo_test.csv): cleaned data with demographics only
