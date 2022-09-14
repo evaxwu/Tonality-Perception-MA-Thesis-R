@@ -207,7 +207,6 @@ all <- left_join(cat_rtg, demo_test, by = "qualtrics_id")
 
 write_csv(all, "all.csv")
 write_csv(demo_test, "demo_test.csv")
-write_csv(cat_rtg_summary, "descriptives.csv")
 ```
 
 ## Cleaned data!
@@ -386,13 +385,14 @@ Oboe: overall most likely to be judged as minor when tuning is unclear
 ## Explicit emotional valence rating exploratory plot
 
 ```{r rating}
-all %>%
-  ggplot(aes(instrument, explicit_rtg, fill = instrument)) +
+all %>% 
+  group_by(instrument) %>%
+  summarize(mean_rtg = mean(explicit_rtg)) %>%
+  ggplot(aes(reorder(instrument, mean_rtg), mean_rtg, fill = instrument)) +
   geom_col() +
-  labs(title = "Explicit valence rating for each instrument",
-       x = "Instrument", y = "Mean rating") +
-  theme_minimal() +
-  theme(legend.position = "None")
+  labs(title = "Mean explicit valence rating across different instruments",
+       x = "Instrument", y = "Mean explicit valence rating") +
+  theme_bw()
 ```
 
 Xylophone: rated "happiest" on average, then piano, then trumpet, then oboe, and violin rated the "saddest".

@@ -1,0 +1,135 @@
+---
+title: "MA Thesis: Effect of Instrument Timbre on Tonality Perception"
+author: "Eva Wu"
+output: github_document
+---
+
+Advisors: Dr. Howard Nusbaum & Dr. Stephen Van Hedger
+
+```{r setup}
+library(tidyverse)
+library(ggtext)
+library(ggsignif) # label ggplot
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+all <- read_csv("all.csv")
+```
+
+## Hypothesis 
+
+“Happy” instruments would make people more prone to identify the chord as major, 
+while “sad” instruments would make people more prone to identify the chord as minor.
+
+## Research questions 
+
+1) Association between instrument timbre and tonality judgment 
+
+2) How timbre interacts and tuning step affect tonality judgment
+
+3) Association between timbre and explicit ratings of instrument valence
+
+4) Association between tonality judgment and explicit ratings of instrument valence
+
+5) Association between musical background/key and tonality judgment and/or explicit ratings of instrument valence
+
+## Design
+
+* IV1 (w/in-subject): instrument (happy [xylophone, trumpet] vs. neutral [piano] vs. sad [oboe, violin]) 
+
+* IV2 (w/in-subject): tuning of middle note (5 levels, ranging from absolute minor to absolute major)
+
+* IV3 (b/w-subject): key (B vs. C) (to find out absolute-pitch-related effects)
+
+* DV: the likelihood that one categorizes a chord as major/minor 
+
+## Procedure
+
+* Pt 1 Sound calibration & headphone test (choose the quietest sound among 3)
+
+* Pt 2 Training (press the buttons to listen to the chords, practice w/ feedback) + 
+testing phase (listen to 12 chords and choose b/w major and minor for each, need to correctly answer 8 to pass)
+
+* only analyzed the response of those who passed the assessment w/in 2 tries
+
+* Pt 3 Categorization task (jspsych) - listen to 4 blocks of 70 chords and choose b/w major and minor for each chord; explicit rating of instrument valence at the end
+
+* Pt 4 Questionnaires (demographics & music experience; Qualtrics)
+
+## Main Findings
+
+```{r viz1}
+#1 cat ~ inst
+all %>% 
+  group_by(instrument) %>%
+  summarize(mean_pct = mean(pct_maj)) %>%
+  ggplot(aes(reorder(instrument, mean_pct), mean_pct, fill = instrument)) +
+  geom_col() +
+  labs(title = "Mean proportion of major categorization across different instruments",
+       x = "Instrument", y = "Mean proportion of major categorization") +
+  theme_bw()
+
+#1.5 cat ~ inst at tuning = 3
+all %>%
+  filter(tuning_step == 3) %>%
+  group_by(instrument) %>%
+  summarize(mean_pct = mean(pct_maj)) %>%
+  ggplot(aes(reorder(instrument, mean_pct), mean_pct, fill = instrument)) +
+  geom_col() +
+  labs(title = "Proportion of major categorization when tuning is exactly in the middle",
+       x = "Instrument", y = "Proportion of major categorization") +
+  theme_bw()
+```
+
+```{r viz2}
+#2 cat ~ inst*tuning
+all %>%
+  ggplot(aes(tuning_step, pct_maj, color = instrument)) +
+  geom_smooth(se = FALSE) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(title = "Proportion of major choices vs. tuning step & instruments",
+       x = "Tuning step", y = "Percept of major choices") +
+  theme_minimal()
+```
+
+```{r viz3}
+#3 rtg ~ inst
+all %>% 
+  group_by(instrument) %>%
+  summarize(mean_rtg = mean(explicit_rtg)) %>%
+  ggplot(aes(reorder(instrument, mean_rtg), mean_rtg, fill = instrument)) +
+  geom_col() +
+  labs(title = "Mean explicit valence rating across different instruments",
+       x = "Instrument", y = "Mean explicit valence rating") +
+  theme_bw()
+```
+
+```{r viz4}
+# 4 cat ~ rtg
+all %>%
+  group_by(instrument, qualtrics_id) %>%
+  summarize(cat = mean(pct_maj),
+            exp = mean(explicit_rtg)) %>%
+  ggplot(aes(exp, cat)) +
+  geom_jitter(aes(color = instrument), alpha = .5) +
+  geom_smooth(color = "grey60", linetype = 5, se = FALSE) +
+  labs(title = "Relationship between tonality perception and explicit valence ratings of instruments",
+       x = "Explicit valence rating", y = "Tonality categorization") +
+  theme_bw()
+```
+
+## File directory
+
+* [cancatenate.md](cancatenate.md): concatenate raw data into 1 csv - by Steve
+
+* [instcat-analysis.md](instcat-analysis.md): GLM analyses - by Steve
+
+* [data_cleaning.md](data_cleaning.md): data cleaning and wrangling & pre-analysis exploratory graphs - by Eva
+
+* [eva_analyses.md](eva_analyses.md): ANOVA of mean categorization and rating across instruments & tuning step - by Eva
+
+* [slope_crossover.md](slope_crossover.md): ANOVA of each individual's regression slope and 50% crossover point - by Eva
+
+* [inst-cat-uc-1.csv](inst-cat-uc-1.csv): raw jspsych data concatenated into one csv file
+
+* [all.csv](all.csv): cleaned data with jspsych and demographics (qualtrics) combined
+
+* [demo_test.csv](demo_test.csv): cleaned data with demographics only

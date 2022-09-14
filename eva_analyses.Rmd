@@ -13,7 +13,6 @@ library(corrplot)
 knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
 
 data <- read_csv("all.csv")
-desc <- read_csv("descriptives.csv")
 ```
 
 In this document, I first presented summary statistics for some demographics variables. Then, I checked ANOVA assumptions. After that, I calculated ANOVA results for how instrument and tuning step affect tonality perception and how explicit valence rating differed across instruments. Results showed that both instrument and tuning step had significant main effect on tonality perception, and there was also a significant interaction between the two. Results also showed that explicit valence ratings differed significantly across instruments.
@@ -306,7 +305,9 @@ data %>%
 
 # cat ~ inst
 data %>% 
-  ggplot(aes(reorder(instrument, pct_maj), pct_maj, fill = instrument)) +
+  group_by(instrument) %>%
+  summarize(mean_pct = mean(pct_maj)) %>%
+  ggplot(aes(reorder(instrument, mean_pct), mean_pct, fill = instrument)) +
   geom_col() +
   labs(title = "Mean proportion of major categorization across different instruments",
        x = "Instrument", y = "Mean proportion of major categorization") +
@@ -314,7 +315,9 @@ data %>%
 
 # rtg ~ inst
 data %>% 
-  ggplot(aes(reorder(instrument, explicit_rtg), explicit_rtg, fill = instrument)) +
+  group_by(instrument) %>%
+  summarize(mean_rtg = mean(explicit_rtg)) %>%
+  ggplot(aes(reorder(instrument, mean_rtg), mean_rtg, fill = instrument)) +
   geom_col() +
   labs(title = "Mean explicit valence rating across different instruments",
        x = "Instrument", y = "Mean explicit valence rating") +

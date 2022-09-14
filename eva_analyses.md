@@ -1,7 +1,7 @@
 Eva Analyses
 ================
 Eva Wu
-2022-09-12
+2022-09-13
 
 In this document, I first presented summary statistics for some
 demographics variables. Then, I checked ANOVA assumptions. After that, I
