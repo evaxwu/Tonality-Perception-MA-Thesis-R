@@ -2,14 +2,14 @@
 title: "Data Cleaning & Exploratory Graphs"
 author: "Eva Wu"
 output: github_document
-date: "2022-05-18"
+date: "2026-05-12"
 ---
 
 ```{r setup, include = FALSE}
 library(tidyverse)
 library(colorspace)
 library(kableExtra)
-knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
 ## Data Cleaning
@@ -18,406 +18,285 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
 
 This code chunk is to import concatenated data, delete irrelevant variables and metadata to prepare for further data cleaning. We have data from both jspsych and Qualtrics, and the two were linked by participants' `qualtrics_id` (10-digit random number assigned by Qualtrics; this was copied automatically to jspsych) and their `jspsych_id` (14-digit random letters and numbers assigned at the end of jspsych task; they were asked to manually copy and paste this code to Qualtrics to show that they finished the jspsych task; all but one pasted the right code).
 
-```{r load}
-# jspsych data
-df_j <- read_csv("inst-cat-uc-1.csv") %>% # load exp1 data
+```{r import-qualtrics}
+# load
+df_q <- read_csv("qualtrics_raw.csv") %>%
+  filter(row_number() > 7) %>% # delete pilot data; arranged by RecordedDate by default; recorded before 2/17 = pilot
+  select(-c(2:6, 8:16, 50:51)) %>% # delete unnecessary meta data
+  mutate(Age = as.numeric(Age),
+         Gender = factor(Gender, levels = c(1:3), labels = c("Male", "Female", "Non-binary")),
+         Year = factor(Year, levels = c(1:6), labels = c("Freshman", "Sophomore", "Junior", "Senior", "Graduate", "Other")),
+         Major = factor(Major, levels = c(1:3), labels = c("Psychology", "Music", "Other")),
+         # extract first number as starting age
+         Start = as.numeric(sub("^.*?(\\d+).*", "\\1", Start)),
+         # manually inspect and correct the wrong one
+         Start = if_else(jspsych_id == "tkp19u9btbvhee", 9, Start),
+         Pitch = as.integer(`Pitch&Tempo_1`),
+         Tempo = as.integer(`Pitch&Tempo_2`),
+         # extract first number as number of concerts attended per year
+         Concert = as.integer(sub("^.*?(\\d+).*", "\\1", Concert))) %>%
+  # calculate the number of years participants played their most-trained instrument  
+  rowwise() %>%
+  mutate(Inst_yr = max(as.integer(unlist(str_extract_all(Inst_list, "\\d+"))))) %>%
+  ungroup() %>%
+  select(-`Pitch&Tempo_1`, -`Pitch&Tempo_2`)
+
+# alternative code:
+# for (i in 1:length(df_q$Inst_list)) {df_q$Inst_yr[i] <- max(as.integer(unlist(str_extract_all(df_q$Inst_list[i], "\\d+"))))}
+
+# we got lots of -Inf values due to people not listing their years of training
+# for those who indicated they are still playing (Inst_now == 1) and filled out a starting age and their current age, I manually calculated it
+# for those who did play something but were not playing anymore, I input NA as their score 
+# for those who nvr played, I put 0
+df_q %>%
+  filter(Inst_yr == -Inf)
+
+df_q <- df_q %>%
+  # manually correct the wrongly coded ones 
+  mutate(Inst_yr = case_when(jspsych_id == "evx5gb3ga2u3qk" ~ 15,
+                             jspsych_id == "h21fw4bmslr0vb" ~ 3,
+                             jspsych_id == "14vd1s548b9ux8" ~ 5,
+                             jspsych_id == "8glm4kxovqneap" ~ 4,
+                             jspsych_id == "46ak9p0c90r96o" ~ 1,
+                             jspsych_id == "lws6fybx47tsfx" ~ 6,
+                             jspsych_id == "cny0e1gcjouwbl" ~ 2,
+                             jspsych_id == "r51mv84rhfl9sj" ~ 0.5,
+                             jspsych_id == "5qjd88k61078vu" ~ 9,
+                             TRUE ~ Inst_yr),
+         Inst_yr = ifelse(is.na(Inst_yr), 0, Inst_yr),
+         Inst_yr = ifelse(Inst_yr == -Inf, NA, Inst_yr)) %>%
+  # flag it if anyone has had training on the instruments used in experiment 1
+  mutate(Inst_list = tolower(Inst_list),
+         Inst_best = str_extract_all(Inst_list, regex("oboe|piano|violin|trumpet|xylophone")),
+         Inst_best = as.character(Inst_best)) %>% # bc can't save list vars in csv
+  relocate(Inst_yr, .after = Inst_list) %>%
+  relocate(Inst_best, .after = Inst_yr)
+```
+
+```{r import-jspsych}
+# load exp1 data
+df_j1 <- read_csv("inst-cat-uc-1.csv") %>% 
   filter(designation != "NA" & 
          designation != "practice-intro" & 
          designation != "practice-resp" & 
-         qualtrics_id != "NA" & 
-         qualtrics_id != "9643222579") %>% # delete pilot data
+         !qualtrics_id %in% c(NA, 9643222579)) %>% # delete 2 pilot data
   select(participant, qualtrics_id, chord, designation, response, # delete meta data
          correct, passed_practice, block_passed_practice, practice_score, 
-         instrument, valence, tuning_step, selected_major, explicit_rtg) %>% 
-  # for some reason 2 participant's qualtrics_id on jspsych was "participant", so I recoded according to their id on Qualtrics
-  mutate(qualtrics_id = if_else(participant == "ch4dg75c7th9g1", "1706631024", qualtrics_id), 
-         qualtrics_id = if_else(participant == "ept8xz3drgq38w", "4475978126", qualtrics_id),
-         instrument = factor(instrument, levels = c("xylophone", "trumpet", "piano", "violin", "oboe")))
+         instrument, valence, tuning_step, selected_major, explicit_rtg) %>%
+  mutate(qualtrics_id = if_else(participant == "ch4dg75c7th9g1", "1706631024", qualtrics_id),
+         instrument = factor(instrument, levels = c("xylophone", "piano", "violin", "trumpet", "oboe")),
+         correct = as.numeric(correct),
+         practice_score = as.numeric(practice_score),
+         tuning_step = as.numeric(tuning_step),
+         selected_major = as.numeric(selected_major),
+         explicit_rtg = factor(explicit_rtg))
 
-# qualtrics data
-df_q <- read_csv("Qualtrics_5:4.csv") %>%
-  filter(row_number() > 7) %>% # delete pilot data
-  select(-(2:16), -50) %>% # delete unnecessary meta data
-  mutate(Age = as.numeric(Age),
-         Year = factor(Year, levels = c("Freshman", "Sophomore", "Junior", "Senior", "Graduate", "Other (please specify):")),
-         Inst = as.integer(if_else(Inst == "Yes", 1, 0)),
-         Start = if_else(Start == "10 Years Old", "10", Start), # so that this won't be coerced to NA when mutated to numeric; only this one participant didn't write an integer as response
-         Start = as.integer(Start),
-         Inst_now = as.integer(if_else(Inst_now == "Yes", 1, 0)),
-         Ens = as.integer(if_else(Ens == "Yes", 1, 0)),
-         Course = as.integer(if_else(Course == "Yes", 1, 0)),
-         Read = as.integer(if_else(Read == "Yes", 1, 0)),
-         `Pitch&Tempo_1` = as.integer(`Pitch&Tempo_1`),
-         `Pitch&Tempo_2` = as.integer(`Pitch&Tempo_2`),
-         Perf = as.integer(case_when(Perf == "Yes" ~ 1,
-                                     Perf == "No" | Perf == "Not sure" ~ 0)),
-         Concert = as.integer(Concert))
+df_j2 <- read_csv("inst-cat-uc-2.csv") %>% 
+  filter(designation != "NA" & 
+         designation != "practice-intro" & 
+         designation != "practice-resp" & 
+         participant != "participant") %>% 
+  select(participant, qualtrics_id, chord, designation, response, # delete meta data
+         correct, passed_practice, block_passed_practice, practice_score, 
+         instrument, envelope, harmonics, tuning_step, selected_major, explicit_rtg) %>%
+  mutate(instrument = factor(instrument, levels = c("T1", "T2", "T3", "T4", "T5", "T6")),
+         correct = as.numeric(correct),
+         practice_score = as.numeric(practice_score),
+         tuning_step = as.numeric(tuning_step),
+         selected_major = as.numeric(selected_major),
+         explicit_rtg = as.numeric(explicit_rtg))
 
-# join qualtrics & jspsych data by embedded qualtrics id
-# discard those who do not have a matching qualtrics_id in qualtrics data, keep everyone's jspsych data
-combined <- left_join(df_j, df_q, by = c("qualtrics_id" = "participant"))
+# examine j IDs
+df_j1_id <- df_j1 %>% 
+  select(participant, qualtrics_id) %>% 
+  unique() %>% # 49 unique jspsych_id in df_j1
+  # for some reason 2 participants' q id on j was "participant", so I recoded one according to their q id on q
+  # one of them has 2 q ids (duplicated rows) on q so just leave it as "participant"
+  mutate(qualtrics_id = if_else(participant == "ch4dg75c7th9g1", "1706631024", qualtrics_id))
+
+df_j2_id <- df_j2 %>% 
+  filter(participant != "participant") %>%
+  select(participant, qualtrics_id) %>% 
+  unique()
+# 58 unique jspsych_id in df_j2; no one's q id was recorded
+```
+
+### Deduplicate
+
+Check for duplicated Qualtrics entries and delete one of the duplicates. This might be due to participants closing the Qualtrics tab while completing the jspsych task, and then being redirected to a new Qualtrics page after jspsych task was over.
+
+Decision rule: 
+1) if one row has a qualtrics_id recorded on jspsych, then keep that row (only possible in exp1);
+2) if one row is blank/partially filled while the other is fully filled, then keep the more filled row;
+3) if no qualtrics_id was recorded on jspsych and both rows are filled to the same extent, keep the one with earlier StartDate (this is arbitrarily decided).
+
+```{r deduplicate}
+# identify duplicated participants on q by manually examining the data
+df_q %>%
+  filter(jspsych_id %in% df_j1_id$participant) %>%
+  arrange(jspsych_id) # seems like these duplicated rows were both filled and had similar values
+
+# check the 2 duplicated participants' q id on j to determine which row to keep
+df_j1_id %>%
+  filter(participant == "w3uh3gtrykkjgc" | participant == "ept8xz3drgq38w")
+
+# now do the same for exp2
+df_q %>%
+  filter(jspsych_id %in% df_j2_id$participant) %>%
+  arrange(jspsych_id)
+
+df_j2_id %>%
+  filter(participant == "a48zc72k379mm5" | participant == "hecbjunkhj9dj8" |
+         participant == "4srlrzfe7zrkce" | participant == "h21fw4bmslr0vb" |
+           participant == "7txj1h7m1zulc0" | participant == "tkp19u9btbvhee")
+
+# since q id was not recorded on j for exp2 for some reason, we can only arbitrarily delete one of the two entries (according to the decision rule)
+df_q_unique <- df_q %>%
+  filter(!(jspsych_id == "a48zc72k379mm5" & StartDate == "2022-03-13 11:44:21" |
+             jspsych_id == "hecbjunkhj9dj8" & StartDate == "2022-03-14 11:09:00" |
+             jspsych_id == "4srlrzfe7zrkce" & StartDate == "2022-03-28 16:31:30" |
+             jspsych_id == "h21fw4bmslr0vb" & StartDate == "2022-03-29 15:21:11" |
+             jspsych_id == "7txj1h7m1zulc0" & StartDate == "2022-03-30 15:49:11" |
+             jspsych_id == "tkp19u9btbvhee" & StartDate == "2022-04-07 19:30:53" |
+             jspsych_id == "ept8xz3drgq38w" & StartDate == "2022-04-15 14:55:23" |
+             jspsych_id == "w3uh3gtrykkjgc" & participant == "9143215998")) 
 ```
 
 ### Drop NA
 
-This code chunk exists only because there were problems with the linking of Qualtrics and jspsych data. This code chunck is to filter out participants who did not do anything in the survey/categorization task. Some participants had duplicate rows, one with response and the other blank. Others had two rows, one with Qualtrics response but blank jspsych response, the other with full jspsych response but blank Qualtrics response. This step is to make sure we delete duplicates and combine each participant's Qualtrics and jspsych data into one row.
+This code chunk exists only because there were problems with the linking of Qualtrics and jspsych data. This code chunck is to filter out participants who did not do anything in the survey/categorization task. Some participants had two rows, one with Qualtrics response but blank jspsych response, the other with full jspsych response but blank Qualtrics response. This step is to merge those participants' Qualtrics and jspsych data into the same row.
 
 ```{r clean-na}
-# those who only have j data but not q
-na_q <- combined %>%
-  filter(is.na(Gender)) %>%
-  select(1:14) # delete q columns
-# there are 4 of them w/ blank qualtrics data but full jspsych data
+# see a list of q participants
+df_q_id <- df_q_unique %>%
+  select(jspsych_id, participant) 
 
-# those who only have q data but not j
-na_j <- df_q %>%
-  # assume 22-0159 in q is 5281kj47nhoboj in j
-  mutate(jspsych_id = if_else(jspsych_id == "22-0159", "5281kj47nhoboj", jspsych_id)) %>% 
-  semi_join(na_q, by = c("jspsych_id" = "participant"))
+# check if there are any j subs without q for exp2
+df_j2_id %>%
+  filter(!participant %in% df_q_id$jspsych_id)
+# nope, luckily everyone on j had a q response in exp2
 
-# join the half-full data together according to jspsych id
-na_combined <- full_join(na_q, na_j, by = c("participant" = "jspsych_id"), keep = TRUE) %>%
-  select(-participant.y) %>%
-  rename(participant = participant.x)
+# yes q no j
+na_j <- df_q_id %>%
+  filter(is.na(jspsych_id) | jspsych_id == "22-0159")
+# 22-0159 is someone who didn't pass the test and therefore wasn't able to 
+# proceed to jspsych main task due to error (they were supposed to be able to)
 
-# bind them back to combined, delete the half-full rows
-combined_drop_na <- rbind(combined, na_combined) %>%
-  filter(!is.na(Gender))
-```
+# q-j mismatch (yes j; blank q survey for the row associated w the q id recorded on j)
+na_q <- df_j1_id %>%
+  filter(qualtrics_id %in% na_j$participant)
+# there's a matching error bw q & j - in q, q id is there, but survey blank; the corresponding j id in q has another q id for the filled survey row
+# there were 4 subs like this in exp1
 
-### Demographics and headphone test data
+# check for blank q rows with q id recorded in j 
+na_j %>%
+#  filter(participant %in% na_q$qualtrics_id) the following line of code does the same thing as this
+  semi_join(na_q, by = c("participant" = "qualtrics_id"))
 
-The following code chunk is to extract demographics and headphone test data, combine them together, and filter out those who did not pass the headphone test.
+# check for q rows w j id that has response in j but blank q rows if matched by q id
+df_q_id %>%
+  filter(jspsych_id %in% na_q$participant) # turns out these responses were recorded under the same j id but different q id
 
-```{r demo-headphone}
-# df for demographics
-demo <- combined_drop_na %>%
-  filter(designation == "PRACTICE-PASSED-SUMMARY") %>%
-  select(-(3:6), -(10:16), -49) %>% # delete unnecessary data
-  mutate(PT1 = `Pitch&Tempo_1`*0.1, 
-         PT2 = `Pitch&Tempo_2`*0.1,
-         .after = `Pitch&Tempo_2`) %>%
-  mutate(Time_make_num = case_when(Time_make == "Less than one hour" ~ 0,
-                                   Time_make == "1-2 hours" ~ 1,
-                                   Time_make == "3-4 hours" ~ 3,
-                                   Time_make == "5-6 hours" ~ 5,
-                                   Time_make == "More than 6 hours" ~ 6),
-         .after = Time_make) %>%
-  mutate(Time_listen_num = case_when(Time_listen == "Less than one hour" ~ 0,
-                                     Time_listen == "1-2 hours" ~ 1,
-                                     Time_listen == "3-4 hours" ~ 3,
-                                     Time_listen == "5-6 hours" ~ 5,
-                                     Time_listen == "More than 6 hours" ~ 6),
-         .after = Time_listen) %>%
-  # fill manually for those who did not have the longest duration as the 1st #
-  mutate(Inst_yr = case_when(qualtrics_id == 9800773380 ~ 5,
-                             qualtrics_id == 6141459621 ~ 2,
-                             qualtrics_id == 2334472117 ~ 23,
-                             qualtrics_id == 7404697358 ~ 5,
-                             qualtrics_id == 3270768954 ~ 5,
-                             qualtrics_id == 6444402078 ~ 7,
-                             qualtrics_id == 2095686609 ~ 5,
-                             qualtrics_id == 1067596379 ~ 8,
-                             qualtrics_id == 2707228965 ~ 5,
-                             qualtrics_id == 5405144116 ~ 1,
-                             qualtrics_id == 4721459480 ~ 6),
-         # extract the 1st number (the longest duration of playing an instrument) in str
-         Inst_yr = if_else(is.na(Inst_yr), 
-                           # if
-                           as.numeric(gsub(".*?([0-9]+).*", "\\1", Inst_list)), 
-                           # else
-                           Inst_yr),
-         .after = Inst_list)
+# change their q id to the one recorded on j
+df_q_unique <- df_q_unique %>%
+  mutate(participant = case_when(jspsych_id == "wczbffevcxqk45" ~ "1044403354",
+                                 jspsych_id == "en7lefm4g8mp17" ~ "4358939887",
+                                 jspsych_id == "ghbk58xwj3w7v2" ~ "1475084897",
+                                 TRUE ~ participant)) %>%
+  filter(!is.na(jspsych_id)) # delete blank rows
+# this person w jspsych_id == "5281kj47nhoboj", qualtrics_id == "6783315289" does not have a corresponding qualtrics survey filled out
+# IDK Y! IDK WHO THAT IS! - how should we report this in the paper?
+
+# for the rest of the blank q rows, I can't figure out which q id matches which j id, bc no q id was recorded on j in exp2
+# so i just left them as they are
+# doesn't matter bc we can join dfs using j id so we can ignore q
 
 # manually code number of instruments they played
-demo$Inst_num <- c(2, 1, 2, 3, 2, 1, 0, 2, 3, 2, 3, 0, 0, 3, 1, 2, 1, 0, 1, 1, 2, 1, 1, 3, 1, 2, 2, 1, 3, 1, 1, 0, 2, 1, 1, 2, 0, 1, 1, 2, 2, 2, 0, 1, 1, 1, 0, 2, 1)
+df_q_unique$Inst_num <- c(2, 1, 2, 3, 2, 1, 0, 2, 3, 2, 3, 0, 0, 3, 1, 2, 1, 0, 1, 1, 2, 1, 1, 1, 3, 1, 2, 2, 1, 3, 1, 1, 0, 2, 1, 1, 2, 0, 2, 0, 1, 1, 2, 2, 1, 2, 1, 7, 1, 2, 0, 0, 2, 1, 3, 1, 2, 2, 4, 0, 3, 0, 3, 3, 2, 2, 1, 0, 0, 1, 3, 4, 2, 2, 0, 3, 2, 4, 2, 1, 3, 2, 1, 2, 0, 3, 3, 1, 2, 2, 0, 2, 4, 1, 2, 2, 5, 1, 1, 1, 2, 2, 2, 0, 1, 1, 4)
 
 # move column
-demo <- demo %>%
+df_q_unique <- df_q_unique %>%
   relocate(Inst_num, .after = Inst_yr)
-
-# arbitrarily summarize music experience using sum of multiple measures
-demo$music_exp <- rowSums(demo[, c(16:19, 21, 24:26, 28, 30:31)], na.rm = TRUE)
-
-# df for headphone test
-test <- combined_drop_na %>%
-  filter(designation == "headphone-test") %>%
-  select(2, 6) %>%
-  group_by(qualtrics_id) %>%
-  summarize(n = sum(correct)) %>%
-  # set 4 out of 6 as passed headphone test
-  mutate(headphone = if_else(n >= 4, 1, 0),
-         test_corr = n) %>%
-  select(-n)
-
-# combine headphone test pass/fail result w/ original data
-demo_test <- left_join(demo, test, by = "qualtrics_id")
-
-# see how many failed the headphone test
-test %>%
-  filter(headphone == 0)
 ```
 
-Setting 4 as the pass threshold, we can see that 8 participants did not pass the headphone test (answered fewer than 4 questions correctly). For now I'll keep them, but later we can see if deleting them makes a big difference, and then decide whether to keep them.
+### Practice and headphone test scores
 
-### Tonality categorization and explicit emotional valence ratings data
+The following code chunk extracts headphone test and practice test (training for major/minor categorization) scores and attaches them to the qualtrics demographic survey.
 
-The following code chunk extracts categorization and explicit rating data respectively, and manipulates them to create 3 new data frames, one with participants' categorization, explicit ratings, and demographics combined ([all.csv](all.csv)), another with participants' demographics, including headphone test and music experience ([demo_test.csv](demo_test.csv)), and still another with the descriptives and categorization and explicit ratings data ([descriptives.csv](descriptives.csv)).
+```{r practice-headphone}
+# df for practice score
+practice1 <- df_j1 %>%
+  filter(designation == "PRACTICE-PASSED-SUMMARY") %>%
+  select(participant, passed_practice, block_passed_practice, practice_score)
 
-```{r cat-rtg}
-# df for categorization
-cat <- combined_drop_na %>%
-  filter(designation == "MAIN-JUDGMENT") %>%
-  select(2:3, 10:13) %>%
-  group_by(qualtrics_id, instrument, tuning_step, chord) %>%
-  summarize(pct_maj = mean(selected_major))
-  
-# each person's mean major choice proportion 
-cat_pivoted <- cat %>%
-  group_by(qualtrics_id, instrument, tuning_step) %>%
-  summarize(mean_cat = mean(pct_maj)) %>%
-  mutate(instrument = paste0(instrument, tuning_step)) %>%
-  select(-tuning_step) %>%
-  pivot_wider(names_from = instrument, values_from = mean_cat)
+# df for headphone test
+headphone1 <- df_j1 %>%
+  filter(designation == "headphone-test") %>%
+  select(participant, correct) %>%
+  group_by(participant) %>%
+  summarize(headphone = sum(correct)) 
 
-# df for explicit rating
-rtg <- combined_drop_na %>%
-  filter(designation == "INST-VALENCE-RTG") %>%
-  select(qualtrics_id, instrument, explicit_rtg, chord)
+# combine headphone test & practice test scores
+practice_headphone1 <- left_join(headphone1, practice1)
 
-# pivot so that one person has one row
-rtg_pivoted <- rtg %>%
-  mutate(instrument = paste0("rtg_", instrument)) %>%
-  pivot_wider(names_from = instrument, values_from = explicit_rtg)
+# now do the same for exp2
+practice2 <- df_j2 %>%
+  filter(designation == "PRACTICE-PASSED-SUMMARY") %>%
+  select(participant, passed_practice, block_passed_practice, practice_score)
 
-# df for both combined
-cat_rtg <- left_join(cat, rtg)
+headphone2 <- df_j2 %>%
+  filter(designation == "headphone-test") %>%
+  select(participant, correct) %>%
+  group_by(participant) %>%
+  summarize(headphone = sum(correct)) 
 
-# each instrument's mean cat & rtg
-cat_rtg_summary <- cat_rtg %>%
-  group_by(instrument, tuning_step, chord) %>%
-  summarize(mean_pct = mean(pct_maj), mean_rtg = mean(explicit_rtg))
+practice_headphone2 <- left_join(headphone2, practice2)
 
-# both pivoted combined
-cat_rtg_pivoted <- cat_pivoted %>% 
-  left_join(rtg_pivoted, by = c("qualtrics_id"))
+# combine headphone & practice test scores w demographics
+df_q_plus_scores <- left_join(df_q_unique, rbind(practice_headphone1, practice_headphone2), by = c("jspsych_id" = "participant")) %>%
+  mutate(passed_practice = factor(passed_practice, levels = c(0, 1), labels = c("No", "Yes")),
+         block_passed_practice = factor(block_passed_practice),
+         accuracy = practice_score/12)
 
-# each participant = 25 rows of data
-all <- left_join(cat_rtg, demo_test, by = "qualtrics_id")
-
-write_csv(all, "all.csv")
-write_csv(demo_test, "demo_test.csv")
+# save a copy of clean q data
+write_csv(df_q_plus_scores, "qualtrics_cleaned.csv")
 ```
 
 ## Cleaned data!
 
 A snapshot of the data (aka codebook):
 
-```{r present}
-variable_names <- colnames(all)
-variable_meaning = c("Random 10-digit ID assigned by Qualtrics, used to join Qualtrics and jspsych data", 
-                     "Instrument used to \"play\" the stimuli",
-                     "Tuning step of 3rd (middle note) of the chord (1 = absolute minor, 5 = absolute major, 2-4 = ambiguous tonality)",
-                     "Key stimuli were in", 
-                     "Percent proportion of chords categorized as major", 
-                     "Explicit valence rating of instrument",
-                     "Random 14-digit combination of letters and numbers, used to verify completion of jspsych task", 
-                     "Passed practice or not (1 = pass)", "Number of attempts taken to pass", 
-                     "Practice score (out of 12)", "", "", "", 
+```{r codebook, echo = FALSE}
+variable_names <- colnames(df_q_plus_scores)
+variable_meaning = c("Time of participation", "Time when the survey response was recorded",
+                     "Random 14-digit combination of letters and numbers, used to verify completion of jspsych task", "", "", 
+                     "Year in university", 
                      "If not a student or faculty", "", 
                      "If not a psych or music major", 
                      "If they have ever played an instrument or not", 
                      "At what age they started playing an instrument", 
                      "Still playing now?", "List of instruments played", 
-                     "Years they played their most trained instrument", 
-                     "Number of instruments played", 
-                     "If they have ever participated in ensemble or not", 
+                     "Number of years they've played their most trained instrument", 
+                     "Number of instruments played (including voice)", 
+                     "List instruments used in exp1 that they've played (if any)",
+                     "If they have ever participated in an ensemble or not", 
                      "Taken music courses or not", "List of music courses taken", 
-                     "Read music or not", 
-                     "Self-rated ability to perceive and remember pitch", 
-                     "Self-rated ability to perceive and remember tempo",
-                     "Self-rated ability to perceive and remember pitch / 10, used to calculate overall music experience", 
-                     "Self-rated ability to perceive and remember tempo / 10, used to calculate overall music experience", 
+                     "Can read music or not", 
                      "Has perfect pitch or not (1 = yes, 0 = no, -1 = don't know", 
                      "Time spent making music per week", 
-                     "Time spent making music per week converted to numeric", 
                      "Time spent listening to music per day", 
-                     "Time spent listening to music per day converted to numeric", 
                      "Number of concerts attended per year", 
                      "Proportion of each genre listened to (total 100)", 
                      "", "", "", "", "", "", "", "", "", "", 
                      "Other genres not mentioned",
-                     "Arbitrary summary of music experience", 
-                     "Passed headphone test or not (1 = pass)", 
+                     "Random 10-digit Qualtircs ID",
+                     "Self-rated ability to perceive and remember pitch", 
+                     "Self-rated ability to perceive and remember tempo",
+                     "headphone test score (out of 6)",
+                     "Passed tonality categorization practice test or not", 
+                     "How many attempts it took to pass the practice test (2 at most)",
+                     "Practice test score (out of 12)",
                      "Number of correct answers in headphone test")
 codebook <- data.frame(variable_names, variable_meaning)
 kable(codebook)
 ```
-
-## Descriptives
-
-```{r descriptives}
-# descriptives for cat B
-print("descriptives for categorization in the key of B")
-cat_rtg_summary %>% 
-  filter(chord == "B") %>%
-  select(-chord, -mean_rtg) %>%
-  pivot_wider(names_from = tuning_step, values_from = mean_pct) %>%
-  mutate_all(funs(round(.,2))) # round all to 2 decimal places
-
-# descriptives for cat C
-print("descriptives for categorization in the key of C")
-cat_rtg_summary %>% 
-  filter(chord == "C") %>%
-  select(-chord, -mean_rtg) %>%
-  pivot_wider(names_from = tuning_step, values_from = mean_pct) %>%
-  mutate_all(funs(round(.,2)))
-
-# descriptives for rtg B
-print("descriptives for explicit ratings in the key of B")
-cat_rtg_summary %>% 
-  filter(chord == "B") %>%
-  select(-chord, -mean_rtg) %>%
-  pivot_wider(names_from = tuning_step, values_from = mean_pct) %>%
-  mutate_all(funs(round(.,2)))
-
-# descriptives for rtg C
-print("descriptives for explicit ratings in the key of C")
-cat_rtg_summary %>% 
-  filter(chord == "C") %>%
-  select(-chord, -mean_pct) %>%
-  pivot_wider(names_from = tuning_step, values_from = mean_rtg) %>%
-  mutate_all(funs(round(.,2)))
-```
-
-## Demographic analysis
-
-```{r demo}
-demo %>%
-  filter(Gender != "NA") %>%
-  ggplot(aes(Gender, fill = Gender)) +
-  geom_bar() +
-  labs(title = "Participant gender distribution",
-       x = "Gender",
-       y = "Number of participants") +
-  theme_minimal() +
-  theme(legend.position = "None")
-
-demo %>%
-  ggplot(aes(Age)) +
-  geom_bar(fill = "lightblue") +
-  labs(title = "Participant age distribution",
-       x = "Age",
-       y = "Number of participants") +
-  theme_minimal()
-
-demo %>%
-  filter(Year != "NA") %>%
-  ggplot(aes(Year)) +
-  geom_bar(fill = "orange") +
-  labs(title = "Participant year of school distribution",
-       x = "Year",
-       y = "Number of participants") +
-  theme_minimal()
-
-
-# 3 psych, 3 double, 43 other; why is the graph like this
-demo %>%
-  mutate(Major = case_when(Major == "Psychology" ~ "Psychology",
-                           Major == "Music" ~ "Music",
-                           Major == "NA" ~ "NA",
-                           Major == "Music,Other (please specify):" ~ "Double major in music and another subject",
-                           Major == "Other (please specify):" ~ "Other",
-                           Major == "Psychology,Other (please specify):" ~ "Double major in psychology and another subject")) %>%
-  ggplot(aes("", Major, fill = Major)) +
-  geom_bar(stat = "identity") +
-  coord_polar(theta = "y") +
-  labs(title = "Participant major distribution") +
-  theme_void()
-```
-
-Turns out the number of female and male participants did not differ much. 
-Most participants were aged 18-21, while a few above 22. 
-We had greater number of sophomores, than freshmen, than juniors, than seniors, than others. 
-Most participants were neither a psychology major nor a music major.
-
-## Practice Score
-
-Participants who failed their first attempt in the practice section could re-do it for a second time. Let's check how many passed in their 2nd attempt. Let's also check the distribution of practice score.
-
-```{r practice}
-# filter those who failed practice for the first attempt but passed the 2nd time
-demo %>%
-  filter(block_passed_practice == 2)
-
-demo %>%
-  ggplot(aes(practice_score)) +
-  geom_bar(fill = "lightgreen") +
-  labs(title = "Practice score distribution among those who passed (almost all did)",
-       subtitle = "Pass: getting ≥ 8 out of 12 correct",
-       x = "Number of correct responses out of 12",
-       y = "Number of participants") +
-  theme_minimal()
-```
-
-Only 2 failed the 1st time. The rest all passed in the 1st try. Most passed with 12/12.
-
-## Categorization exploratory plot
-
-Plot a smooth line graph to see how instrument and tuning step affected tonality categorization.
-
-```{r cat}
-all %>%
-  ggplot(aes(tuning_step, pct_maj, color = instrument)) +
-  geom_smooth(se = FALSE) +
-  scale_y_continuous(labels = scales::percent) +
-  # need to come up w/ a better palette
-  # scale_color_discrete_sequential("Viridis", rev = TRUE) + 
-  labs(title = "Proportion of major choices vs. tuning step & instruments",
-       x = "Tuning step", y = "Percept of major choices") +
-  theme_minimal()
-```
-
-Xylophone: overall most likely to be judged as major when tuning is unclear
-
-Oboe: overall most likely to be judged as minor when tuning is unclear
-
-## Explicit emotional valence rating exploratory plot
-
-```{r rating}
-all %>% 
-  group_by(instrument) %>%
-  summarize(mean_rtg = mean(explicit_rtg)) %>%
-  ggplot(aes(reorder(instrument, mean_rtg), mean_rtg, fill = instrument)) +
-  geom_col() +
-  labs(title = "Mean explicit valence rating across different instruments",
-       x = "Instrument", y = "Mean explicit valence rating") +
-  theme_bw()
-```
-
-Xylophone: rated "happiest" on average, then piano, then trumpet, then oboe, and violin rated the "saddest".
-
-## Compare trend between tonality judgment and explicit rating
-
-```{r compare-cat-valence}
-all %>%
-  group_by(instrument) %>%
-  summarize(mean_pct = mean(pct_maj), mean_rtg = mean(explicit_rtg)) %>%
-  pivot_longer(cols = c(mean_pct, mean_rtg), names_to = "type", values_to = "value") %>%
-  mutate(type = if_else(type == "mean_pct", "Mean percent proportion of major categorization", "Mean explicit valence rating")) %>%
-  ggplot(aes(instrument, value, group = 1, color = type)) +
-  geom_line() +
-  facet_wrap(~type, ncol = 1, scales = "free_y") +
-  labs(title = "Compare trend b/w tonality categorization & valence rating",
-       x = "Instrument", y = NULL) +
-  theme(axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        panel.grid.major.y = element_blank(),
-        legend.position = "None")
-```
-
-Trend for categorization is similar to that for explicit rating. But there was a tiny bit of difference:
-
-Explicit valence rating: violin lowest, violin < oboe
-
-Categorization: oboe lowest, violin > oboe
