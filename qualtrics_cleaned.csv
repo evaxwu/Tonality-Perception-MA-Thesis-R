@@ -1,0 +1,169 @@
+StartDate,RecordedDate,jspsych_id,Age,Gender,Year,Year_6_TEXT,Major,Major_3_TEXT,Inst,Start,Inst_now,Inst_list,Inst_yr,Inst_num,Inst_best,Ens,Course,Course_list,Read,Perf,Time_make,Time_listen,Concert,Genre_18,Genre_8,Genre_9,Genre_17,Genre_10,Genre_11,Genre_12,Genre_13,Genre_16,Genre_14,Genre_15,Genre_15_TEXT,participant,Pitch,Tempo,headphone,passed_practice,block_passed_practice,practice_score,accuracy
+2022-02-17 12:13:06,2022-02-17 12:35:20,14vd1s548b9ux8,18,Female,Freshman,NA,Other,Public Policy,1,8,0,"clarinet, ages 8-13; voice, ages 11-13",5,2,character(0),1,0,NA,1,0,1,2,1,25,0,0,0,0,0,25,0,0,0,50,Indie,9800773380,61,70,6,Yes,1,11,0.9166666666666666
+2022-02-17 12:42:46,2022-02-17 13:33:39,mv7es4a36r07yp,21,Male,Junior,NA,Other,Computer Science,1,5,0,piano 6 years,6,1,piano,0,0,NA,1,1,1,2,0,0,0,0,0,0,0,0,100,0,0,0,NA,3023525743,100,30,5,Yes,1,12,1
+2022-02-17 19:34:23,2022-02-17 19:53:19,zs95hhwkeo7us3,20,Male,Sophomore,NA,Other,NA,1,9,1,"piano (12 years), double bass (8 years)",12,2,piano,1,1,Private piano lessons throughout high school,1,0,1,2,4,52,8,0,0,0,5,5,10,20,0,0,NA,1155580075,80,61,6,Yes,1,12,1
+2022-02-18 11:25:39,2022-02-18 11:52:59,hl7npznsd2l2m3,18,Male,Freshman,NA,Other,Economics,1,9,0,"violin (1 year)
+french horn (1 year)
+keyboard (2 year)",2,3,violin,0,0,NA,1,0,1,2,0,80,0,5,0,0,0,15,0,0,0,0,NA,6141459621,55,70,6,Yes,1,11,0.9166666666666666
+2022-02-18 15:29:25,2022-02-18 15:52:20,ehyzcd5c822frf,32,Female,Other,Non-student,Other,N/A,1,7,0,violin (11 yrs.); piano (23 yrs.),23,2,"c(""violin"", ""piano"")",1,1,9,1,0,1,2,0,10,15,15,60,0,0,0,0,0,0,0,NA,2334472117,60,60,6,Yes,1,12,1
+2022-02-18 19:12:06,2022-02-18 19:30:02,mjcea5cxq7jmh0,20,Male,Junior,NA,Other,Computer Science,1,5,1,piano - 15 years,15,1,piano,1,1,"2 in high school, 1 in college",1,0,1,2,2,10,0,0,0,5,0,20,65,0,0,0,NA,5041247779,70,93,4,Yes,1,12,1
+2022-02-19 10:18:01,2022-02-19 10:35:15,b7w8je90btmbj9,20,Male,Sophomore,NA,Other,CS/Econ,0,NA,0,NA,0,0,NA,0,0,NA,0,0,1,2,0,20,10,10,0,0,0,60,0,0,0,0,NA,3192422879,40,40,6,Yes,1,9,0.75
+2022-02-19 13:34:49,2022-02-19 13:52:18,h2ssk42gqrxfjy,18,Male,Sophomore,NA,Other,Biology,1,13,0,"'-clarinet (1 yr)
+-percussion (5 yrs)",5,2,character(0),1,1,12,1,0,1,3,0,30,0,0,0,0,50,10,0,0,10,0,NA,7404697358,60,60,6,Yes,1,12,1
+2022-02-19 13:36:10,2022-02-19 14:03:31,w3uh3gtrykkjgc,19,Female,Sophomore,NA,Other,Biology and Global Studies,1,8,0,"piano, some guitar, and mostly singing",NA,3,piano,1,1,1 year of music class in highschool,1,0,1,3,2,0,0,0,0,0,20,10,0,0,70,0,NA,9065164044,4,24,4,Yes,1,12,1
+2022-02-19 14:02:24,2022-02-19 14:24:53,wvthln29scycjv,19,Female,Sophomore,NA,Other,Biology,1,7,0,"voice - 3
+piano - 5",5,2,piano,1,0,NA,0,0,1,4,0,94,2,2,0,0,2,0,0,0,0,0,NA,3270768954,46,46,6,Yes,1,10,0.8333333333333334
+2022-02-19 18:15:56,2022-02-19 18:38:58,txmyjty1k80l3f,19,Female,Freshman,NA,NA,Economics,1,12,0,"alto saxophone - 4 years
+piano - 1 year
+violin - 1 year",4,3,"c(""piano"", ""violin"")",0,1,1,0,0,1,3,0,33,33,0,0,0,0,34,0,0,0,0,NA,1588756489,14,14,6,Yes,1,12,1
+2022-02-20 11:27:05,2022-02-20 12:06:18,c1vn7ym2gp4mvs,19,Female,Freshman,NA,Psychology,NA,0,NA,0,NA,0,0,NA,0,0,NA,0,0,1,3,0,50,35,15,0,0,0,0,0,0,0,0,NA,2701997442,5,10,6,Yes,2,9,0.75
+2022-02-20 16:31:42,2022-02-20 16:51:59,2mm1j8vdhh6k4u,NA,Female,Sophomore,NA,Other,Neuroscience,0,NA,0,NA,0,0,NA,0,0,NA,0,0,1,3,0,0,0,0,0,0,80,20,0,0,0,0,NA,7507206303,50,50,6,Yes,1,12,1
+2022-02-20 16:21:56,2022-02-20 18:23:05,5nwv37q3nx1cdx,20,Female,Sophomore,NA,Other,Biology,1,11,1,"piano-5
+guitar-4
+voice-7",7,3,piano,1,1,4,1,0,1,3,3,85,0,0,0,0,3,2,0,0,10,0,NA,6444402078,85,80,6,Yes,1,12,1
+2022-02-21 13:05:07,2022-02-21 13:32:17,2dfy59746pxy2o,19,Female,Sophomore,NA,Other,Economics,1,9,0,violin for 9 years,9,1,violin,1,0,NA,1,-1,1,1,0,50,0,0,0,0,30,10,10,0,0,0,NA,7849985568,81,74,5,Yes,1,12,1
+2022-02-21 20:52:07,2022-02-21 21:19:49,evx5gb3ga2u3qk,19,Female,Sophomore,NA,Other,Business Econ /PreMed,1,4,1,"piano, singing",15,2,piano,1,1,1,1,-1,2,2,1,50,0,0,0,0,20,20,10,0,0,0,NA,3586902878,90,90,6,Yes,1,12,1
+2022-02-21 21:19:15,2022-02-21 21:38:45,ktgf46krk2vkeg,19,Male,Junior,NA,Other,Math,1,8,0,piano - 10 years,10,1,piano,0,0,NA,1,0,1,3,0,20,0,5,0,0,30,40,5,0,0,0,NA,3869729575,70,85,4,Yes,1,11,0.9166666666666666
+2022-02-22 13:25:17,2022-02-22 13:45:21,v6g7xx98ppdmek,21,Male,Junior,NA,Other,Chemistry,0,NA,0,NA,0,0,NA,0,0,NA,0,0,1,3,2,40,40,0,0,0,0,0,0,0,20,0,NA,6050072818,20,50,6,Yes,1,12,1
+2022-02-22 16:34:57,2022-02-22 17:05:00,rcu7aal1utyy9u,19,Female,Freshman,NA,Other,History,1,6,0,piano - 6,6,1,piano,1,0,NA,1,0,1,2,0,80,10,0,0,5,0,0,0,5,0,0,NA,8089229725,34,34,0,Yes,1,12,1
+2022-02-23 11:11:05,2022-02-23 11:44:17,cafntv1le9mk8f,NA,Male,Sophomore,NA,Other,Economics,1,5,0,piano,NA,1,piano,1,1,2,0,-1,1,5,2,50,25,0,10,0,0,0,15,0,0,0,NA,2077443174,23,24,2,Yes,1,11,0.9166666666666666
+2022-02-23 11:45:56,2022-02-23 12:04:34,5w1v1w6y4l86dj,18,Male,Freshman,NA,Other,Neuroscience (undeclared),1,11,0,"piano (2 years)
+cello (5 years)",5,2,piano,1,1,1,1,0,1,2,1,60,0,15,0,0,10,10,5,0,0,0,NA,2095686609,70,80,6,Yes,1,12,1
+2022-02-24 15:13:57,2022-02-24 15:43:02,n4hw01fm7o5ne6,20,Male,Sophomore,NA,Other,Econ,1,5,1,piano 15,15,1,piano,1,1,2,1,-1,1,2,1,20,0,0,15,0,20,20,20,0,5,0,NA,3981943250,82,83,6,Yes,1,12,1
+2022-02-25 16:28:47,2022-02-25 16:46:17,5lrj1rhr26qwa7,19,Female,Sophomore,NA,Other,"econ, bio",1,8,0,"guitar, 4",4,1,character(0),0,0,NA,1,0,1,5,3,90,0,0,0,0,0,0,10,0,0,0,NA,3189001139,21,39,6,Yes,1,12,1
+2022-02-26 16:53:53,2022-02-26 16:56:30,wczbffevcxqk45,19,Female,Sophomore,NA,Other,economics,1,9,0,clarinet for 4 years,4,1,character(0),1,0,NA,0,0,1,1,3,0,0,30,40,5,0,10,0,5,10,0,NA,1044403354,3,3,2,Yes,1,9,0.75
+2022-02-26 21:02:42,2022-02-26 21:20:06,jvjtjq3y1aad9h,19,Female,Sophomore,NA,Other,economics,1,10,0,"violin (2)
+piano(8)
+clarinet(5)",8,3,"c(""violin"", ""piano"")",0,1,2,1,0,1,3,2,40,0,0,0,0,0,30,0,0,30,0,NA,1067596379,50,92,5,Yes,1,12,1
+2022-02-27 10:38:39,2022-02-27 11:00:25,1zp8rsxhypb64v,NA,Female,Sophomore,NA,Other,Economics,1,8,0,piano,NA,1,piano,1,0,NA,0,0,1,3,4,60,0,0,40,0,0,0,0,0,0,0,NA,5684042495,8,20,5,Yes,1,10,0.8333333333333334
+2022-02-28 12:43:22,2022-02-28 13:15:07,lmoldumze64v8k,21,Male,Junior,NA,Other,Computer Science,1,5,0,"alto saxophone (5 years)
+drums (2 years)",5,2,character(0),1,1,2,1,0,1,3,0,35,0,0,0,0,35,30,0,0,0,0,NA,3566263097,55,60,6,Yes,1,11,0.9166666666666666
+2022-02-28 14:37:36,2022-02-28 14:58:26,wu1v9u1mo9tn38,20,Male,Sophomore,NA,Psychology,NA,1,4,1,"piano, 16 years
+
+singing, 6 years",16,2,piano,1,1,2,1,-1,1,4,5,10,10,0,10,0,10,60,0,0,0,0,NA,2528622657,90,100,6,Yes,1,12,1
+2022-02-28 18:20:30,2022-02-28 18:46:05,srlw2wohychnow,20,Female,Freshman,NA,Other,Economics,1,5,0,"piano, 7 years",7,1,piano,0,1,1,0,1,1,2,1,15,5,0,0,15,10,30,5,20,0,0,NA,7516178077,52,51,4,Yes,1,11,0.9166666666666666
+2022-03-01 12:46:56,2022-03-01 13:12:14,vex1uufvtp4phe,NA,Female,Sophomore,NA,Other,Biology,1,12,0,"string bass-2 years
+handbells-5 years
+choir-5 years",5,3,character(0),1,0,NA,1,0,1,2,0,80,10,0,10,0,0,0,0,0,0,0,NA,2707228965,14,40,4,Yes,1,10,0.8333333333333334
+2022-03-03 01:04:59,2022-03-03 01:44:41,l0tb2uewmhksfb,20,Male,Sophomore,NA,Other,Computer Science,1,12,0,violin (3),3,1,violin,1,0,NA,1,0,1,3,0,10,0,0,0,0,70,20,0,0,0,0,NA,3619423604,20,80,0,Yes,1,12,1
+2022-03-04 19:04:45,2022-03-04 19:23:35,uqdy2dcvaaen6p,18,Female,Sophomore,NA,Other,economics,1,4,0,violin,NA,1,violin,0,1,5,1,0,1,3,2,40,0,0,0,0,0,40,20,0,0,0,NA,7263097562,68,89,6,Yes,1,12,1
+2022-03-06 09:54:05,2022-03-06 10:10:25,bldvvocg6fm3nj,21,Male,Sophomore,NA,Other,cs,0,5,0,NA,0,0,NA,0,0,NA,0,0,1,2,0,100,0,0,0,0,0,0,0,0,0,0,NA,6559157051,0,NA,5,Yes,1,12,1
+2022-03-06 14:20:11,2022-03-06 14:38:31,ysz28770jo9npn,20,Female,Sophomore,NA,Other,Biology,1,8,1,"voice (12 years), piano (8 years)",12,2,piano,1,1,4,1,0,5,3,3,70,0,15,0,0,0,0,5,0,10,0,NA,3600962747,85,85,6,Yes,1,12,1
+2022-03-07 18:51:34,2022-03-07 19:12:39,8glm4kxovqneap,21,Female,Junior,NA,Other,Economics,1,8,0,voice -- i was in a choir for 4 years (8 years old -12 yeras old),4,1,character(0),1,1,Piano -- 1 (very basic),0,0,1,1,1,25,15,5,0,0,15,30,5,5,0,0,NA,6819144283,60,89,5,Yes,1,12,1
+2022-03-08 15:25:40,2022-03-08 15:50:29,kl9c63u623v817,24,Male,Senior,NA,Other,Economics,1,6,1,piano - 12 years,12,1,piano,0,0,NA,1,0,1,2,5,0,0,0,0,0,0,0,100,0,0,0,NA,6323213291,60,60,2,Yes,1,12,1
+2022-03-09 20:16:29,2022-03-09 20:19:15,en7lefm4g8mp17,20,Male,Freshman,NA,Other,Business Economics,1,5,0,"violin 10
+viola 3",10,2,violin,1,1,Orchestra all through middle and high school,1,0,1,2,0,80,0,0,0,0,0,0,0,0,0,20,EDM,4358939887,65,65,6,Yes,1,12,1
+2022-03-10 17:39:20,2022-03-10 17:42:18,22-0159,20,Male,Sophomore,NA,Other,Economics (Data Science),0,NA,0,NA,0,0,NA,0,0,NA,0,0,1,2,0,20,80,0,0,0,0,0,0,0,0,0,NA,7602874178,6,4,NA,NA,NA,NA,NA
+2022-03-11 10:07:19,2022-03-11 10:29:04,fmprwbaajkjteu,20,Male,Sophomore,NA,Other,Economics,1,8,0,"piano (10yrs)
+drums (2 yrs)",10,2,piano,1,0,NA,1,0,1,3,1,40,20,0,20,0,0,20,0,0,0,0,NA,5099255339,18,81,6,Yes,1,12,1
+2022-03-11 17:18:03,2022-03-11 17:50:25,zj8x8zq0p7skbk,21,Female,Senior,NA,Other,econ,0,NA,0,NA,0,0,NA,0,0,NA,0,-1,1,3,1,80,0,0,0,20,0,0,0,0,0,0,NA,9969091032,7,8,6,Yes,1,9,0.75
+2022-03-11 17:32:29,2022-03-11 17:51:37,46ak9p0c90r96o,19,Male,Sophomore,NA,Other,Economics,1,8,0,piano for one year,1,1,piano,0,1,1,0,0,1,1,2,30,10,0,0,0,30,0,0,30,0,0,NA,5405144116,8,8,0,Yes,1,11,0.9166666666666666
+2022-03-11 18:04:02,2022-03-11 18:26:42,7wr5yq5806d3ee,19,Female,Sophomore,NA,Other,Biology,1,12,0,flute (4 years),4,1,character(0),0,0,NA,0,0,1,5,5,10,0,0,0,10,40,20,0,0,0,20,Country,9018846073,33,26,1,Yes,1,12,1
+2022-03-11 21:15:17,2022-03-11 21:35:04,lws6fybx47tsfx,19,Male,Freshman,NA,Other,Economics/Statistics,1,10,0,i've played the piano for around 3 years when i was 9. i also started the violin around 9 years old and stopped at around 15 years old.,6,2,"c(""piano"", ""violin"")",1,1,1 (Orchestra during Freshman Year),1,-1,1,2,0,50,0,0,0,0,0,50,0,0,0,0,NA,4721459480,45,52,6,Yes,1,12,1
+2022-03-12 08:53:01,2022-03-12 09:19:31,duvwtwatncc29f,21,Female,Junior,NA,Other,applied mathematics,1,13,0,"viola - 1 year
+guitar - a little less than a year",1,2,character(0),1,1,I took two courses for guitar in high school,0,0,1,3,0,20,20,20,0,0,0,20,0,0,20,0,NA,8017703570,50,40,6,Yes,1,12,1
+2022-03-12 17:30:43,2022-03-12 17:32:18,ghbk58xwj3w7v2,20,Male,Sophomore,NA,NA,Neuroscience,1,15,1,guitar - 5 years,5,1,character(0),1,1,1,1,0,1,4,3,30,0,0,0,0,10,60,0,0,0,0,NA,1475084897,35,32,6,Yes,1,8,0.6666666666666666
+2022-03-12 21:08:36,2022-03-12 21:43:57,dw2g8xvmm29hzv,22,Female,Senior,NA,Other,Computer Science,1,4,0,"piano (9 years)
+opera (2 years)",9,2,piano,0,0,NA,1,0,1,3,1,20,20,0,0,0,20,0,20,20,0,0,NA,1176432322,70,70,6,Yes,1,12,1
+2022-03-13 11:27:00,2022-03-13 11:48:14,a48zc72k379mm5,19,Male,Freshman,NA,Other,Business Economics,1,12,0,tuba for 2 years,2,1,character(0),0,0,NA,0,0,1,2,3,0,0,25,0,0,0,25,0,0,0,50,Spanish,7592328979,18,19,6,Yes,1,9,0.75
+2022-03-14 11:29:00,2022-03-14 11:34:20,hecbjunkhj9dj8,19,Female,Sophomore,NA,Other,Economics,1,7,1,"piano (12), violin (8), cello (1), ukulele (4), guitar (2), electric bass (1), vocals (19)",19,7,"c(""piano"", ""violin"")",1,1,8,1,0,2,5,3,10,0,0,0,0,30,0,60,0,0,0,NA,8008612604,95,87,5,Yes,1,10,0.8333333333333334
+2022-03-15 06:37:02,2022-03-15 06:40:02,vak3dxc5advtbp,18,Female,Freshman,NA,Other,Economics,1,3,1,piano 15,15,1,piano,1,1,5,1,0,1,2,1,20,0,0,0,0,0,0,20,0,0,60,KPOP,1499053324,61,82,6,Yes,1,12,1
+2022-03-15 17:01:48,2022-03-15 17:20:46,cny0e1gcjouwbl,20,Male,Sophomore,NA,Other,Economics,1,5,0,i played the guitar from 5-7. i never got very good. i also played the recorder in music class in middle school.,2,2,character(0),0,1,3,0,0,1,1,0,20,20,0,0,0,0,30,10,20,0,0,NA,4813440157,30,66,5,Yes,1,8,0.6666666666666666
+2022-03-10 17:05:13,2022-03-15 22:19:19,a6ht9dc0qtad3q,NA,Male,Sophomore,NA,Psychology,NA,0,NA,0,NA,0,0,NA,0,0,NA,0,0,1,2,1,10,0,0,0,0,20,70,0,0,0,0,NA,5345399037,67,88,4,Yes,1,8,0.6666666666666666
+2022-03-16 17:56:54,2022-03-16 18:16:30,nblba5uf3agcee,19,Male,Sophomore,NA,Other,Economics,0,10,0,NA,0,0,NA,0,0,NA,0,0,1,3,4,30,0,0,0,0,0,70,0,0,0,0,NA,4351513553,30,14,6,Yes,2,11,0.9166666666666666
+2022-03-18 11:37:46,2022-03-18 11:41:40,q7elxyj5557f33,20,Female,Sophomore,NA,NA,Math and Economics,1,9,1,"cello: 11 years
+violin: 1 year",11,2,violin,1,1,1,1,0,2,3,3,30,40,0,0,0,0,0,30,0,0,0,NA,2714305726,65,70,5,Yes,1,12,1
+2022-03-18 13:24:21,2022-03-18 13:27:59,sh7e5mf22heylw,22,Male,Junior,NA,Other,Economics,1,8,0,"piano, 2 years",2,1,piano,0,0,NA,0,0,1,2,0,0,0,0,0,0,0,0,5,5,0,90,Jewish,6469563586,65,55,5,Yes,1,12,1
+2022-03-21 17:55:11,2022-03-21 17:58:03,68y16tu9q206kk,NA,Male,Sophomore,NA,Music,NA,1,11,1,"voice (9 years)
+piano (7 years)
+clarinet (6 years)",9,3,piano,1,1,6,1,0,5,3,0,0,0,0,0,0,30,20,0,0,0,50,Gospel,7682843385,70,90,0,Yes,1,12,1
+2022-03-27 16:02:17,2022-03-27 16:24:41,1ud48q8gbhuohl,20,Male,Sophomore,NA,Other,Mathematics,1,17,0,"oboe, 1 year",1,1,oboe,0,1,1 music course in high school,1,0,1,3,0,0,0,0,0,0,0,0,0,0,0,100,hyperpop,8330397838,10,10,6,Yes,1,11,0.9166666666666666
+2022-03-27 21:39:04,2022-03-27 22:07:51,4z28vs74263l11,19,Female,Sophomore,NA,Other,"political science, business economics",1,4,1,"piano (15 years)
+choir (3 years)",15,2,piano,1,1,4,1,0,1,2,10,15,0,0,0,0,0,0,85,0,0,0,NA,3875503013,75,90,5,Yes,1,11,0.9166666666666666
+2022-03-28 14:42:04,2022-03-28 15:09:24,r51mv84rhfl9sj,21,Male,Junior,NA,Other,Computer Science,1,12,0,"flute, 0.5 year
+electric guitar, 0.5 year",0.5,2,character(0),0,0,NA,0,0,1,4,0,0,75,0,0,25,0,0,0,0,0,0,NA,4020586959,5,10,6,Yes,1,11,0.9166666666666666
+2022-03-28 15:42:33,2022-03-28 16:01:21,kzv3jux3ejem13,20,Female,Sophomore,NA,Psychology,NA,1,4,0,"violin (16) , viola (6), piano (2), saxophone (0.5)",16,4,"c(""violin"", ""piano"")",1,1,2,1,0,1,5,3,40,30,10,0,5,10,0,0,0,0,5,Indie,6574248171,77,89,6,Yes,1,12,1
+2022-03-28 15:52:45,2022-03-28 16:15:43,wt1s146c0vr3a1,NA,Male,Sophomore,NA,Other,Business Economics and Computer Science,0,NA,0,NA,0,0,NA,0,0,NA,0,0,1,3,1,25,5,20,10,5,5,25,5,0,0,0,NA,7561812961,10,30,6,Yes,1,11,0.9166666666666666
+2022-03-28 16:12:10,2022-03-28 16:37:22,4srlrzfe7zrkce,18,Non-binary,Freshman,NA,Psychology,NA,1,5,1,"violin (8 years)
+voice (13 years)
+piano (2 years)",13,3,"c(""violin"", ""piano"")",1,0,NA,0,0,1,2,1,25,5,0,0,0,0,0,0,0,10,60,Musical Theater,3534700936,94,94,6,Yes,1,11,0.9166666666666666
+2022-03-28 15:41:51,2022-03-28 16:41:25,7cpzxqj3q7e4kx,19,Male,Freshman,NA,Other,Computer Science,0,NA,0,NA,0,0,NA,1,0,NA,1,0,1,5,3,0,45,30,0,0,0,25,0,0,0,0,NA,2691455753,15,70,6,Yes,1,12,1
+2022-03-28 17:06:35,2022-03-28 17:28:05,5qjd88k61078vu,18,Female,Freshman,NA,Other,LLSO and Public Policy,1,2,0,"violin - ages 2-10
+flute - ages 10-18
+voice - ages 8-17",9,3,violin,1,1,4,1,0,1,2,6,70,5,0,0,0,0,0,10,15,0,0,NA,9826140240,51,82,1,Yes,1,12,1
+2022-03-28 16:31:54,2022-03-28 17:32:51,ynofrfor3jkeq6,19,Female,Sophomore,NA,Other,Computer Science,1,8,1,"violin: 6 years
+piano: 5 years
+voice: 11 years",11,3,"c(""violin"", ""piano"")",1,0,NA,1,0,4,4,1,90,10,0,0,0,0,0,0,0,0,0,NA,3527054000,70,40,6,Yes,1,12,1
+2022-03-28 19:42:46,2022-03-28 20:08:38,kty5f6maptb0dd,19,Male,Sophomore,NA,Other,Biochemistry and MENG,1,5,0,"piano - 10 years
+guitar - 2 years",10,2,piano,0,0,NA,1,0,1,3,0,50,0,10,0,0,20,10,10,0,0,0,NA,8038459790,60,60,6,Yes,1,12,1
+2022-03-28 20:29:29,2022-03-28 20:31:24,tn79ehg5du7orv,19,Female,Sophomore,NA,Other,Biology,1,6,0,violin for 6 years and high school choir,6,2,violin,1,1,2 courses in high school,1,0,1,3,0,50,5,0,0,0,25,20,0,0,0,0,NA,4398419358,30,29,6,Yes,1,12,1
+2022-03-28 20:57:19,2022-03-28 21:16:55,2ydzvypmquy3m6,21,Male,Junior,NA,Other,Economics,1,7,1,piano (14 years),14,1,piano,0,1,4,1,-1,1,2,10,10,0,0,0,0,10,30,50,0,0,0,NA,1191837194,80,61,6,Yes,1,12,1
+2022-03-28 21:39:27,2022-03-28 22:56:47,f5cnmcxqh2k3nk,19,Female,Sophomore,NA,Other,Biology,0,NA,0,NA,0,0,NA,0,0,NA,0,-1,1,1,0,40,5,10,0,0,10,35,0,0,0,0,NA,9622225015,0,0,6,Yes,1,10,0.8333333333333334
+2022-03-29 11:16:47,2022-03-29 11:38:06,3n34nqsw1a95al,20,Male,Sophomore,NA,Other,Biological Sciences,0,NA,0,NA,0,0,NA,0,0,NA,0,-1,1,3,0,20,0,0,0,0,20,0,0,0,60,0,NA,3917121574,9,10,6,Yes,1,11,0.9166666666666666
+2022-03-29 14:10:26,2022-03-29 14:41:32,1k76xhtxu33fna,18,Female,Freshman,NA,Other,"Law, Letters and Society",1,7,0,"clarinet, 7 years",7,1,character(0),1,0,NA,1,0,1,1,1,20,0,0,0,0,0,0,30,0,50,0,NA,7565443735,65,71,6,Yes,1,11,0.9166666666666666
+2022-03-29 15:44:46,2022-03-29 16:11:28,25s7fat9pbn07a,NA,Male,Freshman,NA,Other,Not declared,1,8,1,"guitar - 10 years
+piano - 2 years
+drums - 1 year",10,3,piano,1,1,"At least weekly lessons until high school, and then normal music class requirements during high school",1,0,1,2,2,0,30,0,0,15,0,40,0,15,0,0,NA,8256498212,30,30,4,Yes,1,12,1
+2022-03-28 08:18:55,2022-03-29 16:13:46,dv8pnc8n8709ac,18,Female,Sophomore,NA,Other,Biology and Neuroscience,1,7,0,"violin (2 years)
+piano (5 years)
+recorder (1 year)
+voice (4 years)",5,4,"c(""violin"", ""piano"")",1,1,Choir (4 years),0,0,1,3,2,73,0,5,5,2,10,5,0,0,0,0,NA,5743115892,53,44,1,Yes,1,12,1
+2022-03-29 16:43:46,2022-03-29 16:46:45,h21fw4bmslr0vb,19,Male,Sophomore,NA,Other,Economics,1,16,1,"ukulele, guitar",3,2,character(0),0,0,NA,0,0,1,4,3,10,0,10,0,0,0,0,5,0,0,75,reggaeton,1244088576,60,70,6,Yes,1,12,1
+2022-03-29 20:49:37,2022-03-29 20:52:20,d4qe5xyo1szx29,19,Female,Sophomore,NA,Other,Biology,1,13,0,"clarinet-4 years
+choir-3 years",4,2,character(0),1,1,2,1,-1,1,1,2,20,0,0,0,0,20,0,20,0,0,40,spanish,7296446301,19,19,1,Yes,2,8,0.6666666666666666
+2022-03-29 21:22:07,2022-03-29 21:41:40,xem2lsmz2rw58a,23,Male,Junior,NA,Other,Economics,0,NA,0,NA,0,0,NA,0,0,NA,0,0,1,1,0,100,0,0,0,0,0,0,0,0,0,0,NA,9946057928,NA,NA,6,Yes,1,10,0.8333333333333334
+2022-03-30 13:36:07,2022-03-30 13:57:16,3ts9x7fclowjoe,18,Female,Sophomore,NA,NA,Biology,1,5,0,"piano (~14 years)
+ukulele/guitar (2-3 years)",14,3,piano,0,0,NA,1,0,1,2,1,30,40,0,0,5,20,0,5,0,0,0,NA,6623958929,40,85,6,Yes,1,12,1
+2022-03-30 14:43:41,2022-03-30 15:53:24,7txj1h7m1zulc0,19,Male,Sophomore,NA,Other,Economics,1,10,0,"piano, drum set",NA,2,piano,0,0,NA,0,0,2,2,0,70,0,0,10,0,0,20,0,0,0,0,NA,3353181194,30,40,5,Yes,1,9,0.75
+2022-03-30 08:46:31,2022-03-30 20:36:37,caglmeprzlkyy2,19,Female,Sophomore,NA,NA,Computer Science,1,7,0,"piano (3 years)
+flute (1 year)
+ukulele (4 years)
+voice (4 years)",4,4,piano,1,0,NA,1,0,1,2,1,95,2,0,0,0,2,1,0,0,0,0,NA,3425884653,70,25,6,Yes,1,12,1
+2022-03-31 14:57:28,2022-03-31 15:20:32,gpg04v7qyrefwx,18,Female,Sophomore,NA,Other,Business Economics / Public Policy,1,7,0,"piano - 5 years
+saxophone - 4 years",5,2,piano,0,0,NA,1,0,1,2,1,60,0,5,0,0,5,30,0,0,0,0,NA,5508193314,10,10,0,Yes,1,9,0.75
+2022-03-31 17:13:37,2022-03-31 18:04:12,1zs6z0yx3n7f49,21,Male,Sophomore,NA,Other,NA,1,6,0,piano,NA,1,piano,0,0,NA,0,0,1,2,0,0,0,0,0,50,50,0,0,0,0,0,NA,3660856133,0,0,2,Yes,1,8,0.6666666666666666
+2022-04-01 08:12:58,2022-04-01 08:39:22,lresmp7xwjprcu,18,Male,Sophomore,NA,Other,Mathematics with a Specialization in Economics,1,5,1,"voice (15 years), piano (8 years), cello (12 years)",15,3,piano,1,1,3,1,0,2,2,5,0,0,0,0,0,0,0,100,0,0,0,NA,7537436869,92,92,6,Yes,1,12,1
+2022-04-01 15:04:16,2022-04-01 15:27:38,q4xckwadt0egfj,21,Male,Junior,NA,Other,Economics,1,5,0,"violin - 5yr
+guitar - 2yr",5,2,violin,0,0,NA,0,0,1,3,5,10,0,0,30,20,5,30,5,0,0,0,NA,3379996212,63,68,6,Yes,1,12,1
+2022-04-02 07:45:32,2022-04-02 08:31:11,l857wwdmpx8888,20,Male,Junior,NA,Other,Economics,1,6,1,violin 14 years,14,1,violin,1,1,2,1,0,3,2,3,40,0,20,0,0,0,20,20,0,0,0,NA,1794725346,92,90,0,Yes,1,12,1
+2022-04-02 10:53:50,2022-04-02 11:13:28,ebw8gz9q7hd6cr,21,Male,Senior,NA,Other,Biology,1,8,0,"piano (5 years), violin (5 years)",5,2,"c(""piano"", ""violin"")",1,1,3,1,0,1,2,0,50,0,0,0,0,50,0,0,0,0,0,NA,1126656225,90,80,6,Yes,1,12,1
+2022-04-04 09:04:24,2022-04-04 09:30:16,xc4r58tev7jayc,21,Female,Junior,NA,Other,English,0,NA,0,NA,0,0,NA,0,0,NA,0,0,1,4,0,20,5,0,0,0,15,60,0,0,0,0,NA,4121615838,0,0,6,Yes,2,8,0.6666666666666666
+2022-04-04 16:48:08,2022-04-04 18:31:07,8vlrmgcbq7y546,19,Female,Sophomore,NA,Other,Biology,1,6,1,"piano (13), cello (9), guitar (6)",13,3,piano,1,1,2,1,0,1,2,10,20,0,0,0,0,0,0,0,0,80,0,NA,1851802052,70,80,6,Yes,1,12,1
+2022-04-04 21:22:02,2022-04-04 21:26:20,zovf07f99nvz2m,19,Male,Sophomore,NA,Other,Molecular Engineering,1,5,0,piano (4) bassoon (1) recorder (1),4,3,piano,1,0,NA,1,0,1,3,1,25,12,5,1,1,2,54,0,0,0,0,NA,2216086347,61,80,6,Yes,1,11,0.9166666666666666
+2022-04-04 15:23:59,2022-04-04 21:31:00,2qldvayn5a55jf,20,Female,Sophomore,NA,Other,Chemistry/Biochemistry,1,8,0,"cello
+clarinet",NA,1,character(0),1,1,2 at the high school level,1,0,1,1,0,90,0,5,0,0,0,5,0,0,0,0,NA,6792691757,46,33,6,Yes,1,12,1
+2022-04-05 08:39:09,2022-04-05 08:42:28,lr83vfvoqgj6h5,20,Female,Sophomore,NA,Other,Biological Sciences,1,11,0,"viola, 1 year
+violin, 6 years",6,2,violin,0,0,NA,1,0,1,2,2,70,0,0,0,5,10,10,5,0,0,0,NA,1898811428,70,80,6,Yes,1,12,1
+2022-04-06 15:37:11,2022-04-06 16:46:27,5dwls1sf4lslby,NA,Female,Sophomore,NA,Other,Biology and Economics,1,5,0,"piano: 5 years
+voice: 2 years",5,2,piano,1,0,NA,0,0,1,1,2,80,0,10,0,0,0,10,0,0,0,0,NA,7963778504,20,20,3,Yes,1,9,0.75
+2022-04-06 18:01:56,2022-04-06 18:07:37,847ko8wdqynnpc,18,Male,Freshman,NA,Other,Engineering Management,0,NA,0,NA,0,0,NA,1,0,NA,0,0,1,1,0,0,0,0,0,5,0,50,0,0,0,45,Funk/Soul,6624393663,0,0,4,Yes,1,10,0.8333333333333334
+2022-04-06 22:40:27,2022-04-06 22:43:24,clpqs49ahh7d7x,18,Female,Freshman,NA,Other,Visual Arts,1,7,0,piano and guitar both 4 years,4,2,piano,0,0,NA,0,0,1,5,0,5,0,0,0,0,40,55,0,0,0,0,NA,4744070734,50,63,6,Yes,1,12,1
+2022-04-07 12:46:50,2022-04-07 13:12:09,hvd7cs283lte36,19,Female,Sophomore,NA,Other,Statistics,1,3,0,"piano - 15 years
+flute - 8 years
+guitar - 3 years
+vocals - 10 years",15,4,piano,1,0,NA,1,1,1,3,1,30,0,0,0,0,0,10,20,0,30,10,Lofi,8363057701,100,100,6,Yes,1,12,1
+2022-04-07 18:58:30,2022-04-07 19:04:57,tkp19u9btbvhee,20,Female,Junior,NA,Other,Business Economics,1,9,0,"recorder, 1 year",1,1,character(0),0,0,NA,0,0,1,1,0,85,0,0,0,0,0,15,0,0,0,0,NA,5488759773,10,15,6,Yes,1,10,0.8333333333333334
+2022-04-07 20:08:35,2022-04-07 20:43:03,zvg0j5o4ck1rtb,20,Female,Sophomore,NA,Other,molecular engineering,1,12,0,"flute for 7 years
+mellophone for 5 years",7,2,character(0),1,1,4,1,0,1,4,2,0,40,25,0,0,0,0,0,0,0,35,indie rock,6250020939,20,60,6,Yes,1,9,0.75
+2022-04-09 20:25:43,2022-04-09 20:59:21,f93ne6zc350d6s,20,Male,Sophomore,NA,Other,Biological Sciences,1,5,0,"piano, 12 years
+violin, 8 years",12,2,"c(""piano"", ""violin"")",1,0,NA,1,0,1,1,0,5,0,0,0,0,0,0,90,5,0,0,NA,2132382415,93,95,6,Yes,1,12,1
+2022-04-10 15:10:33,2022-04-10 15:38:09,1qnukjvv6we824,21,Male,Junior,NA,Psychology,NA,1,10,0,"violin, 1 year
+oboe, 8 years
+voice, 2 years
+piano, 0.2 years
+guitar, 0.5 years",8,5,"c(""violin"", ""oboe"", ""piano"")",1,0,NA,1,0,1,5,0,30,60,0,0,0,0,5,5,0,0,0,NA,2484240170,50,60,6,Yes,1,10,0.8333333333333334
+2022-04-10 23:56:20,2022-04-11 00:26:38,j2guyrtt517s58,19,Male,Freshman,NA,Psychology,NA,1,5,1,piano 5,5,1,piano,1,1,2,1,0,1,5,0,40,30,0,0,10,0,5,10,5,0,0,NA,9539012860,31,30,6,Yes,1,12,1
+2022-04-12 12:50:21,2022-04-12 13:14:05,52kb70x7blx386,19,Male,Freshman,NA,Other,Public Policy,1,12,0,trombone - 2 years,2,1,character(0),1,0,NA,1,0,1,2,2,15,50,0,0,5,15,0,0,15,0,0,NA,5693761165,60,75,6,Yes,1,12,1
+2022-04-12 08:19:17,2022-04-12 19:09:51,8v9f2rerj5w3r1,19,Female,Sophomore,NA,Other,Neuroscience,1,8,0,percussion (2 years),2,1,character(0),0,1,1,0,0,1,5,2,5,20,18,18,2,5,28,0,2,2,0,NA,9959910970,0,0,5,Yes,1,10,0.8333333333333334
+2022-04-13 22:41:16,2022-04-13 23:07:55,734mmplp3tpwcz,20,Female,Junior,NA,Other,neuroscience,1,8,0,"piano - 5
+voice - 9",9,2,piano,1,1,9,1,0,1,3,10,90,0,0,0,0,0,0,10,0,0,0,NA,2092488623,70,70,2,Yes,1,12,1
+2022-04-14 11:39:10,2022-04-14 12:05:13,3er8w4utygyt3x,20,Male,Junior,NA,Other,Engineering,1,7,0,"piano, recorder",NA,2,piano,0,1,1,0,0,1,3,1,40,0,0,60,0,0,0,0,0,0,0,NA,5791200605,50,80,5,Yes,1,12,1
+2022-04-14 16:05:25,2022-04-14 16:44:11,zbda5dxo5cvxwg,20,Male,Sophomore,NA,Other,Molecular Engineering and Chemistry,1,7,0,"piano
+guitar (string)",NA,2,piano,1,0,NA,1,0,1,3,0,0,5,0,0,5,15,15,0,0,0,60,Reggaeton/Spanish,8388457347,40,30,6,Yes,1,8,0.6666666666666666
+2022-04-15 02:06:06,2022-04-15 02:43:56,8mb5vuxtwfrq3l,22,Female,Senior,NA,Psychology,NA,0,NA,0,NA,0,0,NA,0,0,NA,0,0,1,2,0,50,0,0,0,0,0,15,10,0,25,0,NA,8434274910,11,26,6,Yes,1,10,0.8333333333333334
+2022-04-15 12:14:21,2022-04-15 12:42:07,ch4dg75c7th9g1,26,Male,Freshman,NA,Other,CAAM,1,12,0,guitar - 3 years,3,1,character(0),1,0,NA,0,0,1,3,1,5,20,15,30,0,0,15,5,10,0,0,NA,1706631024,90,90,6,Yes,1,12,1
+2022-04-15 14:36:44,2022-04-15 15:01:45,ept8xz3drgq38w,19,Female,Freshman,NA,NA,Economics,1,6,0,piano (12 years),12,1,piano,0,1,1 course in high school,1,0,1,2,3,55,10,5,0,5,0,5,20,0,0,0,NA,4196220404,30,20,6,Yes,1,9,0.75
+2022-04-15 16:20:13,2022-04-15 16:23:21,6jbjgfdffnat8q,20,Female,Sophomore,NA,Other,Chemistry,1,7,0,"piano - 2
+flute - 1
+trombone - 1
+french horn - 3",3,4,piano,1,0,NA,1,0,1,2,2,40,0,0,0,0,0,0,0,0,0,60,indie,3777715837,80,70,6,Yes,1,10,0.8333333333333334
