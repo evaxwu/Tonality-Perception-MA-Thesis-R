@@ -6,6 +6,82 @@ Eva Wu
 *This script referenced code from my stats professor Liz Page-Gould and
 collaborator/MA thesis advisor Stephen Van Hedger.*
 
+    ## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
+    ## ✔ ggplot2 3.4.0      ✔ purrr   1.0.0 
+    ## ✔ tibble  3.1.8      ✔ dplyr   1.0.10
+    ## ✔ tidyr   1.2.1      ✔ stringr 1.5.0 
+    ## ✔ readr   2.1.3      ✔ forcats 0.5.2 
+    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ✖ dplyr::filter() masks stats::filter()
+    ## ✖ dplyr::lag()    masks stats::lag()
+    ## 
+    ## Attaching package: 'rstatix'
+    ## 
+    ## 
+    ## The following object is masked from 'package:stats':
+    ## 
+    ##     filter
+    ## 
+    ## 
+    ## Loading required package: Matrix
+    ## 
+    ## 
+    ## Attaching package: 'Matrix'
+    ## 
+    ## 
+    ## The following objects are masked from 'package:tidyr':
+    ## 
+    ##     expand, pack, unpack
+    ## 
+    ## 
+    ## 
+    ## Attaching package: 'ordinal'
+    ## 
+    ## 
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     slice
+    ## 
+    ## 
+    ## Loading required package: carData
+    ## 
+    ## 
+    ## Attaching package: 'car'
+    ## 
+    ## 
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     recode
+    ## 
+    ## 
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     some
+    ## 
+    ## 
+    ## Loading required package: MASS
+    ## 
+    ## 
+    ## Attaching package: 'MASS'
+    ## 
+    ## 
+    ## The following object is masked from 'package:rstatix':
+    ## 
+    ##     select
+    ## 
+    ## 
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     select
+    ## 
+    ## 
+    ## Loading required package: mvtnorm
+    ## 
+    ## Loading required package: sandwich
+    ## 
+    ## mediation: Causal Mediation Analysis
+    ## Version: 4.5.1
+
 This project examines how instrumental timbre influences categorization
 of three-note arpeggios as major versus minor. Middle note of the
 arpeggios has five steps, ranging from +0c (minor) to +100c (major) in
@@ -25,6 +101,50 @@ base judgments on these characteristics.
 
 At the end of the experiment, participants are asked to make explicit
 ratings on how likely each instrument is to play a sad melody.
+
+    ## Rows: 107 Columns: 44
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr  (11): jspsych_id, Gender, Year, Year_6_TEXT, Major, Major_3_TEXT, Inst_...
+    ## dbl  (31): Age, Inst, Start, Inst_now, Inst_yr, Inst_num, Ens, Course, Read,...
+    ## dttm  (2): StartDate, RecordedDate
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    ## Rows: 25161 Columns: 33
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (18): trial_type, internal_node_id, participant, expt, chord, qualtrics_...
+    ## dbl (13): trial_index, time_elapsed, played_major1, played_minor1, correct, ...
+    ## lgl  (2): success, timeout
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    ## `summarise()` has grouped output by 'participant', 'chord', 'tuning_c'. You can override using the `.groups` argument.
+    ## Rows: 32970 Columns: 33
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (33): trial_type, trial_index, time_elapsed, internal_node_id, participa...
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    ## `summarise()` has grouped output by 'participant', 'chord', 'tuning_c', 'instrument', 'envelope'. You can override using the `.groups` argument.
+    ## Rows: 25161 Columns: 33
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (18): trial_type, internal_node_id, participant, expt, chord, qualtrics_...
+    ## dbl (13): trial_index, time_elapsed, played_major1, played_minor1, correct, ...
+    ## lgl  (2): success, timeout
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    ## Rows: 32970 Columns: 33
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (33): trial_type, trial_index, time_elapsed, internal_node_id, participa...
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 ## 1. Demographics
 
@@ -154,7 +274,7 @@ against instrument timbre and tuning step, because DV is binary (major =
 1, minor = 0), and we were interested in comparing points of subjective
 equality (PSEs) for each instrument.
 
-### Calculate ICC
+### 2.1 Calculate ICC
 
 ``` r
 # baseline model
@@ -183,7 +303,7 @@ First, we checked for ICC of the baseline model. ICC for both
 experiments were greater than .1, indicating clustering effects within
 each participant. Therefore, random effects were included in the models.
 
-### Model Comparison (GLMM)
+### 2.2 Model Comparison (GLMM)
 
 We modeled probability of major tonality categorization against tuning
 step (5 levels, treated as a continuous numeric variable, centered ahead
@@ -282,7 +402,7 @@ instruments). Therefore, we decided to only include 1 random slope.
 Including the random slope for tuning step resulted in a better model
 than including that for instrument.
 
-### Model Summary
+### 2.3 Model Summary
 
 ``` r
 # examine results of the model we decided on
@@ -415,7 +535,7 @@ summary(model_tuning2) # baseline = T1
     ## tnng_c:nsT5  0.483       
     ## tnng_c:nsT6  0.474  0.484
 
-### Post-hoc Comparison
+### 2.4 Post-hoc Comparison
 
 ``` r
 # pairwise comparison at the 3rd tuning_step (+50c)
@@ -478,7 +598,7 @@ Exp1: oboe \< all, xylophone \> all
 
 Exp2: T6 \> all but T3, T3 \> T1&2, T1 \< T3&6
 
-### PSE Analysis
+### 2.5 PSE Analysis
 
 PSE represents the tuning step at which the probability of selecting
 major (or minor) is .5 (probit(p) = 0). Higher PSE means chords played
@@ -566,7 +686,7 @@ pses2
     ##   pse -0.1691891 0.07765555 -0.3213912 -0.01698704
     ##   jnd  0.6787662 0.07835030  0.5252024  0.83232993
 
-### Visualizations
+### 2.6 Visualizations
 
 We calculated predicted probability values at tuning steps with smaller
 bins so that we could plot a smoothed curve graph rather than just a
@@ -729,7 +849,7 @@ df_pse2 %>%
 
 ## 3. Explicit Valence Ratings Analysis
 
-### Calculate ICC
+### 3.1 Calculate ICC
 
 ``` r
 model_base_rtg1 <- clmm(explicit_rtg ~ 1 + (1 | participant), data = df_rtg1)
@@ -754,7 +874,7 @@ icc(model_base_rtg2)
 ICC from both experiments were smaller than .1, but we still chose to
 employ the nested model due to clustering within individuals.
 
-### CLMM
+### 3.2 CLMM
 
 We modeled explicit valence rating for each instrument against
 instrument timbre. We used CLMM because DV is ordinal.
@@ -844,7 +964,7 @@ exp(coef(model_rtg2)[4:8])
     ## instrumentT2 instrumentT3 instrumentT4 instrumentT5 instrumentT6 
     ##     2.172131     4.371078     7.118938    11.291016    14.288876
 
-### Post-hoc Comparison
+### 3.3 Post-hoc Comparison
 
 ``` r
 # correction: Tukey (default)
@@ -895,7 +1015,7 @@ xylophone
 
 Exp2: T1 \< all but T2, T2 \< T4-6, T6 \> T1-3
 
-### Visualizations
+### 3.4 Visualizations
 
 ``` r
 # exp1
@@ -905,12 +1025,32 @@ as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %
   summarise(mean_rating = sum(as.numeric(explicit_rtg) * prob)) %>%
   ggplot(aes(reorder(instrument, mean_rating), mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
-  labs(x = "instrument", y = "Mean valence rating") +
+  labs(x = "Instrument", y = "Estimated mean valence rating",
+       title = "Explicit Emotional Valence Rating for each Instrument") +
   theme_minimal() +
   theme(legend.position = "none")
 ```
 
 ![](data_analysis_files/figure-gfm/exp-plot-1.png)<!-- -->
+
+``` r
+# how to plot aggregated SE???
+
+# alternative: use raw data
+df_rtg1 %>%
+  group_by(instrument) %>%
+  summarise(mean_rating = mean(as.numeric(explicit_rtg)),
+            se_rating = sd(as.numeric(explicit_rtg)/sqrt(n()))) %>%
+  ggplot(aes(reorder(instrument, mean_rating), mean_rating, fill = instrument)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(aes(ymin = mean_rating-se_rating, ymax = mean_rating+se_rating), width = .1) +
+  labs(x = "Instrument", y = "Mean valence rating",
+       title = "Explicit Emotional Valence Rating for each Instrument") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+![](data_analysis_files/figure-gfm/exp-plot-2.png)<!-- -->
 
 ``` r
 # plot estimated probability of each rating (not very intuitive so prolly won't use)
@@ -921,22 +1061,40 @@ as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %
   theme_minimal()
 ```
 
-![](data_analysis_files/figure-gfm/exp-plot-2.png)<!-- -->
+![](data_analysis_files/figure-gfm/exp-plot-3.png)<!-- -->
 
 ``` r
-# exp1
+# exp2
 # plot mean rating 
 as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %>%
   group_by(instrument) %>%
   summarise(mean_rating = sum(as.numeric(explicit_rtg) * prob)) %>%
   ggplot(aes(reorder(instrument, mean_rating), mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
-  labs(x = "instrument", y = "Mean valence rating") +
+  labs(x = "Instrument", y = "Mean valence rating",
+       title = "Explicit Emotional Valence Rating for each Instrument") +
   theme_minimal() +
   theme(legend.position = "none")
 ```
 
-![](data_analysis_files/figure-gfm/exp-plot-3.png)<!-- -->
+![](data_analysis_files/figure-gfm/exp-plot-4.png)<!-- -->
+
+``` r
+# using raw data
+df_rtg2 %>%
+  group_by(instrument) %>%
+  summarise(mean_rating = mean(as.numeric(explicit_rtg)),
+            se_rating = sd(as.numeric(explicit_rtg)/sqrt(n()))) %>%
+  ggplot(aes(reorder(instrument, mean_rating), mean_rating, fill = instrument)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(aes(ymin = mean_rating-se_rating, ymax = mean_rating+se_rating), width = .1) +
+  labs(x = "Instrument", y = "Mean valence rating",
+       title = "Explicit Emotional Valence Rating for each Instrument") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+![](data_analysis_files/figure-gfm/exp-plot-5.png)<!-- -->
 
 ``` r
 # plot estimated probability
@@ -947,7 +1105,7 @@ as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %
   theme_minimal()
 ```
 
-![](data_analysis_files/figure-gfm/exp-plot-4.png)<!-- -->
+![](data_analysis_files/figure-gfm/exp-plot-6.png)<!-- -->
 
 ## 4. Mediation Analysis
 
@@ -1352,11 +1510,17 @@ harmonics interaction, but significant main effect of harmonics and
 tuning \* envelope interaction and tuning \* harmonics \* envelope 3-way
 interaction. Post-hoc comparisons below.
 
-Main effect: \* Harmonics: low/mid \< high; low = mid \* Envelope:
-rounded \< percussive
+Main effect:
 
-Interaction: \* rounded low/mid \< rounded/percussive high \* percussive
-low/mid \< high
+- Harmonics: low/mid \< high; low = mid
+
+- Envelope: rounded \< percussive
+
+Interaction:
+
+- rounded low/mid \< rounded/percussive high
+
+- percussive low/mid \< high
 
 **Explicit valence rating:**
 
@@ -1364,13 +1528,23 @@ CLMM showed significant main effects of envelope and harmonics, but no
 significant envelope \* harmonics interaction. Post-hoc comparisons
 below.
 
-Main effect: \* Harmonics: low \< high (strong); low \< mid (p =.044);
-mid = high \* Envelope: rounded \< percussive
+Main effect:
 
-Interaction: \* rounded \< percussive envelope for all harmonics \*
-rounded low \< high \* rounded low \< percussive mid \* rounded mid \<
-percussive low  
-\* rounded low/mid \< percussive high
+- Harmonics: low \< high (strong); low \< mid (p =.044); mid = high
+
+- Envelope: rounded \< percussive
+
+Interaction:
+
+- rounded \< percussive envelope for all harmonics
+
+- rounded low \< high
+
+- rounded low \< percussive mid
+
+- rounded mid \< percussive low
+
+- rounded low/mid \< percussive high
 
 Similar trend between tonality categorization and explicit valence
 rating.
@@ -1387,7 +1561,7 @@ so we left them out of our models for parsimony. These analyses will not
 be included in main results, but will potentially be included as
 supplementary materials.
 
-### Key
+### 6.1 Key
 
 ``` r
 model_key1 <- df_sum1 %>%
@@ -1638,7 +1812,7 @@ anova(model_sep_key2, model_sep2) # does not significantly improve model fit
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-### Musical Training
+### 6.2 Musical Training
 
 We wanted to add Inst_yr, etc., but there were too many NA values, so we
 couldn’t compare it against the OG model.
@@ -1647,7 +1821,7 @@ couldn’t compare it against the OG model.
 answered no to Inst / yes to Inst_now) - not enough data to reach stable
 model params.
 
-### Pianists only
+### 6.3 Pianists only
 
 We filtered out participants who have had experience playing an
 instrument that was used as stimuli in exp1.
