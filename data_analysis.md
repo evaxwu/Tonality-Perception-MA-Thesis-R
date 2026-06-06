@@ -1,86 +1,31 @@
 Effects of Timbre on Tonality Perception - Data Analyses
 ================
 Eva Wu
-2026-05-26
+
+- [1. Demographics](#1-demographics)
+- [2. Tonality Categorization
+  Analysis](#2-tonality-categorization-analysis)
+  - [2.1 Calculate ICC](#21-calculate-icc)
+  - [2.2 Model Comparison (GLMM)](#22-model-comparison-glmm)
+  - [2.3 Model Summary](#23-model-summary)
+  - [2.4 Post-hoc Comparison](#24-post-hoc-comparison)
+  - [2.5 PSE Analysis](#25-pse-analysis)
+  - [2.6 Visualizations](#26-visualizations)
+- [3. Explicit Valence Ratings
+  Analysis](#3-explicit-valence-ratings-analysis)
+  - [3.1 Calculate ICC](#31-calculate-icc)
+  - [3.2 CLMM](#32-clmm)
+  - [3.3 Post-hoc Comparison](#33-post-hoc-comparison)
+  - [3.4 Visualizations](#34-visualizations)
+- [4. The Role of Valence](#4-the-role-of-valence)
+- [5. Separate Timbral Features](#5-separate-timbral-features)
+- [6. Exploratory Analyses](#6-exploratory-analyses)
+  - [6.1 Key](#61-key)
+  - [6.2 Musical Training](#62-musical-training)
+  - [6.3 Pianists only](#63-pianists-only)
 
 *This script referenced code from my stats professor Liz Page-Gould and
 collaborator/MA thesis advisor Stephen Van Hedger.*
-
-    ## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
-    ## ✔ ggplot2 3.4.0      ✔ purrr   1.0.0 
-    ## ✔ tibble  3.1.8      ✔ dplyr   1.0.10
-    ## ✔ tidyr   1.2.1      ✔ stringr 1.5.0 
-    ## ✔ readr   2.1.3      ✔ forcats 0.5.2 
-    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-    ## ✖ dplyr::filter() masks stats::filter()
-    ## ✖ dplyr::lag()    masks stats::lag()
-    ## 
-    ## Attaching package: 'rstatix'
-    ## 
-    ## 
-    ## The following object is masked from 'package:stats':
-    ## 
-    ##     filter
-    ## 
-    ## 
-    ## Loading required package: Matrix
-    ## 
-    ## 
-    ## Attaching package: 'Matrix'
-    ## 
-    ## 
-    ## The following objects are masked from 'package:tidyr':
-    ## 
-    ##     expand, pack, unpack
-    ## 
-    ## 
-    ## 
-    ## Attaching package: 'ordinal'
-    ## 
-    ## 
-    ## The following object is masked from 'package:dplyr':
-    ## 
-    ##     slice
-    ## 
-    ## 
-    ## Loading required package: carData
-    ## 
-    ## 
-    ## Attaching package: 'car'
-    ## 
-    ## 
-    ## The following object is masked from 'package:dplyr':
-    ## 
-    ##     recode
-    ## 
-    ## 
-    ## The following object is masked from 'package:purrr':
-    ## 
-    ##     some
-    ## 
-    ## 
-    ## Loading required package: MASS
-    ## 
-    ## 
-    ## Attaching package: 'MASS'
-    ## 
-    ## 
-    ## The following object is masked from 'package:rstatix':
-    ## 
-    ##     select
-    ## 
-    ## 
-    ## The following object is masked from 'package:dplyr':
-    ## 
-    ##     select
-    ## 
-    ## 
-    ## Loading required package: mvtnorm
-    ## 
-    ## Loading required package: sandwich
-    ## 
-    ## mediation: Causal Mediation Analysis
-    ## Version: 4.5.1
 
 This project examines how instrumental timbre influences categorization
 of three-note arpeggios as major versus minor. Middle note of the
@@ -102,6 +47,18 @@ base judgments on these characteristics.
 At the end of the experiment, participants are asked to make explicit
 ratings on how likely each instrument is to play a sad melody.
 
+``` r
+# import cleaned Qualtrics data
+df_demo <- read_csv("qualtrics_cleaned.csv") %>%
+  mutate(Inst = factor(Inst, levels = c(0, 1), labels = c("No", "Yes")),
+         Inst_now = factor(Inst_now, levels = c(0, 1), labels = c("No", "Yes")),
+         Read = factor(Read, levels = c(0, 1), labels = c("No", "Yes")),
+         Ens = factor(Ens, levels = c(0, 1), labels = c("No", "Yes")),
+         Course = factor(Course, levels = c(0, 1), labels = c("No", "Yes")),
+         Perf = factor(Perf, levels = c(0, 1, -1), labels = c("No", "Yes", "Not sure")),
+         block_passed_practice = factor(block_passed_practice))
+```
+
     ## Rows: 107 Columns: 44
     ## ── Column specification ────────────────────────────────────────────────────────
     ## Delimiter: ","
@@ -111,6 +68,23 @@ ratings on how likely each instrument is to play a sad melody.
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+# define instrument lists (to avoid redundant code)
+instruments1 <- c("oboe", "violin", "trumpet", "piano", "xylophone")
+instruments2 <- c("T1", "T2", "T3", "T4", "T5", "T6")
+
+# import tonality categorization data from jspsych
+df_cat1 <- read_csv("inst-cat-uc-1.csv") %>%
+  filter(designation == "MAIN-JUDGMENT") %>%
+  dplyr::select(participant, chord, qualtrics_id, selected_major, instrument, tuning_step) %>%
+  mutate(chord = factor(chord),
+         instrument = factor(instrument, levels = instruments1),
+         # centre so that tuning=3 becomes reference; this is equivalent to group-mean centering bc design is the same across subs
+         tuning_c = tuning_step-3) %>%
+  semi_join(df_demo, by = c("participant" = "jspsych_id")) # let go of the j sub who didn't have q response
+```
+
     ## Rows: 25161 Columns: 33
     ## ── Column specification ────────────────────────────────────────────────────────
     ## Delimiter: ","
@@ -120,7 +94,35 @@ ratings on how likely each instrument is to play a sad melody.
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## `summarise()` has grouped output by 'participant', 'chord', 'tuning_c'. You can override using the `.groups` argument.
+
+``` r
+# aggregate data for modeling (mixpsy, the package that helps us calculate pse, can only take count data as DV)
+df_sum1 <- df_cat1 %>%
+  group_by(participant, chord, tuning_c, instrument) %>%
+  summarize(count_major = sum(selected_major),
+            count_minor = 8-count_major) %>%
+  inner_join(df_demo, by = c("participant" = "jspsych_id")) %>%
+  rename(qualtrics_id = participant.y)
+```
+
+    ## `summarise()` has grouped output by 'participant', 'chord', 'tuning_c'. You can
+    ## override using the `.groups` argument.
+
+``` r
+# 200 trials per subject (8 repetitions of the same stimulus), 52 subjects total
+# treating tuning step as continuous, numeric
+
+# now do the same for exp2
+df_cat2 <- read_csv("inst-cat-uc-2.csv") %>%
+  filter(designation == "MAIN-JUDGMENT") %>%
+  dplyr::select(participant, chord, qualtrics_id, selected_major, instrument, envelope, harmonics, tuning_step) %>%
+  mutate(selected_major = as.numeric(selected_major),
+         tuning_step = as.numeric(tuning_step),
+         chord = factor(chord),
+         instrument = factor(instrument, levels = instruments2),
+         tuning_c = tuning_step-3)
+```
+
     ## Rows: 32970 Columns: 33
     ## ── Column specification ────────────────────────────────────────────────────────
     ## Delimiter: ","
@@ -128,7 +130,40 @@ ratings on how likely each instrument is to play a sad melody.
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## `summarise()` has grouped output by 'participant', 'chord', 'tuning_c', 'instrument', 'envelope'. You can override using the `.groups` argument.
+
+``` r
+# 240 trials per subject (8 repetitions of the same stimulu), 58 subjects total
+
+df_sum2 <- df_cat2 %>%
+  group_by(participant, chord, tuning_c, instrument, envelope, harmonics) %>%
+  summarize(count_major = sum(selected_major),
+            count_minor = 8-count_major) %>%
+  mutate(envelope = factor(envelope),
+         harmonics = factor(harmonics, levels = c("low", "mid", "high"))) %>%
+  inner_join(df_demo, by = c("participant" = "jspsych_id")) %>%
+  rename(qualtrics_id = participant.y)
+```
+
+    ## `summarise()` has grouped output by 'participant', 'chord', 'tuning_c',
+    ## 'instrument', 'envelope'. You can override using the `.groups` argument.
+
+``` r
+# separate exp1&2 qualtrics participants
+df_demo1 <- df_demo %>%
+  semi_join(df_sum1, by = c("jspsych_id" = "participant"))
+
+df_demo2 <- df_demo %>%
+  semi_join(df_sum2, by = c("jspsych_id" = "participant"))
+
+# import explicit valence rating data from jspsych
+df_rtg1 <- read_csv("inst-cat-uc-1.csv") %>%
+  filter(designation == "INST-VALENCE-RTG") %>%
+  dplyr::select(participant, chord, instrument, explicit_rtg)  %>%
+  mutate(explicit_rtg = factor(explicit_rtg),
+         instrument = factor(instrument, levels = instruments1)) %>%
+  semi_join(df_demo, by = c("participant" = "jspsych_id")) # let go of the j sub who didn't have q response
+```
+
     ## Rows: 25161 Columns: 33
     ## ── Column specification ────────────────────────────────────────────────────────
     ## Delimiter: ","
@@ -138,6 +173,18 @@ ratings on how likely each instrument is to play a sad melody.
     ## 
     ## ℹ Use `spec()` to retrieve the full column specification for this data.
     ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+df_rtg2 <- read_csv("inst-cat-uc-2.csv") %>%
+  filter(designation == "INST-VALENCE-RTG") %>%
+  dplyr::select(participant, chord, instrument, envelope, harmonics, explicit_rtg)  %>%
+  mutate(explicit_rtg = factor(explicit_rtg),
+         instrument = factor(instrument, levels = instruments2),
+         envelope = factor(envelope),
+         harmonics = factor(harmonics, levels = c("low", "mid", "high"))) %>%
+  semi_join(df_demo, by = c("participant" = "jspsych_id"))
+```
+
     ## Rows: 32970 Columns: 33
     ## ── Column specification ────────────────────────────────────────────────────────
     ## Delimiter: ","
@@ -163,6 +210,70 @@ df_demo1 %>%
     ## 3    48 accuracy  0.938 0.101  0.667     1
 
 ``` r
+lapply(df_demo1[c("Gender", "Major", "Inst", "Inst_now", "Read", "Ens", "Course", "Perf", "Time_make", "Time_listen", "Concert", "block_passed_practice")], table)
+```
+
+    ## $Gender
+    ## 
+    ## Female   Male 
+    ##     25     23 
+    ## 
+    ## $Major
+    ## 
+    ##      Other Psychology 
+    ##         42          3 
+    ## 
+    ## $Inst
+    ## 
+    ##  No Yes 
+    ##   7  41 
+    ## 
+    ## $Inst_now
+    ## 
+    ##  No Yes 
+    ##  39   9 
+    ## 
+    ## $Read
+    ## 
+    ##  No Yes 
+    ##  18  30 
+    ## 
+    ## $Ens
+    ## 
+    ##  No Yes 
+    ##  20  28 
+    ## 
+    ## $Course
+    ## 
+    ##  No Yes 
+    ##  24  24 
+    ## 
+    ## $Perf
+    ## 
+    ##       No      Yes Not sure 
+    ##       39        2        7 
+    ## 
+    ## $Time_make
+    ## 
+    ##  1  2  5 
+    ## 46  1  1 
+    ## 
+    ## $Time_listen
+    ## 
+    ##  1  2  3  4  5 
+    ##  4 19 19  3  3 
+    ## 
+    ## $Concert
+    ## 
+    ##  0  1  2  3  4  5 
+    ## 19 11  7  6  2  3 
+    ## 
+    ## $block_passed_practice
+    ## 
+    ##  1  2 
+    ## 47  1
+
+``` r
 df_demo1 %>%
   ggplot(aes(Age)) +
   geom_bar()
@@ -172,40 +283,15 @@ df_demo1 %>%
 
 ``` r
 df_demo1 %>%
-  ggplot(aes(Gender)) +
-  geom_bar()
-```
-
-![](data_analysis_files/figure-gfm/descriptives-2.png)<!-- -->
-
-``` r
-df_demo1 %>%
-  ggplot(aes(Inst)) +
-  geom_bar() +
-  labs(title = "Had instrument training or not")
-```
-
-![](data_analysis_files/figure-gfm/descriptives-3.png)<!-- -->
-
-``` r
-df_demo1 %>%
   ggplot(aes(Inst_yr)) +
   geom_bar() +
   labs(title = "Years of most trained instrument")
 ```
 
-![](data_analysis_files/figure-gfm/descriptives-4.png)<!-- -->
+![](data_analysis_files/figure-gfm/descriptives-2.png)<!-- -->
 
 ``` r
-df_demo1 %>%
-  ggplot(aes(block_passed_practice)) +
-  geom_bar()
-```
-
-![](data_analysis_files/figure-gfm/descriptives-5.png)<!-- -->
-
-``` r
-# exp1
+# exp2
 df_demo2 %>%
   get_summary_stats(c(Age, Inst_yr, accuracy), type = "full") %>%
   dplyr::select(n, variable, mean, sd, min, max)
@@ -219,29 +305,76 @@ df_demo2 %>%
     ## 3    58 accuracy  0.911 0.112  0.667     1
 
 ``` r
+lapply(df_demo2[c("Gender", "Major", "Inst", "Inst_now", "Read", "Ens", "Course", "Perf", "Time_make", "Time_listen", "Concert", "block_passed_practice")], table)
+```
+
+    ## $Gender
+    ## 
+    ##     Female       Male Non-binary 
+    ##         28         29          1 
+    ## 
+    ## $Major
+    ## 
+    ##      Music      Other Psychology 
+    ##          1         49          5 
+    ## 
+    ## $Inst
+    ## 
+    ##  No Yes 
+    ##   9  49 
+    ## 
+    ## $Inst_now
+    ## 
+    ##  No Yes 
+    ##  44  14 
+    ## 
+    ## $Read
+    ## 
+    ##  No Yes 
+    ##  23  35 
+    ## 
+    ## $Ens
+    ## 
+    ##  No Yes 
+    ##  25  33 
+    ## 
+    ## $Course
+    ## 
+    ##  No Yes 
+    ##  34  24 
+    ## 
+    ## $Perf
+    ## 
+    ##       No      Yes Not sure 
+    ##       53        1        4 
+    ## 
+    ## $Time_make
+    ## 
+    ##  1  2  3  4  5 
+    ## 51  4  1  1  1 
+    ## 
+    ## $Time_listen
+    ## 
+    ##  1  2  3  4  5 
+    ## 10 21 15  5  7 
+    ## 
+    ## $Concert
+    ## 
+    ##  0  1  2  3  4  5  6 10 
+    ## 23 11  9  7  1  2  1  4 
+    ## 
+    ## $block_passed_practice
+    ## 
+    ##  1  2 
+    ## 55  3
+
+``` r
 df_demo2 %>%
   ggplot(aes(Age)) +
   geom_bar()
 ```
 
-![](data_analysis_files/figure-gfm/descriptives-6.png)<!-- -->
-
-``` r
-df_demo2 %>%
-  ggplot(aes(Gender)) +
-  geom_bar()
-```
-
-![](data_analysis_files/figure-gfm/descriptives-7.png)<!-- -->
-
-``` r
-df_demo2 %>%
-  ggplot(aes(Inst)) +
-  geom_bar() +
-  labs(title = "Had instrument training or not")
-```
-
-![](data_analysis_files/figure-gfm/descriptives-8.png)<!-- -->
+![](data_analysis_files/figure-gfm/descriptives-3.png)<!-- -->
 
 ``` r
 df_demo2 %>%
@@ -250,15 +383,7 @@ df_demo2 %>%
   labs(title = "Years of most trained instrument")
 ```
 
-![](data_analysis_files/figure-gfm/descriptives-9.png)<!-- -->
-
-``` r
-df_demo2 %>%
-  ggplot(aes(block_passed_practice)) +
-  geom_bar()
-```
-
-![](data_analysis_files/figure-gfm/descriptives-10.png)<!-- -->
+![](data_analysis_files/figure-gfm/descriptives-4.png)<!-- -->
 
 48 participants in exp1, 58 in exp2.
 
@@ -272,7 +397,8 @@ generalizability of our results to non-musicians.
 We used binomial/probit regression to model tonality categorization
 against instrument timbre and tuning step, because DV is binary (major =
 1, minor = 0), and we were interested in comparing points of subjective
-equality (PSEs) for each instrument.
+equality (PSEs) for each instrument (i.e., tuning step at which
+participants’ likelihood of choosing major/minor is the same).
 
 ### 2.1 Calculate ICC
 
@@ -313,87 +439,6 @@ categorical variable).
 We were not sure which random slopes to include, if at all, so we
 compared models without random slope (only random intercept), with
 random slope of instrument or tuning step, and with both random slopes.
-
-``` r
-# start with maximal model (Barr et al., 2013) 
-# since we are using mixpsy to calculate PSE, we have to convert binary DV to sum
-model_maximal1 <- df_sum1 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c + instrument | participant), 
-        family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
-
-# model is singular (convergence issue) - model too complicated
-# which makes sense given instrument is a categorical variable
-model_maximal2 <- df_sum2 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c + instrument | participant), 
-        family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
-```
-
-    ## boundary (singular) fit: see help('isSingular')
-
-``` r
-# try deleting 1 random slope
-model_tuning1 <- df_sum1 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c | participant), 
-        family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
-
-model_tuning2 <- df_sum2 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c | participant), 
-        family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
-
-# try deleting another random slope instead
-model_instrument1 <- df_sum1 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + instrument | participant), 
-        family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
-
-# model is still singular (too many instruments)
-model_instrument2 <- df_sum2 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + instrument | participant), 
-        family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
-```
-
-    ## boundary (singular) fit: see help('isSingular')
-
-``` r
-anova(model_maximal1, model_tuning1)
-```
-
-    ## Data: .
-    ## Models:
-    ## model_tuning1: cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c | participant)
-    ## model_maximal1: cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c + instrument | participant)
-    ##                npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
-    ## model_tuning1    13 3814.8 3881.0 -1894.4   3788.8                         
-    ## model_maximal1   31 3500.7 3658.5 -1719.3   3438.7 350.15 18  < 2.2e-16 ***
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-``` r
-# including both random slope (vs only 1 of the 2) significantly improves model
-anova(model_maximal1, model_instrument1)
-```
-
-    ## Data: .
-    ## Models:
-    ## model_instrument1: cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + instrument | participant)
-    ## model_maximal1: cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c + instrument | participant)
-    ##                   npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
-    ## model_instrument1   25 5077.9 5205.2 -2513.9   5027.9                         
-    ## model_maximal1      31 3500.7 3658.5 -1719.3   3438.7 1589.2  6  < 2.2e-16 ***
-    ## ---
-    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-
-``` r
-# including random slope of tuning step (vs instrument) results in lower AIC/BIC 
-anova(model_tuning1, model_instrument1)
-```
-
-    ## Data: .
-    ## Models:
-    ## model_tuning1: cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c | participant)
-    ## model_instrument1: cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + instrument | participant)
-    ##                   npar    AIC    BIC  logLik deviance Chisq Df Pr(>Chisq)
-    ## model_tuning1       13 3814.8 3881.0 -1894.4   3788.8                    
-    ## model_instrument1   25 5077.9 5205.2 -2513.9   5027.9     0 12          1
 
 Even though likelihood ratio test (LRT) showed that the model including
 both random slopes explained the most variance, it resulted in model
@@ -535,11 +580,53 @@ summary(model_tuning2) # baseline = T1
     ## tnng_c:nsT5  0.483       
     ## tnng_c:nsT6  0.474  0.484
 
+``` r
+Anova(model_tuning1, type = 3) # sig main effects, non-sig interaction
+```
+
+    ## Analysis of Deviance Table (Type III Wald chisquare tests)
+    ## 
+    ## Response: cbind(count_major, count_minor)
+    ##                        Chisq Df Pr(>Chisq)    
+    ## (Intercept)          33.5977  1  6.777e-09 ***
+    ## tuning_c             54.1897  1  1.820e-13 ***
+    ## instrument          259.6849  4  < 2.2e-16 ***
+    ## tuning_c:instrument   9.0428  4    0.06004 .  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+Anova(model_tuning2, type = 3) # sig main effects & interaction
+```
+
+    ## Analysis of Deviance Table (Type III Wald chisquare tests)
+    ## 
+    ## Response: cbind(count_major, count_minor)
+    ##                       Chisq Df Pr(>Chisq)    
+    ## (Intercept)          2.5035  1   0.113591    
+    ## tuning_c            60.7900  1   6.35e-15 ***
+    ## instrument          58.4420  5   2.55e-11 ***
+    ## tuning_c:instrument 17.0505  5   0.004405 ** 
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+|                             | Exp1 | Exp2 |
+|-----------------------------|------|------|
+| Main effect of timbre       | ✓    | ✓    |
+| Main effect of tuning       | ✓    | ✓    |
+| Timbre × Tuning interaction | ✗    | ✓    |
+
+Sig main effects for tuning & instrument for both experiments, but
+interaction was non-sig for exp1 but sig for exp2. In exp1, the effect
+was primarily expressed as a shift in the categorization boundary (PSE),
+while in exp2, timbre altered listeners’ sensitivity to tuning
+manipulations.
+
 ### 2.4 Post-hoc Comparison
 
 ``` r
 # pairwise comparison at the 3rd tuning_step (+50c)
-# exp 1
+# exp1
 emmeans(model_tuning1, "instrument") %>%
   pairs()
 ```
@@ -564,7 +651,7 @@ emmeans(model_tuning1, "instrument") %>%
     ## P value adjustment: tukey method for comparing a family of 5 estimates
 
 ``` r
-# exp 2
+# exp2
 emmeans(model_tuning2, "instrument") %>%
   pairs()
 ```
@@ -686,6 +773,10 @@ pses2
     ##   pse -0.1691891 0.07765555 -0.3213912 -0.01698704
     ##   jnd  0.6787662 0.07835030  0.5252024  0.83232993
 
+Exp1: oboe \> all, xylophone \< all but piano, middle 3 don’t differ
+
+Exp2: only T2 \> T6
+
 ### 2.6 Visualizations
 
 We calculated predicted probability values at tuning steps with smaller
@@ -759,7 +850,6 @@ df_pse2 <- pses2 %>%
 
 ``` r
 # exp1
-
 # graphing probability
 df_cat_plot1 %>%
   ggplot(aes(x = tuning_c, y = prob, color = instrument)) +
@@ -769,7 +859,7 @@ df_cat_plot1 %>%
   geom_errorbar(data = df_cat_pts1, aes(ymin = prob-SE, ymax = prob+SE), width = 0.1) +
   scale_x_continuous(labels = c("0", "25", "50", "75", "100")) +
   labs(y = "Predicted likelihood of major categorization",
-       x = "Tuning step (+cents)") +
+       x = "Tuning step (+cents)", caption = "error bar = SE") +
   theme_minimal()
 ```
 
@@ -783,7 +873,7 @@ df_cat_pts1 %>%
   geom_col() +
   geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = 0.1) +
   labs(x = "Instrument", y = "Avg predicted likelihood of major categorization",
-       title = "Tonality Categorization at Tuning Step = +50c") +
+       title = "Tonality Categorization at Tuning Step = +50c", caption = "error bar = SE") +
   guides(fill = "none") +
   theme_minimal()
 ```
@@ -797,7 +887,7 @@ df_pse1 %>%
   geom_col() +
   geom_errorbar(aes(ymin = CI.low, ymax = CI.upp), width = 0.1) + 
   labs(x = "Instrument", y = "Tuning step (cents) at which \nprobability of major categorization = 50%",
-       title = "Points of Subjective Equality (PSE)") +
+       title = "Points of Subjective Equality (PSE)", caption = "error bar = 95% CI") +
   guides(fill = "none") +
   theme_minimal()
 ```
@@ -805,8 +895,7 @@ df_pse1 %>%
 ![](data_analysis_files/figure-gfm/cat-plot-3.png)<!-- -->
 
 ``` r
-# exp1
-
+# exp2
 df_cat_plot2 %>%
   ggplot(aes(x = tuning_c, y = prob, color = instrument)) +
   geom_line() + # so that it reflects model predicted value
@@ -815,7 +904,7 @@ df_cat_plot2 %>%
   geom_errorbar(data = df_cat_pts2, aes(ymin = prob-SE, ymax = prob+SE), width = 0.1) +
   scale_x_continuous(labels = c("0", "25", "50", "75", "100")) +
   labs(y = "Predicted Likelihood of Major Categorization",
-       x = "Tuning step (+cents)") +
+       x = "Tuning step (+cents)", caption = "error bar = SE") +
   theme_minimal()
 ```
 
@@ -825,9 +914,10 @@ df_cat_plot2 %>%
 df_cat_pts2 %>%
   filter(tuning_c == 0) %>%
   ggplot(aes(instrument, prob, fill = instrument)) +
+  geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = 0.1) +
   geom_col() +
   labs(x = "Instrument", y = "Avg predicted likelihood of major categorization",
-       title = "Tonality Categorization at Tuning Step = +50c") +
+       title = "Tonality Categorization at Tuning Step = +50c", caption = "error bar = SE") +
   guides(fill = "none") +
   theme_minimal()
 ```
@@ -840,7 +930,7 @@ df_pse2 %>%
   geom_col() +
   geom_errorbar(aes(ymin = CI.low, ymax = CI.upp), width = 0.1) + 
   labs(x = "Instrument", y = "Tuning step (cents) at which \nprobability of major categorization = 50%",
-       title = "Points of Subjective Equality (PSE)") +
+       title = "Points of Subjective Equality (PSE)", caption = "error bar = 95% CI") +
   guides(fill = "none") +
   theme_minimal()
 ```
@@ -848,6 +938,10 @@ df_pse2 %>%
 ![](data_analysis_files/figure-gfm/cat-plot-6.png)<!-- -->
 
 ## 3. Explicit Valence Ratings Analysis
+
+We modeled explicit valence rating for each instrument against
+instrument timbre. We used Cumulative Link Mixed Models (CLMM) because
+DV is ordinal.
 
 ### 3.1 Calculate ICC
 
@@ -875,9 +969,6 @@ ICC from both experiments were smaller than .1, but we still chose to
 employ the nested model due to clustering within individuals.
 
 ### 3.2 CLMM
-
-We modeled explicit valence rating for each instrument against
-instrument timbre. We used CLMM because DV is ordinal.
 
 ``` r
 # fit clmm b/c rating is ordinal not interval (1-4 likert scale)
@@ -950,19 +1041,21 @@ summary(model_rtg2)
     ## 3|4   4.4470     0.3839  11.582
 
 ``` r
-# odds ratio (OR)
-exp(coef(model_rtg1)[4:7])
+# cumulative odds ratio (OR) relative to baseline (< 1 = less likely, > 1 = more likely)
+exp(coef(model_rtg1)[4:7]) # x times more likely to have a higher rating than oboe
 ```
 
     ##    instrumentviolin   instrumenttrumpet     instrumentpiano instrumentxylophone 
     ##           0.4245079           2.9558469           3.4086158           7.3533433
 
 ``` r
-exp(coef(model_rtg2)[4:8])
+exp(coef(model_rtg2)[4:8]) # x times more likely to have a higher rating than T1
 ```
 
     ## instrumentT2 instrumentT3 instrumentT4 instrumentT5 instrumentT6 
     ##     2.172131     4.371078     7.118938    11.291016    14.288876
+
+In both experiments, timbre and valence were related.
 
 ### 3.3 Post-hoc Comparison
 
@@ -1010,8 +1103,7 @@ emmeans(model_rtg2, "instrument") %>%
     ## 
     ## P value adjustment: tukey method for comparing a family of 6 estimates
 
-Exp1: oboe \< piano, trumpet, xylophone; violin \< trumpet, piano,
-xylophone
+Exp1: oboe \< piano, xylophone; violin \< trumpet, piano, xylophone
 
 Exp2: T1 \< all but T2, T2 \< T4-6, T6 \> T1-3
 
@@ -1027,27 +1119,26 @@ as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %
   geom_col(position = "dodge") +
   labs(x = "Instrument", y = "Estimated mean valence rating",
        title = "Explicit Emotional Valence Rating for each Instrument") +
-  theme_minimal() +
-  theme(legend.position = "none")
+  guides(fill = "none") +
+  theme_minimal()
 ```
 
 ![](data_analysis_files/figure-gfm/exp-plot-1.png)<!-- -->
 
 ``` r
-# how to plot aggregated SE???
-
+# problem: cannot to plot aggregated SE
 # alternative: use raw data
 df_rtg1 %>%
   group_by(instrument) %>%
   summarise(mean_rating = mean(as.numeric(explicit_rtg)),
             se_rating = sd(as.numeric(explicit_rtg)/sqrt(n()))) %>%
-  ggplot(aes(reorder(instrument, mean_rating), mean_rating, fill = instrument)) +
+  ggplot(aes(instrument, mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
   geom_errorbar(aes(ymin = mean_rating-se_rating, ymax = mean_rating+se_rating), width = .1) +
-  labs(x = "Instrument", y = "Mean valence rating",
-       title = "Explicit Emotional Valence Rating for each Instrument") +
-  theme_minimal() +
-  theme(legend.position = "none")
+  labs(x = "Instrument", y = "Mean valence rating", caption = "error bar = SE",
+       title = "Emotional Valence Rating for each Instrument") +
+  guides(fill = "none") +
+  theme_minimal()
 ```
 
 ![](data_analysis_files/figure-gfm/exp-plot-2.png)<!-- -->
@@ -1057,7 +1148,10 @@ df_rtg1 %>%
 as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %>%
   ggplot(aes(explicit_rtg, prob, group = instrument, color = instrument)) +
   geom_line() +
-  labs(x = "Explicit valence rating", y = "Probability for each rating level") +
+  geom_point() +
+  geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = .1) +
+  labs(x = "Explicit valence rating", y = "Probability for each rating level",
+       caption = "error bar = SE") +
   theme_minimal()
 ```
 
@@ -1073,8 +1167,8 @@ as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %
   geom_col(position = "dodge") +
   labs(x = "Instrument", y = "Mean valence rating",
        title = "Explicit Emotional Valence Rating for each Instrument") +
-  theme_minimal() +
-  theme(legend.position = "none")
+  guides(fill = "none") +
+  theme_minimal()
 ```
 
 ![](data_analysis_files/figure-gfm/exp-plot-4.png)<!-- -->
@@ -1085,13 +1179,13 @@ df_rtg2 %>%
   group_by(instrument) %>%
   summarise(mean_rating = mean(as.numeric(explicit_rtg)),
             se_rating = sd(as.numeric(explicit_rtg)/sqrt(n()))) %>%
-  ggplot(aes(reorder(instrument, mean_rating), mean_rating, fill = instrument)) +
+  ggplot(aes(instrument, mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
   geom_errorbar(aes(ymin = mean_rating-se_rating, ymax = mean_rating+se_rating), width = .1) +
-  labs(x = "Instrument", y = "Mean valence rating",
-       title = "Explicit Emotional Valence Rating for each Instrument") +
-  theme_minimal() +
-  theme(legend.position = "none")
+  labs(x = "Instrument", y = "Mean valence rating", caption = "error bar = SE",
+       title = "Emotional Valence Rating for each Instrument") +
+  guides(fill = "none") +
+  theme_minimal()
 ```
 
 ![](data_analysis_files/figure-gfm/exp-plot-5.png)<!-- -->
@@ -1101,23 +1195,33 @@ df_rtg2 %>%
 as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %>%
   ggplot(aes(explicit_rtg, prob, group = instrument, color = instrument)) +
   geom_line() +
-  labs(x = "Explicit valence rating", y = "Probability for each rating level") +
+  geom_point() +
+  geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = .1) +
+  labs(x = "Explicit valence rating", y = "Probability for each rating level",
+        caption = "error bar = SE") +
   theme_minimal()
 ```
 
 ![](data_analysis_files/figure-gfm/exp-plot-6.png)<!-- -->
 
-## 4. Mediation Analysis
+## 4. The Role of Valence
 
 We added explicit valence rating as another predictor in our GLMM, to
-see if this mediates the timbre-tonality relationship.
+see if this accounts for the timbre-tonality relationship.
 
 ``` r
-# causal steps approach + boostrapping? TBD
-df_combo1 <- left_join(df_sum1, df_rtg1, by = c("participant", "instrument"))
+df_combo1 <- left_join(df_sum1, df_rtg1, by = c("participant", "instrument", "chord"))
 model_mediation1 <- df_combo1 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + as.numeric(explicit_rtg) + (1 + tuning_c | participant), 
-        family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
+  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + as.numeric(explicit_rtg) + 
+          (1 + tuning_c | participant), family = binomial(link = "probit"), 
+        data = ., control = glmerControl(optimizer = "bobyqa"))
+
+df_combo2 <- left_join(df_sum2, df_rtg2, by = c("participant", "instrument", "chord", "envelope", "harmonics"))
+model_mediation2 <- df_combo2 %>%
+  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + as.numeric(explicit_rtg) + 
+          (1 + tuning_c | participant), family = binomial(link = "probit"), 
+        data = ., control = glmerControl(optimizer = "bobyqa"))
+
 summary(model_mediation1)
 ```
 
@@ -1184,10 +1288,22 @@ summary(model_mediation1)
     ## tnng_c:nstrmntx  0.504           0.504           0.495
 
 ``` r
-df_combo2 <- left_join(df_sum2, df_rtg2, by = c("participant", "instrument"))
-model_mediation2 <- df_combo2 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + as.numeric(explicit_rtg) + (1 + tuning_c | participant), 
-        family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
+Anova(model_mediation1, type = 3)
+```
+
+    ## Analysis of Deviance Table (Type III Wald chisquare tests)
+    ## 
+    ## Response: cbind(count_major, count_minor)
+    ##                             Chisq Df Pr(>Chisq)    
+    ## (Intercept)               45.1981  1  1.781e-11 ***
+    ## tuning_c                  54.0742  1  1.931e-13 ***
+    ## instrument               195.8744  4  < 2.2e-16 ***
+    ## as.numeric(explicit_rtg)  11.7372  1  0.0006126 ***
+    ## tuning_c:instrument        9.1311  4  0.0579052 .  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
 summary(model_mediation2)
 ```
 
@@ -1237,17 +1353,58 @@ summary(model_mediation2)
     ##     vcov(x)        if you need it
 
 ``` r
-# instrument - tonality sig
-# instrument - valence sig
-# (instrument + valence) - tonality sig
-# partial mediation
+Anova(model_mediation2, type = 3)
 ```
 
-TBD. Look into the mediation package.
+    ## Analysis of Deviance Table (Type III Wald chisquare tests)
+    ## 
+    ## Response: cbind(count_major, count_minor)
+    ##                            Chisq Df Pr(>Chisq)    
+    ## (Intercept)               4.4961  1   0.033971 *  
+    ## tuning_c                 60.6983  1  6.653e-15 ***
+    ## instrument               43.2510  5  3.287e-08 ***
+    ## as.numeric(explicit_rtg)  2.3358  1   0.126431    
+    ## tuning_c:instrument      17.1809  5   0.004169 ** 
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-Adding explicit valence rating to our OG GLMM attenuated but did not
-completely eliminate the effect of instrument timbre on tonality
-categorization.
+``` r
+# exp1:
+# instrument - tonality sig
+# instrument - valence sig
+# instrument - tonality after controlling for valence still sig
+# valence - tonality sig (after controlling for timbre)
+# potential partial mediation
+
+# exp2:
+# instrument - tonality after controlling for valence still sig
+# valence - tonality nonsig (after controlling for timbre)
+```
+
+| After controlling for valence (GLMM)    | Experiment 1 | Experiment 2 |
+|-----------------------------------------|--------------|--------------|
+| Tuning main effect on Tonality          | ✓            | ✓            |
+| Timbre main effect on Tonality          | ✓            | ✓            |
+| Timbre × Tuning interaction             | ✗            | ✓            |
+| Valence main effect on Tonality         | ✓            | ✗            |
+| —————————–                              | ————–        | ————–        |
+| Timbre-Valence relationship (from CLMM) | ✓            | ✓            |
+
+In both experiments, timbre was significantly associated with both
+tonality and valence. After controlling for valence, timbre still
+significantly predicted tonality perception, although the magnitude of
+the timbre effect was attenuated. However, in exp1, valence was also a
+significant predictor of tonality, after controlling for timbre-related
+effects, whereas in exp2, that was no longer the case - after
+controlling for timbre, valence did not significantly predict tonality
+perception. This pattern suggests that valence may explain part of the
+timbre-tonality relationship observed in real instruments, but in
+artificial timbres, this relationship cannot be explained by emotional
+valence alone.
+
+Experiment 2 partially replicated Experiment 1 results, suggesting that
+exp1 effects were partly acoustically grounded and partly due to learned
+associations.
 
 ## 5. Separate Timbral Features
 
@@ -1262,8 +1419,9 @@ timbre.
 ``` r
 # Tonality Categorization
 model_sep2 <- df_sum2 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * envelope * harmonics + (1 + tuning_c | participant), 
-        family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
+  glmer(cbind(count_major, count_minor) ~ tuning_c * envelope * harmonics + 
+          (1 + tuning_c | participant), family = binomial(link = "probit"), 
+        data = ., control = glmerControl(optimizer = "bobyqa"))
 summary(model_sep2)
 ```
 
@@ -1357,12 +1515,26 @@ summary(model_sep2)
     ## tnng_c:nvlpprcssv:hrmncsh  0.034               0.503
 
 ``` r
-emmeans(model_sep2, "harmonics") %>%
+emmeans(model_sep2, "envelope") %>%
   pairs()
 ```
 
     ## NOTE: Results may be misleading due to involvement in interactions
 
+    ## Note: Use 'contrast(regrid(object), ...)' to obtain contrasts of back-transformed estimates
+
+    ##  contrast             estimate     SE  df z.ratio p.value
+    ##  rounded - percussive   -0.092 0.0265 Inf  -3.464  0.0005
+    ## 
+    ## Results are averaged over the levels of: harmonics 
+    ## Note: contrasts are still on the probit scale
+
+``` r
+emmeans(model_sep2, "harmonics") %>%
+  pairs()
+```
+
+    ## NOTE: Results may be misleading due to involvement in interactions
     ## Note: Use 'contrast(regrid(object), ...)' to obtain contrasts of back-transformed estimates
 
     ##  contrast    estimate     SE  df z.ratio p.value
@@ -1415,15 +1587,34 @@ anova(model_tuning2, model_sep2) # this model did not perform better than our OG
     ## model_sep2      15 5257.9 5339.9  -2614   5227.9     0  0
 
 ``` r
+Anova(model_sep2, type = 3)
+```
+
+    ## Analysis of Deviance Table (Type III Wald chisquare tests)
+    ## 
+    ## Response: cbind(count_major, count_minor)
+    ##                               Chisq Df Pr(>Chisq)    
+    ## (Intercept)                  2.5035  1   0.113596    
+    ## tuning_c                    60.7900  1  6.350e-15 ***
+    ## envelope                     1.8223  1   0.177040    
+    ## harmonics                   22.4902  2  1.307e-05 ***
+    ## tuning_c:envelope            9.7217  1   0.001821 ** 
+    ## tuning_c:harmonics           1.2689  2   0.530236    
+    ## envelope:harmonics           0.6721  2   0.714570    
+    ## tuning_c:envelope:harmonics  6.6528  2   0.035922 *  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
 plot(emmeans(model_sep2, ~ harmonics * envelope))
 ```
 
     ## NOTE: Results may be misleading due to involvement in interactions
 
-![](data_analysis_files/figure-gfm/sep-1.png)<!-- -->
+![](data_analysis_files/figure-gfm/model_env*harm-1.png)<!-- -->
 
 ``` r
-# Explicit Valence Rating
+# timbre-valence model
 model_sep_rtg2 <- clmm(explicit_rtg ~ envelope * harmonics + (1 | participant), data = df_rtg2)
 summary(model_sep_rtg2)
 ```
@@ -1498,60 +1689,41 @@ emmeans(model_sep_rtg2, ~ envelope * harmonics) %>%
     ## P value adjustment: tukey method for comparing a family of 6 estimates
 
 ``` r
+joint_tests(model_sep_rtg2) # cuz Anova can't be used for clmm
+```
+
+    ##  model term         df1 df2 F.ratio p.value
+    ##  envelope             1 Inf  48.907  <.0001
+    ##  harmonics            2 Inf   8.746  0.0002
+    ##  envelope:harmonics   2 Inf   1.176  0.3085
+
+``` r
 plot(emmeans(model_sep_rtg2, ~ harmonics * envelope))
 ```
 
-![](data_analysis_files/figure-gfm/sep-2.png)<!-- -->
+![](data_analysis_files/figure-gfm/model_env*harm-2.png)<!-- -->
 
-**Tonality categorization:**
+| Experiment 2 | Tonality Categorization | Valence Rating |
+|----|----|----|
+| Envelope main effect | ✗ | ✓ |
+| Harmonics main effect | ✓ | ✓ |
+| Envelope × Harmonics interaction | ✗ | ✗ |
+| Tuning × Envelope interaction | ✓ | NA |
+| Tuning × Harmonics interaction | ✗ | NA |
+| Tuning × Envelope × Harmonics interaction | ✓ | NA |
+| Harmonics post-hoc low-mid difference | ✗ | ~✓ (p = .044) |
+| Harmonics post-hoc mid-high difference | ✓ | ✗ |
 
-GLMM showed no significant main effect of envelope or envelope \*
-harmonics interaction, but significant main effect of harmonics and
-tuning \* envelope interaction and tuning \* harmonics \* envelope 3-way
-interaction. Post-hoc comparisons below.
+Other post-hoc differences:
 
-Main effect:
+- **Tonality Categorization:** rounded low/mid \< rounded/percussive
+  high; percussive low/mid \< high
 
-- Harmonics: low/mid \< high; low = mid
-
-- Envelope: rounded \< percussive
-
-Interaction:
-
-- rounded low/mid \< rounded/percussive high
-
-- percussive low/mid \< high
-
-**Explicit valence rating:**
-
-CLMM showed significant main effects of envelope and harmonics, but no
-significant envelope \* harmonics interaction. Post-hoc comparisons
-below.
-
-Main effect:
-
-- Harmonics: low \< high (strong); low \< mid (p =.044); mid = high
-
-- Envelope: rounded \< percussive
-
-Interaction:
-
-- rounded \< percussive envelope for all harmonics
-
-- rounded low \< high
-
-- rounded low \< percussive mid
-
-- rounded mid \< percussive low
-
-- rounded low/mid \< percussive high
+- **Explicit Valence Rating:** rounded low \< percussive mid; rounded
+  mid \< percussive low; rounded low/mid \< percussive high
 
 Similar trend between tonality categorization and explicit valence
 rating.
-
-Experiment 2 partially replicated Experiment 1 results, suggesting that
-exp1 effects were partly acoustically grounded and partly due to learned
-associations.
 
 ## 6. Exploratory Analyses
 
