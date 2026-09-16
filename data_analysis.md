@@ -18,6 +18,9 @@ Eva Wu
   - [3.3 Post-hoc Comparison](#33-post-hoc-comparison)
   - [3.4 Visualizations](#34-visualizations)
 - [4. The Role of Valence](#4-the-role-of-valence)
+  - [4.1 Valence as an Exploratory
+    Variable](#41-valence-as-an-exploratory-variable)
+  - [4.2 Mediation Analysis](#42-mediation-analysis)
 - [5. Separate Timbral Features](#5-separate-timbral-features)
 - [6. Exploratory Analyses](#6-exploratory-analyses)
   - [6.1 Key](#61-key)
@@ -704,8 +707,8 @@ df_cat_plot2 %>%
 df_cat_pts2 %>%
   filter(tuning_c == 0) %>%
   ggplot(aes(instrument, prob, fill = instrument)) +
-  geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = 0.1) +
   geom_col() +
+  geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = 0.1) +
   labs(x = "Instrument", y = "Avg predicted likelihood of major categorization",
        title = "Tonality Categorization at Tuning Step = +50c", caption = "error bar = SE") +
   guides(fill = "none") +
@@ -736,8 +739,8 @@ DV is ordinal.
 ### 3.1 Calculate ICC
 
 ``` r
-model_base_rtg1 <- clmm(explicit_rtg ~ 1 + (1 | participant), data = df_rtg1)
-model_base_rtg2 <- clmm(explicit_rtg ~ 1 + (1 | participant), data = df_rtg2)
+model_base_rtg1 <- clmm(valence ~ 1 + (1 | participant), data = df_rtg1)
+model_base_rtg2 <- clmm(valence ~ 1 + (1 | participant), data = df_rtg2)
 icc(model_base_rtg1)
 ```
 
@@ -762,15 +765,13 @@ employ the nested model due to clustering within individuals.
 
 ``` r
 # fit clmm b/c rating is ordinal not interval (1-4 likert scale)
-model_rtg1 <- clmm(explicit_rtg ~ instrument + (1 | participant), data = df_rtg1, Hess = TRUE)
-model_rtg2 <- clmm(explicit_rtg ~ instrument + (1 | participant), data = df_rtg2, Hess = TRUE)
-
+model_rtg1 <- clmm(valence ~ instrument + (1 | participant), data = df_rtg1, Hess = TRUE)
 summary(model_rtg1)
 ```
 
     ## Cumulative Link Mixed Model fitted with the Laplace approximation
     ## 
-    ## formula: explicit_rtg ~ instrument + (1 | participant)
+    ## formula: valence ~ instrument + (1 | participant)
     ## data:    df_rtg1
     ## 
     ##  link  threshold nobs logLik  AIC    niter    max.grad cond.H 
@@ -798,12 +799,29 @@ summary(model_rtg1)
 
 ``` r
 #"cond. H" shows identifiability of the model. The smaller the better; not ok above 10^4. We are ok.
+joint_tests(model_rtg1)
+```
+
+    ##  model term df1 df2 F.ratio p.value
+    ##  instrument   4 Inf  11.982  <.0001
+
+``` r
+# cumulative odds ratio (OR) relative to baseline (< 1 = less likely, > 1 = more likely)
+exp(coef(model_rtg1)[4:7]) # x times more likely to have a higher rating than oboe
+```
+
+    ##    instrumentviolin   instrumenttrumpet     instrumentpiano instrumentxylophone 
+    ##           0.4245079           2.9558469           3.4086158           7.3533433
+
+``` r
+# exp2
+model_rtg2 <- clmm(valence ~ instrument + (1 | participant), data = df_rtg2, Hess = TRUE)
 summary(model_rtg2)
 ```
 
     ## Cumulative Link Mixed Model fitted with the Laplace approximation
     ## 
-    ## formula: explicit_rtg ~ instrument + (1 | participant)
+    ## formula: valence ~ instrument + (1 | participant)
     ## data:    df_rtg2
     ## 
     ##  link  threshold nobs logLik  AIC    niter     max.grad cond.H 
@@ -831,12 +849,11 @@ summary(model_rtg2)
     ## 3|4   4.4470     0.3839  11.582
 
 ``` r
-# cumulative odds ratio (OR) relative to baseline (< 1 = less likely, > 1 = more likely)
-exp(coef(model_rtg1)[4:7]) # x times more likely to have a higher rating than oboe
+joint_tests(model_rtg2)
 ```
 
-    ##    instrumentviolin   instrumenttrumpet     instrumentpiano instrumentxylophone 
-    ##           0.4245079           2.9558469           3.4086158           7.3533433
+    ##  model term df1 df2 F.ratio p.value
+    ##  instrument   5 Inf  12.411  <.0001
 
 ``` r
 exp(coef(model_rtg2)[4:8]) # x times more likely to have a higher rating than T1
@@ -902,9 +919,9 @@ Exp2: T1 \< all but T2, T2 \< T4-6, T6 \> T1-3
 ``` r
 # exp1
 # plot mean rating as estimated from the model
-as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %>%
+as.data.frame(emmeans(model_rtg1, ~ valence | instrument, mode = "prob")) %>%
   group_by(instrument) %>%
-  summarise(mean_rating = sum(as.numeric(explicit_rtg) * prob)) %>%
+  summarise(mean_rating = sum(as.numeric(valence) * prob)) %>%
   ggplot(aes(reorder(instrument, mean_rating), mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
   labs(x = "Instrument", y = "Estimated mean valence rating",
@@ -916,12 +933,12 @@ as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %
 ![](data_analysis_files/figure-gfm/exp-plot-1.png)<!-- -->
 
 ``` r
-# problem: cannot to plot aggregated SE
+# problem: cannot plot aggregated SE
 # alternative: use raw data
 df_rtg1 %>%
   group_by(instrument) %>%
-  summarise(mean_rating = mean(as.numeric(explicit_rtg)),
-            se_rating = sd(as.numeric(explicit_rtg)/sqrt(n()))) %>%
+  summarise(mean_rating = mean(explicit_rtg),
+            se_rating = sd(explicit_rtg/sqrt(n()))) %>%
   ggplot(aes(instrument, mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
   geom_errorbar(aes(ymin = mean_rating-se_rating, ymax = mean_rating+se_rating), width = .1) +
@@ -935,8 +952,8 @@ df_rtg1 %>%
 
 ``` r
 # plot estimated probability of each rating (not very intuitive so prolly won't use)
-as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %>%
-  ggplot(aes(explicit_rtg, prob, group = instrument, color = instrument)) +
+as.data.frame(emmeans(model_rtg1, ~ valence | instrument, mode = "prob")) %>%
+  ggplot(aes(valence, prob, group = instrument, color = instrument)) +
   geom_line() +
   geom_point() +
   geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = .1) +
@@ -950,9 +967,9 @@ as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %
 ``` r
 # exp2
 # plot mean rating 
-as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %>%
+as.data.frame(emmeans(model_rtg2, ~ valence | instrument, mode = "prob")) %>%
   group_by(instrument) %>%
-  summarise(mean_rating = sum(as.numeric(explicit_rtg) * prob)) %>%
+  summarise(mean_rating = sum(as.numeric(valence) * prob)) %>%
   ggplot(aes(reorder(instrument, mean_rating), mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
   labs(x = "Instrument", y = "Mean valence rating",
@@ -967,8 +984,8 @@ as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %
 # using raw data
 df_rtg2 %>%
   group_by(instrument) %>%
-  summarise(mean_rating = mean(as.numeric(explicit_rtg)),
-            se_rating = sd(as.numeric(explicit_rtg)/sqrt(n()))) %>%
+  summarise(mean_rating = mean(explicit_rtg),
+            se_rating = sd(explicit_rtg/sqrt(n()))) %>%
   ggplot(aes(instrument, mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
   geom_errorbar(aes(ymin = mean_rating-se_rating, ymax = mean_rating+se_rating), width = .1) +
@@ -982,8 +999,8 @@ df_rtg2 %>%
 
 ``` r
 # plot estimated probability
-as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %>%
-  ggplot(aes(explicit_rtg, prob, group = instrument, color = instrument)) +
+as.data.frame(emmeans(model_rtg2, ~ valence | instrument, mode = "prob")) %>%
+  ggplot(aes(valence, prob, group = instrument, color = instrument)) +
   geom_line() +
   geom_point() +
   geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = .1) +
@@ -996,30 +1013,29 @@ as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %
 
 ## 4. The Role of Valence
 
+### 4.1 Valence as an Exploratory Variable
+
 We added explicit valence rating as another predictor in our GLMM, to
 see if this accounts for the timbre-tonality relationship.
 
 ``` r
-df_combo1 <- left_join(df_sum1, df_rtg1, by = c("participant", "instrument", "chord"))
-model_mediation1 <- df_combo1 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + as.numeric(explicit_rtg) + 
+model_add_valence1 <- df_combo1 %>%
+  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + explicit_rtg + 
+          (1 + tuning_c | participant), family = binomial(link = "probit"), 
+        data = ., control = glmerControl(optimizer = "bobyqa"))
+model_add_valence2 <- df_combo2 %>%
+  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + explicit_rtg + 
           (1 + tuning_c | participant), family = binomial(link = "probit"), 
         data = ., control = glmerControl(optimizer = "bobyqa"))
 
-df_combo2 <- left_join(df_sum2, df_rtg2, by = c("participant", "instrument", "chord", "envelope", "harmonics"))
-model_mediation2 <- df_combo2 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + as.numeric(explicit_rtg) + 
-          (1 + tuning_c | participant), family = binomial(link = "probit"), 
-        data = ., control = glmerControl(optimizer = "bobyqa"))
-
-summary(model_mediation1)
+summary(model_add_valence1)
 ```
 
     ## Generalized linear mixed model fit by maximum likelihood (Laplace
     ##   Approximation) [glmerMod]
     ##  Family: binomial  ( probit )
     ## Formula: 
-    ## cbind(count_major, count_minor) ~ tuning_c * instrument + as.numeric(explicit_rtg) +  
+    ## cbind(count_major, count_minor) ~ tuning_c * instrument + explicit_rtg +  
     ##     (1 + tuning_c | participant)
     ##    Data: .
     ## Control: glmerControl(optimizer = "bobyqa")
@@ -1045,7 +1061,7 @@ summary(model_mediation1)
     ## instrumenttrumpet             0.45351    0.05268   8.609  < 2e-16 ***
     ## instrumentpiano               0.48326    0.05322   9.080  < 2e-16 ***
     ## instrumentxylophone           0.75517    0.05524  13.670  < 2e-16 ***
-    ## as.numeric(explicit_rtg)      0.08628    0.02518   3.426 0.000613 ***
+    ## explicit_rtg                  0.08628    0.02518   3.426 0.000613 ***
     ## tuning_c:instrumentviolin     0.02828    0.04024   0.703 0.482137    
     ## tuning_c:instrumenttrumpet    0.03634    0.04022   0.904 0.366215    
     ## tuning_c:instrumentpiano      0.10064    0.04103   2.453 0.014179 *  
@@ -1054,13 +1070,13 @@ summary(model_mediation1)
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Correlation of Fixed Effects:
-    ##                 (Intr) tnng_c instrmntv instrmntt instrmntp instrmntx as.(_)
+    ##                 (Intr) tnng_c instrmntv instrmntt instrmntp instrmntx explc_
     ## tuning_c         0.043                                                      
     ## instrmntvln     -0.346  0.030                                               
     ## instrmnttrm     -0.128  0.031  0.464                                        
     ## instrumntpn     -0.119  0.030  0.457     0.536                              
     ## instrmntxyl     -0.054  0.036  0.429     0.543     0.542                    
-    ## as.nmrc(x_)     -0.589  0.000  0.128    -0.233    -0.245    -0.340          
+    ## explict_rtg     -0.589  0.000  0.128    -0.233    -0.245    -0.340          
     ## tnng_c:nstrmntv  0.036 -0.161 -0.079    -0.072    -0.072    -0.070     0.005
     ## tnng_c:nstrmntt  0.035 -0.161 -0.072    -0.068    -0.072    -0.071     0.008
     ## tnng_c:nstrmntp  0.037 -0.157 -0.071    -0.069    -0.043    -0.065     0.000
@@ -1071,37 +1087,37 @@ summary(model_mediation1)
     ## instrmnttrm                                                    
     ## instrumntpn                                                    
     ## instrmntxyl                                                    
-    ## as.nmrc(x_)                                                    
+    ## explict_rtg                                                    
     ## tnng_c:nstrmntv                                                
     ## tnng_c:nstrmntt  0.510                                         
     ## tnng_c:nstrmntp  0.500           0.501                         
     ## tnng_c:nstrmntx  0.504           0.504           0.495
 
 ``` r
-Anova(model_mediation1, type = 3)
+Anova(model_add_valence1, type = 3)
 ```
 
     ## Analysis of Deviance Table (Type III Wald chisquare tests)
     ## 
     ## Response: cbind(count_major, count_minor)
-    ##                             Chisq Df Pr(>Chisq)    
-    ## (Intercept)               45.1981  1  1.781e-11 ***
-    ## tuning_c                  54.0742  1  1.931e-13 ***
-    ## instrument               195.8744  4  < 2.2e-16 ***
-    ## as.numeric(explicit_rtg)  11.7372  1  0.0006126 ***
-    ## tuning_c:instrument        9.1311  4  0.0579052 .  
+    ##                        Chisq Df Pr(>Chisq)    
+    ## (Intercept)          45.1981  1  1.781e-11 ***
+    ## tuning_c             54.0742  1  1.931e-13 ***
+    ## instrument          195.8744  4  < 2.2e-16 ***
+    ## explicit_rtg         11.7372  1  0.0006126 ***
+    ## tuning_c:instrument   9.1311  4  0.0579052 .  
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
-summary(model_mediation2)
+summary(model_add_valence2)
 ```
 
     ## Generalized linear mixed model fit by maximum likelihood (Laplace
     ##   Approximation) [glmerMod]
     ##  Family: binomial  ( probit )
     ## Formula: 
-    ## cbind(count_major, count_minor) ~ tuning_c * instrument + as.numeric(explicit_rtg) +  
+    ## cbind(count_major, count_minor) ~ tuning_c * instrument + explicit_rtg +  
     ##     (1 + tuning_c | participant)
     ##    Data: .
     ## Control: glmerControl(optimizer = "bobyqa")
@@ -1120,20 +1136,20 @@ summary(model_mediation2)
     ## Number of obs: 1740, groups:  participant, 58
     ## 
     ## Fixed effects:
-    ##                           Estimate Std. Error z value Pr(>|z|)    
-    ## (Intercept)              -0.162075   0.076436  -2.120  0.03397 *  
-    ## tuning_c                  0.891191   0.114389   7.791 6.65e-15 ***
-    ## instrumentT2             -0.033709   0.045822  -0.736  0.46195    
-    ## instrumentT3              0.153914   0.046949   3.278  0.00104 ** 
-    ## instrumentT4              0.041328   0.047862   0.863  0.38788    
-    ## instrumentT5              0.056142   0.049730   1.129  0.25893    
-    ## instrumentT6              0.241437   0.050846   4.748 2.05e-06 ***
-    ## as.numeric(explicit_rtg)  0.031771   0.020788   1.528  0.12643    
-    ## tuning_c:instrumentT2     0.039130   0.035883   1.090  0.27550    
-    ## tuning_c:instrumentT3     0.009416   0.035638   0.264  0.79160    
-    ## tuning_c:instrumentT4     0.114883   0.036591   3.140  0.00169 ** 
-    ## tuning_c:instrumentT5     0.029756   0.035774   0.832  0.40554    
-    ## tuning_c:instrumentT6     0.102674   0.036555   2.809  0.00497 ** 
+    ##                        Estimate Std. Error z value Pr(>|z|)    
+    ## (Intercept)           -0.162075   0.076436  -2.120  0.03397 *  
+    ## tuning_c               0.891191   0.114389   7.791 6.65e-15 ***
+    ## instrumentT2          -0.033709   0.045822  -0.736  0.46195    
+    ## instrumentT3           0.153914   0.046949   3.278  0.00104 ** 
+    ## instrumentT4           0.041328   0.047862   0.863  0.38788    
+    ## instrumentT5           0.056142   0.049730   1.129  0.25893    
+    ## instrumentT6           0.241437   0.050846   4.748 2.05e-06 ***
+    ## explicit_rtg           0.031771   0.020788   1.528  0.12643    
+    ## tuning_c:instrumentT2  0.039130   0.035883   1.090  0.27550    
+    ## tuning_c:instrumentT3  0.009416   0.035638   0.264  0.79160    
+    ## tuning_c:instrumentT4  0.114883   0.036591   3.140  0.00169 ** 
+    ## tuning_c:instrumentT5  0.029756   0.035774   0.832  0.40554    
+    ## tuning_c:instrumentT6  0.102674   0.036555   2.809  0.00497 ** 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
@@ -1143,33 +1159,134 @@ summary(model_mediation2)
     ##     vcov(x)        if you need it
 
 ``` r
-Anova(model_mediation2, type = 3)
+Anova(model_add_valence2, type = 3)
 ```
 
     ## Analysis of Deviance Table (Type III Wald chisquare tests)
     ## 
     ## Response: cbind(count_major, count_minor)
-    ##                            Chisq Df Pr(>Chisq)    
-    ## (Intercept)               4.4961  1   0.033971 *  
-    ## tuning_c                 60.6983  1  6.653e-15 ***
-    ## instrument               43.2510  5  3.287e-08 ***
-    ## as.numeric(explicit_rtg)  2.3358  1   0.126431    
-    ## tuning_c:instrument      17.1809  5   0.004169 ** 
+    ##                       Chisq Df Pr(>Chisq)    
+    ## (Intercept)          4.4961  1   0.033971 *  
+    ## tuning_c            60.6983  1  6.653e-15 ***
+    ## instrument          43.2510  5  3.287e-08 ***
+    ## explicit_rtg         2.3358  1   0.126431    
+    ## tuning_c:instrument 17.1809  5   0.004169 ** 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 ``` r
 # exp1:
-# instrument - tonality sig
-# instrument - valence sig
-# instrument - tonality after controlling for valence still sig
-# valence - tonality sig (after controlling for timbre)
+# instrument - tonality sig (c=total effect)
+# instrument - valence sig (a)
+# instrument - tonality after controlling for valence still sig (c'=direct effect)
+# valence - tonality sig (after controlling for timbre) (b=mediation effect)
 # potential partial mediation
 
 # exp2:
-# instrument - tonality after controlling for valence still sig
-# valence - tonality nonsig (after controlling for timbre)
+# instrument - tonality sig (c=total effect)
+# instrument - valence sig (a)
+# instrument - tonality after controlling for valence still sig (c'=direct effect)
+# valence - tonality nonsig (after controlling for timbre) (b=mediation effect)
+# no mediation
 ```
+
+### 4.2 Mediation Analysis
+
+``` r
+set.seed(2026) # for reproducibility
+# aggregate prop_major across tuning steps (so that both models use df w/ same nrows)
+df_avg1 <- df_combo1 %>%
+  group_by(participant, instrument, explicit_rtg) %>%
+  summarise(sum_maj = sum(count_major),
+            sum_min = sum(count_minor),
+            .groups = "drop")
+
+model.m1 <- df_avg1 %>%
+  lmer(formula = explicit_rtg ~ instrument + (1 | participant), data = .)
+model.y1 <- df_avg1 %>%
+  glmer(formula = cbind(sum_maj, sum_min) ~ instrument + explicit_rtg + (1 | participant), family = binomial(link = "probit"), data = .)
+
+med1 <- mediate(model.m1, model.y1, treat = "instrument", mediator = "explicit_rtg", control.value = "oboe", treat.value = "xylophone") 
+
+df_avg2 <- df_combo2 %>%
+  group_by(participant, instrument, explicit_rtg) %>%
+  summarise(sum_maj = sum(count_major),
+            sum_min = sum(count_minor),
+            .groups = "drop")
+
+summary(med1)
+```
+
+    ## 
+    ## Causal Mediation Analysis 
+    ## 
+    ## Quasi-Bayesian Confidence Intervals
+    ## 
+    ## Mediator Groups: participant 
+    ## 
+    ## Outcome Groups: participant 
+    ## 
+    ## Output Based on Overall Averages Across Groups 
+    ## 
+    ##                           Estimate 95% CI Lower 95% CI Upper p-value    
+    ## ACME (control)           0.0195175    0.0074647    0.0343231   0.002 ** 
+    ## ACME (treated)           0.0196768    0.0076158    0.0346686   0.002 ** 
+    ## ADE (control)            0.1828764    0.1516434    0.2166617  <2e-16 ***
+    ## ADE (treated)            0.1830357    0.1517323    0.2175518  <2e-16 ***
+    ## Total Effect             0.2025532    0.1713249    0.2322460  <2e-16 ***
+    ## Prop. Mediated (control) 0.0946266    0.0370241    0.1694262   0.002 ** 
+    ## Prop. Mediated (treated) 0.0957204    0.0377691    0.1708237   0.002 ** 
+    ## ACME (average)           0.0195971    0.0075590    0.0345121   0.002 ** 
+    ## ADE (average)            0.1829561    0.1517588    0.2169853  <2e-16 ***
+    ## Prop. Mediated (average) 0.0951735    0.0375586    0.1704761   0.002 ** 
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Sample Size Used: 240 
+    ## 
+    ## 
+    ## Simulations: 1000
+
+``` r
+model.m2 <- df_avg2 %>%
+  lmer(formula = explicit_rtg ~ instrument + (1 | participant), data = .)
+model.y2 <- df_avg2 %>%
+  glmer(formula = cbind(sum_maj, sum_min) ~ instrument + explicit_rtg + (1 | participant), family = binomial(link = "probit"), data = .)
+
+med2 <- mediate(model.m2, model.y2, treat = "instrument", mediator = "explicit_rtg", control.value = "T2", treat.value = "T6") 
+
+summary(med2)
+```
+
+    ## 
+    ## Causal Mediation Analysis 
+    ## 
+    ## Quasi-Bayesian Confidence Intervals
+    ## 
+    ## Mediator Groups: participant 
+    ## 
+    ## Outcome Groups: participant 
+    ## 
+    ## Output Based on Overall Averages Across Groups 
+    ## 
+    ##                            Estimate 95% CI Lower 95% CI Upper p-value    
+    ## ACME (control)            0.0057779   -0.0032465    0.0150298   0.244    
+    ## ACME (treated)            0.0057365   -0.0032078    0.0149470   0.244    
+    ## ADE (control)             0.0638207    0.0341702    0.0931035  <2e-16 ***
+    ## ADE (treated)             0.0637794    0.0340867    0.0930608  <2e-16 ***
+    ## Total Effect              0.0695573    0.0405503    0.0985932  <2e-16 ***
+    ## Prop. Mediated (control)  0.0826565   -0.0484089    0.2597248   0.244    
+    ## Prop. Mediated (treated)  0.0818434   -0.0484772    0.2591152   0.244    
+    ## ACME (average)            0.0057572   -0.0032271    0.0149712   0.244    
+    ## ADE (average)             0.0638001    0.0341285    0.0930858  <2e-16 ***
+    ## Prop. Mediated (average)  0.0822499   -0.0484431    0.2595927   0.244    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Sample Size Used: 348 
+    ## 
+    ## 
+    ## Simulations: 1000
 
 | After controlling for valence (GLMM)    | Experiment 1 | Experiment 2 |
 |-----------------------------------------|--------------|--------------|
@@ -1405,13 +1522,13 @@ plot(emmeans(model_sep2, ~ harmonics * envelope))
 
 ``` r
 # timbre-valence model
-model_sep_rtg2 <- clmm(explicit_rtg ~ envelope * harmonics + (1 | participant), data = df_rtg2)
+model_sep_rtg2 <- clmm(valence ~ envelope * harmonics + (1 | participant), data = df_rtg2)
 summary(model_sep_rtg2)
 ```
 
     ## Cumulative Link Mixed Model fitted with the Laplace approximation
     ## 
-    ## formula: explicit_rtg ~ envelope * harmonics + (1 | participant)
+    ## formula: valence ~ envelope * harmonics + (1 | participant)
     ## data:    df_rtg2
     ## 
     ##  link  threshold nobs logLik  AIC    niter     max.grad cond.H 
@@ -1492,6 +1609,60 @@ plot(emmeans(model_sep_rtg2, ~ harmonics * envelope))
 ```
 
 ![](data_analysis_files/figure-gfm/model_env*harm-2.png)<!-- -->
+
+``` r
+# plot 3-way interaction
+pred <- ggpredict(
+  model_sep2,
+  terms = c("tuning_c [-2:2 by=.1]",
+            "envelope",
+            "harmonics")
+)
+
+ggplot(pred,
+       aes(x = x,
+           y = predicted,
+           color = group)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high,
+                  fill = group),
+              alpha = .15,
+              colour = NA) +
+  facet_wrap(~facet) +
+  labs(
+    x = "Tuning",
+    y = "Predicted probability of 'Major'",
+    color = "Envelope",
+    fill = "Envelope"
+  ) +
+  theme_classic()
+```
+
+![](data_analysis_files/figure-gfm/model_env*harm-3.png)<!-- -->
+
+``` r
+ggplot(pred,
+       aes(x = x,
+           y = predicted,
+           color = facet)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high,
+                  fill = facet),
+              alpha = .15,
+              colour = NA) +
+  facet_wrap(~group) +
+  labs(
+    x = "Tuning",
+    y = "Predicted probability of 'Major'",
+    color = "Harmonics",
+    fill = "Harmonics"
+  ) +
+  theme_classic()
+```
+
+![](data_analysis_files/figure-gfm/model_env*harm-4.png)<!-- -->
 
 | Experiment 2 | Tonality Categorization | Valence Rating |
 |----|----|----|
@@ -1771,6 +1942,38 @@ anova(model_sep_key2, model_sep2) # does not significantly improve model fit
     ##                npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)  
     ## model_sep2       15 5257.9 5339.9 -2614.0   5227.9                       
     ## model_sep_key2   27 5261.6 5409.1 -2603.8   5207.6 20.317 12    0.06131 .
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+Anova(model_key1, type = 3)
+```
+
+    ## Analysis of Deviance Table (Type III Wald chisquare tests)
+    ## 
+    ## Response: cbind(count_major, count_minor)
+    ##                        Chisq Df Pr(>Chisq)    
+    ## (Intercept)           9.7522  1   0.001791 ** 
+    ## tuning_c             53.6315  1  2.418e-13 ***
+    ## instrument          259.7754  4  < 2.2e-16 ***
+    ## chord                 3.9855  1   0.045894 *  
+    ## tuning_c:instrument   9.0326  4   0.060291 .  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+Anova(model_key2, type = 3)
+```
+
+    ## Analysis of Deviance Table (Type III Wald chisquare tests)
+    ## 
+    ## Response: cbind(count_major, count_minor)
+    ##                       Chisq Df Pr(>Chisq)    
+    ## (Intercept)          0.7129  1   0.398491    
+    ## tuning_c            60.7486  1  6.485e-15 ***
+    ## instrument          58.4367  5  2.556e-11 ***
+    ## chord                0.3560  1   0.550710    
+    ## tuning_c:instrument 17.0556  5   0.004396 ** 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 

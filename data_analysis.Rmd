@@ -15,10 +15,11 @@ library(rstatix) # descriptives
 library(lme4) # GLMM (GLM w/ random effects)
 library(car) # anova test
 library(ordinal) # CLMM (ordinal DV)
+library(mediation)
 library(emmeans) # post hoc
-library(car) # ANOVA test
 library(performance) # calc ICC 
 library(MixedPsy) # PSE
+library(ggeffects)
 ```
 
 This project examines how instrumental timbre influences categorization of three-note arpeggios as major versus minor. Middle note of the arpeggios has five steps, ranging from +0c (minor) to +100c (major) in 25c increments. Participants heard five instruments in total in Experiment 1 (randomized across trial): piano, oboe, violin, trumpet, xylophone. To investigate whether effects were due to acoustic reasons or learned associations, we conducted Experiment 2 using six artificial timbres, varying in terms of spectral centroid (low, mid, high) and amplitude envelope (rounded versus percussive).
@@ -27,7 +28,7 @@ Judgments should be theoretically independent of instrument. However, if certain
 
 At the end of the experiment, participants are asked to make explicit ratings on how likely each instrument is to play a sad melody.
 
-```{r import, results = "hide"}
+```{r import, include = FALSE}
 # import cleaned Qualtrics data
 df_demo <- read_csv("qualtrics_cleaned.csv") %>%
   mutate(Inst = factor(Inst, levels = c(0, 1), labels = c("No", "Yes")),
@@ -94,18 +95,23 @@ df_demo2 <- df_demo %>%
 df_rtg1 <- read_csv("inst-cat-uc-1.csv") %>%
   filter(designation == "INST-VALENCE-RTG") %>%
   dplyr::select(participant, chord, instrument, explicit_rtg)  %>%
-  mutate(explicit_rtg = factor(explicit_rtg),
+  mutate(valence = factor(explicit_rtg),
          instrument = factor(instrument, levels = instruments1)) %>%
   semi_join(df_demo, by = c("participant" = "jspsych_id")) # let go of the j sub who didn't have q response
 
 df_rtg2 <- read_csv("inst-cat-uc-2.csv") %>%
   filter(designation == "INST-VALENCE-RTG") %>%
   dplyr::select(participant, chord, instrument, envelope, harmonics, explicit_rtg)  %>%
-  mutate(explicit_rtg = factor(explicit_rtg),
+  mutate(explicit_rtg = as.numeric(explicit_rtg),
+         valence = factor(explicit_rtg),
          instrument = factor(instrument, levels = instruments2),
          envelope = factor(envelope),
          harmonics = factor(harmonics, levels = c("low", "mid", "high"))) %>%
   semi_join(df_demo, by = c("participant" = "jspsych_id"))
+
+# combine cat & rat data
+df_combo1 <- left_join(df_sum1, df_rtg1, by = c("participant", "instrument", "chord"))
+df_combo2 <- left_join(df_sum2, df_rtg2, by = c("participant", "instrument", "chord", "envelope", "harmonics"))
 ```
 
 ## 1. Demographics
@@ -176,32 +182,32 @@ We were not sure which random slopes to include, if at all, so we compared model
 ```{r cat-model-comparison, include = FALSE}
 # start with maximal model (Barr et al., 2013) 
 # since we are using mixpsy to calculate PSE, we have to convert binary DV to sum
-model_maximal1 <- df_sum1 %>%
+model_maximal1 <- df_combo1 %>%
   glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c + instrument | participant), 
         family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
 
 # model is singular (convergence issue) - model too complicated
 # which makes sense given instrument is a categorical variable
-model_maximal2 <- df_sum2 %>%
+model_maximal2 <- df_combo2 %>%
   glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c + instrument | participant), 
         family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
 
 # try deleting 1 random slope
-model_tuning1 <- df_sum1 %>%
+model_tuning1 <- df_combo1 %>%
   glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c | participant), 
         family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
 
-model_tuning2 <- df_sum2 %>%
+model_tuning2 <- df_combo2 %>%
   glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + tuning_c | participant), 
         family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
 
 # try deleting another random slope instead
-model_instrument1 <- df_sum1 %>%
+model_instrument1 <- df_combo1 %>%
   glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + instrument | participant), 
         family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
 
 # model is still singular (too many instruments)
-model_instrument2 <- df_sum2 %>%
+model_instrument2 <- df_combo2 %>%
   glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + (1 + instrument | participant), 
         family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
 
@@ -273,8 +279,9 @@ Exp2: only T2 > T6
 
 ### 2.6 Visualizations
 
-We calculated predicted probability values at tuning steps with smaller bins so that we could plot a smoothed curve graph rather than just a line graph. We also calculated predicted probability values at the 3rd (middle) tuning step. 
-```{r df2plot}
+We calculated predicted probability values at tuning steps with smaller bins so that we could plot a smoothed curve graph rather than just a line graph. We also calculated predicted probability values at the 3rd (middle) tuning step.
+
+```{r df2plot, include = FALSE}
 df_cat_plot1 <- emmeans(model_tuning1, c("tuning_c", "instrument"),
                         at = list(instrument = instruments1,
                                   tuning_c = seq(-2, 2, length = 25)), 
@@ -388,8 +395,8 @@ df_cat_plot2 %>%
 df_cat_pts2 %>%
   filter(tuning_c == 0) %>%
   ggplot(aes(instrument, prob, fill = instrument)) +
-  geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = 0.1) +
   geom_col() +
+  geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = 0.1) +
   labs(x = "Instrument", y = "Avg predicted likelihood of major categorization",
        title = "Tonality Categorization at Tuning Step = +50c", caption = "error bar = SE") +
   guides(fill = "none") +
@@ -412,8 +419,8 @@ We modeled explicit valence rating for each instrument against instrument timbre
 ### 3.1 Calculate ICC
 
 ```{r exp-icc}
-model_base_rtg1 <- clmm(explicit_rtg ~ 1 + (1 | participant), data = df_rtg1)
-model_base_rtg2 <- clmm(explicit_rtg ~ 1 + (1 | participant), data = df_rtg2)
+model_base_rtg1 <- clmm(valence ~ 1 + (1 | participant), data = df_rtg1)
+model_base_rtg2 <- clmm(valence ~ 1 + (1 | participant), data = df_rtg2)
 icc(model_base_rtg1)
 icc(model_base_rtg2)
 ```
@@ -424,15 +431,17 @@ ICC from both experiments were smaller than .1, but we still chose to employ the
 
 ```{r clmm}
 # fit clmm b/c rating is ordinal not interval (1-4 likert scale)
-model_rtg1 <- clmm(explicit_rtg ~ instrument + (1 | participant), data = df_rtg1, Hess = TRUE)
-model_rtg2 <- clmm(explicit_rtg ~ instrument + (1 | participant), data = df_rtg2, Hess = TRUE)
-
+model_rtg1 <- clmm(valence ~ instrument + (1 | participant), data = df_rtg1, Hess = TRUE)
 summary(model_rtg1)
 #"cond. H" shows identifiability of the model. The smaller the better; not ok above 10^4. We are ok.
-summary(model_rtg2)
-
+joint_tests(model_rtg1)
 # cumulative odds ratio (OR) relative to baseline (< 1 = less likely, > 1 = more likely)
 exp(coef(model_rtg1)[4:7]) # x times more likely to have a higher rating than oboe
+
+# exp2
+model_rtg2 <- clmm(valence ~ instrument + (1 | participant), data = df_rtg2, Hess = TRUE)
+summary(model_rtg2)
+joint_tests(model_rtg2)
 exp(coef(model_rtg2)[4:8]) # x times more likely to have a higher rating than T1
 ```
 
@@ -457,9 +466,9 @@ Exp2: T1 < all but T2, T2 < T4-6, T6 > T1-3
 ```{r exp-plot}
 # exp1
 # plot mean rating as estimated from the model
-as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %>%
+as.data.frame(emmeans(model_rtg1, ~ valence | instrument, mode = "prob")) %>%
   group_by(instrument) %>%
-  summarise(mean_rating = sum(as.numeric(explicit_rtg) * prob)) %>%
+  summarise(mean_rating = sum(as.numeric(valence) * prob)) %>%
   ggplot(aes(reorder(instrument, mean_rating), mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
   labs(x = "Instrument", y = "Estimated mean valence rating",
@@ -467,12 +476,12 @@ as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %
   guides(fill = "none") +
   theme_minimal()
 
-# problem: cannot to plot aggregated SE
+# problem: cannot plot aggregated SE
 # alternative: use raw data
 df_rtg1 %>%
   group_by(instrument) %>%
-  summarise(mean_rating = mean(as.numeric(explicit_rtg)),
-            se_rating = sd(as.numeric(explicit_rtg)/sqrt(n()))) %>%
+  summarise(mean_rating = mean(explicit_rtg),
+            se_rating = sd(explicit_rtg/sqrt(n()))) %>%
   ggplot(aes(instrument, mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
   geom_errorbar(aes(ymin = mean_rating-se_rating, ymax = mean_rating+se_rating), width = .1) +
@@ -482,8 +491,8 @@ df_rtg1 %>%
   theme_minimal()
 
 # plot estimated probability of each rating (not very intuitive so prolly won't use)
-as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %>%
-  ggplot(aes(explicit_rtg, prob, group = instrument, color = instrument)) +
+as.data.frame(emmeans(model_rtg1, ~ valence | instrument, mode = "prob")) %>%
+  ggplot(aes(valence, prob, group = instrument, color = instrument)) +
   geom_line() +
   geom_point() +
   geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = .1) +
@@ -493,9 +502,9 @@ as.data.frame(emmeans(model_rtg1, ~ explicit_rtg | instrument, mode = "prob")) %
 
 # exp2
 # plot mean rating 
-as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %>%
+as.data.frame(emmeans(model_rtg2, ~ valence | instrument, mode = "prob")) %>%
   group_by(instrument) %>%
-  summarise(mean_rating = sum(as.numeric(explicit_rtg) * prob)) %>%
+  summarise(mean_rating = sum(as.numeric(valence) * prob)) %>%
   ggplot(aes(reorder(instrument, mean_rating), mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
   labs(x = "Instrument", y = "Mean valence rating",
@@ -506,8 +515,8 @@ as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %
 # using raw data
 df_rtg2 %>%
   group_by(instrument) %>%
-  summarise(mean_rating = mean(as.numeric(explicit_rtg)),
-            se_rating = sd(as.numeric(explicit_rtg)/sqrt(n()))) %>%
+  summarise(mean_rating = mean(explicit_rtg),
+            se_rating = sd(explicit_rtg/sqrt(n()))) %>%
   ggplot(aes(instrument, mean_rating, fill = instrument)) +
   geom_col(position = "dodge") +
   geom_errorbar(aes(ymin = mean_rating-se_rating, ymax = mean_rating+se_rating), width = .1) +
@@ -517,8 +526,8 @@ df_rtg2 %>%
   theme_minimal()
 
 # plot estimated probability
-as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %>%
-  ggplot(aes(explicit_rtg, prob, group = instrument, color = instrument)) +
+as.data.frame(emmeans(model_rtg2, ~ valence | instrument, mode = "prob")) %>%
+  ggplot(aes(valence, prob, group = instrument, color = instrument)) +
   geom_line() +
   geom_point() +
   geom_errorbar(aes(ymin = prob-SE, ymax = prob+SE), width = .1) +
@@ -529,40 +538,78 @@ as.data.frame(emmeans(model_rtg2, ~ explicit_rtg | instrument, mode = "prob")) %
 
 ## 4. The Role of Valence
 
+### 4.1 Valence as an Exploratory Variable
+
 We added explicit valence rating as another predictor in our GLMM, to see if this accounts for the timbre-tonality relationship.
 
-```{r model_tun+inst+valence}
-df_combo1 <- left_join(df_sum1, df_rtg1, by = c("participant", "instrument", "chord"))
-model_mediation1 <- df_combo1 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + as.numeric(explicit_rtg) + 
+```{r model_add_valence}
+model_add_valence1 <- df_combo1 %>%
+  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + explicit_rtg + 
+          (1 + tuning_c | participant), family = binomial(link = "probit"), 
+        data = ., control = glmerControl(optimizer = "bobyqa"))
+model_add_valence2 <- df_combo2 %>%
+  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + explicit_rtg + 
           (1 + tuning_c | participant), family = binomial(link = "probit"), 
         data = ., control = glmerControl(optimizer = "bobyqa"))
 
-df_combo2 <- left_join(df_sum2, df_rtg2, by = c("participant", "instrument", "chord", "envelope", "harmonics"))
-model_mediation2 <- df_combo2 %>%
-  glmer(cbind(count_major, count_minor) ~ tuning_c * instrument + as.numeric(explicit_rtg) + 
-          (1 + tuning_c | participant), family = binomial(link = "probit"), 
-        data = ., control = glmerControl(optimizer = "bobyqa"))
-
-summary(model_mediation1)
-Anova(model_mediation1, type = 3)
-summary(model_mediation2)
-Anova(model_mediation2, type = 3)
+summary(model_add_valence1)
+Anova(model_add_valence1, type = 3)
+summary(model_add_valence2)
+Anova(model_add_valence2, type = 3)
 
 # exp1:
-# instrument - tonality sig
-# instrument - valence sig
-# instrument - tonality after controlling for valence still sig
-# valence - tonality sig (after controlling for timbre)
+# instrument - tonality sig (c=total effect)
+# instrument - valence sig (a)
+# instrument - tonality after controlling for valence still sig (c'=direct effect)
+# valence - tonality sig (after controlling for timbre) (b=mediation effect)
 # potential partial mediation
 
 # exp2:
-# instrument - tonality after controlling for valence still sig
-# valence - tonality nonsig (after controlling for timbre)
+# instrument - tonality sig (c=total effect)
+# instrument - valence sig (a)
+# instrument - tonality after controlling for valence still sig (c'=direct effect)
+# valence - tonality nonsig (after controlling for timbre) (b=mediation effect)
+# no mediation
+```
+
+### 4.2 Mediation Analysis
+
+```{r mediation}
+set.seed(2026) # for reproducibility
+# aggregate prop_major across tuning steps (so that both models use df w/ same nrows)
+df_avg1 <- df_combo1 %>%
+  group_by(participant, instrument, explicit_rtg) %>%
+  summarise(sum_maj = sum(count_major),
+            sum_min = sum(count_minor),
+            .groups = "drop")
+
+model.m1 <- df_avg1 %>%
+  lmer(formula = explicit_rtg ~ instrument + (1 | participant), data = .)
+model.y1 <- df_avg1 %>%
+  glmer(formula = cbind(sum_maj, sum_min) ~ instrument + explicit_rtg + (1 | participant), family = binomial(link = "probit"), data = .)
+
+med1 <- mediate(model.m1, model.y1, treat = "instrument", mediator = "explicit_rtg", control.value = "oboe", treat.value = "xylophone") 
+
+df_avg2 <- df_combo2 %>%
+  group_by(participant, instrument, explicit_rtg) %>%
+  summarise(sum_maj = sum(count_major),
+            sum_min = sum(count_minor),
+            .groups = "drop")
+
+summary(med1)
+
+model.m2 <- df_avg2 %>%
+  lmer(formula = explicit_rtg ~ instrument + (1 | participant), data = .)
+model.y2 <- df_avg2 %>%
+  glmer(formula = cbind(sum_maj, sum_min) ~ instrument + explicit_rtg + (1 | participant), family = binomial(link = "probit"), data = .)
+
+med2 <- mediate(model.m2, model.y2, treat = "instrument", mediator = "explicit_rtg", control.value = "T2", treat.value = "T6") 
+
+summary(med2)
 ```
 
 | After controlling for valence (GLMM) | Experiment 1 | Experiment 2 |
-| ----------------------------- |--------------|--------------|
+| ------------------------------ |--------------|--------------|
 | Tuning main effect on Tonality | ✓            | ✓            |
 | Timbre main effect on Tonality | ✓            | ✓            |
 | Timbre × Tuning interaction    | ✗            | ✓            |
@@ -596,7 +643,7 @@ Anova(model_sep2, type = 3)
 plot(emmeans(model_sep2, ~ harmonics * envelope))
 
 # timbre-valence model
-model_sep_rtg2 <- clmm(explicit_rtg ~ envelope * harmonics + (1 | participant), data = df_rtg2)
+model_sep_rtg2 <- clmm(valence ~ envelope * harmonics + (1 | participant), data = df_rtg2)
 summary(model_sep_rtg2)
 emmeans(model_sep_rtg2, "harmonics") %>%
   pairs()
@@ -605,6 +652,52 @@ emmeans(model_sep_rtg2, ~ envelope * harmonics) %>%
   pairs()
 joint_tests(model_sep_rtg2) # cuz Anova can't be used for clmm
 plot(emmeans(model_sep_rtg2, ~ harmonics * envelope))
+
+# plot 3-way interaction
+pred <- ggpredict(
+  model_sep2,
+  terms = c("tuning_c [-2:2 by=.1]",
+            "envelope",
+            "harmonics")
+)
+
+ggplot(pred,
+       aes(x = x,
+           y = predicted,
+           color = group)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high,
+                  fill = group),
+              alpha = .15,
+              colour = NA) +
+  facet_wrap(~facet) +
+  labs(
+    x = "Tuning",
+    y = "Predicted probability of 'Major'",
+    color = "Envelope",
+    fill = "Envelope"
+  ) +
+  theme_classic()
+
+ggplot(pred,
+       aes(x = x,
+           y = predicted,
+           color = facet)) +
+  geom_line(size = 1) +
+  geom_ribbon(aes(ymin = conf.low,
+                  ymax = conf.high,
+                  fill = facet),
+              alpha = .15,
+              colour = NA) +
+  facet_wrap(~group) +
+  labs(
+    x = "Tuning",
+    y = "Predicted probability of 'Major'",
+    color = "Harmonics",
+    fill = "Harmonics"
+  ) +
+  theme_classic()
 ```
 
 | Experiment 2                  | Tonality Categorization | Valence Rating |
@@ -653,6 +746,9 @@ model_sep_key2 <- df_sum2 %>%
         family = binomial(link = "probit"), data = ., control = glmerControl(optimizer = "bobyqa"))
 summary(model_sep_key2)
 anova(model_sep_key2, model_sep2) # does not significantly improve model fit
+
+Anova(model_key1, type = 3)
+Anova(model_key2, type = 3)
 ```
 
 ### 6.2 Musical Training
